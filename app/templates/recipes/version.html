@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block nav %}
+{% if is_latest %}<a class="btn btn-small" href="/recipes/{{ recipe.id }}/edit">Edit</a>{% endif %}
+<a class="btn btn-small btn-secondary" href="/recipes">All recipes</a>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>{{ recipe.name }}</h1>
+  <p class="jar-meta">
+    <span class="badge">{{ recipe.category.label }}</span>
+    <span class="badge badge-version">{{ version.label }}</span>
+    {% if not is_latest %}<span class="badge badge-readonly">read-only</span>{% endif %}
+    {% if recipe.archived %}<span class="badge">archived</span>{% endif %}
+  </p>
+  {% if version.notes %}<p class="sub">{{ version.notes }}</p>{% endif %}
+  <p class="muted small">Saved {{ version.created_at | local_dt }}</p>
+</section>
+
+{% if recipe.versions | length > 1 %}
+<nav class="version-switch" aria-label="Versions">
+  {% for other in recipe.versions %}
+  <a class="chip {% if other.id == version.id %}is-current{% endif %}"
+     href="/recipes/{{ recipe.id }}/v/{{ other.version }}">{{ other.label }}</a>
+  {% endfor %}
+  <a class="chip chip-action" href="/recipes/{{ recipe.id }}/diff">Compare</a>
+</nav>
+{% endif %}
+
+{% if not is_latest %}
+<p class="notice card">
+  This is an older version, kept exactly as it was baked from.
+  <a href="/recipes/{{ recipe.id }}">Go to {{ recipe.latest_version.label }}</a> to edit.
+</p>
+{% endif %}
+
+<section class="card">
+  <h2 class="section-title">Scale to</h2>
+  <form class="form scale-form" method="get" action="/recipes/{{ recipe.id }}/v/{{ version.version }}">
+    <div class="field-row">
+      <label>
+        <span>Total flour <em>grams</em></span>
+        <input name="flour" type="number" step="1" min="0" inputmode="decimal"
+               value="{{ flour_input | num }}" placeholder="500">
+      </label>
+      <label>
+        <span>…or target dough weight <em>grams</em></span>
+        <input name="dough" type="number" step="1" min="0" inputmode="decimal"
+               value="{{ dough_input | num }}" placeholder="1115">
+      </label>
+    </div>
+    <div class="row-actions">
+      <button class="btn" type="submit">Work out the grams</button>
+      {% if scaled %}
+      <a class="btn btn-secondary" href="/recipes/{{ recipe.id }}/v/{{ version.version }}">Clear</a>
+      {% endif %}
+    </div>
+    <p class="muted small">Give either one. Flour wins if you fill in both.</p>
+  </form>
+</section>
+
+{% if scale_error %}
+<div class="card errors" role="alert"><ul><li>{{ scale_error }}</li></ul></div>
+{% endif %}
+
+{% if scaled and scaled.warnings %}
+<div class="card notice" role="status">
+  <ul>{% for warning in scaled.warnings %}<li>{{ warning }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<h2 class="section-title">Ingredients</h2>
+{% if version.ingredients %}
+<div class="card table-card">
+  <table class="data">
+    <thead>
+      {# Grams sit before role: on a phone the first three columns are what
+         fits, and the grams are what you are actually weighing out. #}
+      <tr>
+        <th scope="col">Ingredient</th>
+        <th scope="col" class="numeric">Baker's %</th>
+        {% if scaled %}<th scope="col" class="numeric">Grams</th>{% endif %}
+        <th scope="col">Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in version.ingredients %}
+      <tr>
+        <td>
+          {{ line.name }}
+          {% if line.notes %}<span class="muted small">· {{ line.notes }}</span>{% endif %}
+        </td>
+        <td class="numeric">{{ line.baker_pct | percent(1) }}</td>
+        {% if scaled %}
+        <td class="numeric strong">{{ scaled.ingredients[loop.index0].grams | grams }}</td>
+        {% endif %}
+        <td><span class="badge badge-role role-{{ line.role.value }}">{{ line.role.label }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <th scope="row">Flour</th>
+        <td class="numeric">{{ flour_pct | percent(1) }}</td>
+        {% if scaled %}<td class="numeric strong">{{ scaled.total_flour_g | grams }}</td>{% endif %}
+        <td></td>
+      </tr>
+      <tr>
+        <th scope="row">Total dough</th>
+        <td class="numeric">{{ total_pct | percent(1) }}</td>
+        {% if scaled %}<td class="numeric strong">{{ scaled.total_dough_g | grams }}</td>{% endif %}
+        <td></td>
+      </tr>
+      {% if scaled and scaled.hydration_pct is not none %}
+      <tr>
+        <th scope="row">Hydration <span class="muted small">added water</span></th>
+        <td class="numeric">{{ scaled.hydration_pct | percent(1) }}</td>
+        <td></td>
+        <td></td>
+      </tr>
+      {% endif %}
+    </tfoot>
+  </table>
+</div>
+{% else %}
+<p class="card empty">No ingredients on this version.</p>
+{% endif %}
+
+<h2 class="section-title">Stages</h2>
+{% if version.stages %}
+<ol class="stage-list">
+  {% for stage in version.stages %}
+  <li class="card stage">
+    <div class="stage-head">
+      <h3>{{ stage.name }}</h3>
+      <span class="stage-facts muted">
+        {% if stage.duration_min is not none %}{{ stage.duration_min }} min{% endif %}
+        {% if stage.duration_min is not none and stage.temp_c is not none %} · {% endif %}
+        {% if stage.temp_c is not none %}{{ stage.temp_c | temp(temp_unit) }}{% endif %}
+      </span>
+    </div>
+    {% if stage.notes %}<p class="stage-notes">{{ stage.notes }}</p>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="card empty">No stages on this version.</p>
+{% endif %}
+
+<section class="danger-zone">
+  <form method="post" action="/recipes/{{ recipe.id }}/archive">
+    <input type="hidden" name="archived" value="{{ '0' if recipe.archived else '1' }}">
+    <button class="btn btn-secondary" type="submit">
+      {{ "Unarchive recipe" if recipe.archived else "Archive recipe" }}
+    </button>
+  </form>
+  <p class="muted small">Recipes are archived, never deleted — bakes point at these versions.</p>
+</section>
+{% endblock %}

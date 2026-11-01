@@ -62,6 +62,26 @@ the LAN. The in-app banner works everywhere.
 Getting phone notifications means either serving over HTTPS or the ntfy push
 planned for v2 (`docs/TODO-v1.md`).
 
+## Recipes
+
+Ingredients are stored as **baker's percentages**: total flour is 100%, and
+everything else is a percentage of the flour weight. The scale-to box on a
+recipe page turns those into grams — give it either a total flour weight or
+a target dough weight and it works the other out.
+
+Levain is kept as its own line rather than being broken back into the flour
+and water inside it, so the grams match what you actually weigh. That does
+mean the hydration figure shown is the dough's *added* water, not its true
+total.
+
+Editing a recipe never changes it in place: every save writes a new version,
+and old versions stay readable so a bake recorded against v1 still describes
+what was made. The compare page shows what changed between any two versions,
+matching lines by name rather than by position.
+
+Equipment programs are the bread maker's programs, typed in from its manual,
+so a bake can record which one was used.
+
 ## Development
 
 ```bash

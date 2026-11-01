@@ -48,6 +48,8 @@ a { color: var(--accent); }
   align-items: center;
   justify-content: space-between;
   gap: var(--gutter);
+  flex-wrap: wrap;
+  row-gap: 10px;
   padding: 12px var(--gutter);
   padding-top: max(12px, env(safe-area-inset-top));
   background: var(--surface);
@@ -65,6 +67,7 @@ a { color: var(--accent); }
   font-size: 1.125rem;
   color: var(--text);
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .brand-mark { font-size: 1.3rem; }
@@ -440,4 +443,137 @@ code {
 
 @media (min-width: 640px) {
   .alert-item { flex-direction: row; align-items: center; justify-content: space-between; }
+}
+
+/* --- Recipes ----------------------------------------------------------- */
+
+.small { font-size: 0.8125rem; }
+.strong { font-weight: 650; }
+.inline { display: inline; }
+
+.notice {
+  border-left: 3px solid var(--accent);
+  margin: 0 0 16px;
+}
+.notice ul { margin: 0; padding-left: 20px; }
+
+.badge-version { border-color: var(--accent); color: var(--accent); }
+.badge-readonly { border-color: var(--warn); color: var(--warn); }
+.badge-role { font-weight: 600; }
+.role-flour { border-color: var(--accent); color: var(--accent); }
+.role-water { border-color: var(--ok); color: var(--ok); }
+.role-levain { border-color: var(--warn); color: var(--warn); }
+
+/* Version switcher */
+.version-switch { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 20px; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.chip.is-current { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip-action { border-style: dashed; color: var(--muted); }
+
+/* Ingredient table. Scrolls sideways rather than squeezing on a phone. */
+.table-card { padding: 0; overflow-x: auto; }
+
+table.data { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+table.data th,
+table.data td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+table.data thead th { font-size: 0.8125rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+table.data .numeric { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.data tbody tr:last-child td { border-bottom: 1px solid var(--border); }
+table.data tfoot th,
+table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0; }
+
+/* Stage list */
+.stage-list { list-style: none; counter-reset: stage; margin: 0; padding: 0; }
+.stage { counter-increment: stage; }
+.stage-head { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.stage-head h3 { margin: 0; font-size: 1.0625rem; }
+.stage-head h3::before { content: counter(stage) ". "; color: var(--muted); font-weight: 400; }
+.stage-facts { white-space: nowrap; font-size: 0.9375rem; }
+.stage-notes { margin: 8px 0 0; color: var(--muted); }
+
+/* Repeating ingredient and stage rows in the recipe form */
+.repeat { gap: 12px; }
+.repeat-row { display: grid; gap: 10px; align-items: end; }
+.repeat-head { display: none; font-size: 0.8125rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+.repeat-row + .repeat-row { padding-top: 12px; border-top: 1px solid var(--border); }
+.repeat [data-repeat-rows] { display: flex; flex-direction: column; gap: 12px; }
+.repeat [data-repeat-rows] .repeat-row + .repeat-row { padding-top: 0; border-top: 0; }
+
+@media (min-width: 720px) {
+  .repeat-head { display: grid; }
+  .ingredient-row { grid-template-columns: 2fr 1.2fr 0.8fr 2fr; }
+  .stage-row { grid-template-columns: 2fr 0.8fr 0.8fr 2fr; }
+  .repeat-head.repeat-row { align-items: center; padding: 0 0 4px; }
+}
+
+.scale-form, .diff-picker { margin: 0; }
+
+.danger-zone { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border); }
+.danger-zone p { margin: 8px 0 0; }
+
+/* Version diff */
+.diff-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.diff-line { display: flex; gap: 10px; align-items: baseline; }
+
+.diff-kind {
+  flex: 0 0 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-weight: 700;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.diff-added .diff-kind { color: var(--ok); border-color: var(--ok); }
+.diff-removed .diff-kind { color: var(--danger); border-color: var(--danger); }
+.diff-changed .diff-kind { color: var(--warn); border-color: var(--warn); }
+.diff-moved .diff-kind { color: var(--muted); }
+
+.diff-fields { list-style: none; margin: 4px 0 0; padding: 0; color: var(--muted); font-size: 0.9375rem; }
+.diff-fields .was { text-decoration: line-through; }
+.diff-fields .now { color: var(--text); font-weight: 600; }
+
+.program-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+.program-list li { border-bottom: 0; padding: 16px; }
+/* Archiving is a separate form, so it gets its own line under the edits. */
+.program-list li > form + form { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+
+.sectionnav { display: flex; gap: 16px; align-items: center; }
+
+.navlink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9375rem;
+}
+.navlink:hover, .navlink:focus-visible { color: var(--text); }
+
+@media (max-width: 639px) {
+  /* Too wide for one phone-width row, and the page's own action matters
+     more, so the section links take a row of their own underneath. */
+  .sectionnav {
+    flex: 1 0 100%;
+    order: 3;
+    gap: 18px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
 }

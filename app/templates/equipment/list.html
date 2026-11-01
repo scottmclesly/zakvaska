@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block nav %}
+<a class="btn btn-small btn-secondary" href="/recipes">Recipes</a>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Equipment programs</h1>
+  <p class="sub">
+    The bread maker's programs, typed in from the manual, so a bake can
+    record which one was used.
+  </p>
+</section>
+
+{% if errors %}
+<div class="card errors" role="alert">
+  <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+{% if programs %}
+<ul class="plain program-list">
+  {% for program in programs %}
+  <li class="card">
+    <form class="form" method="post" action="/equipment/{{ program.id }}/edit">
+      <div class="field-row">
+        <label>
+          <span>Program</span>
+          <input name="name" required value="{{ program.name }}">
+        </label>
+        <label>
+          <span>Device</span>
+          <input name="device" value="{{ program.device or '' }}">
+        </label>
+        <label>
+          <span>Total minutes</span>
+          <input name="total_min" type="number" step="1" min="0" inputmode="numeric"
+                 value="{{ program.total_min if program.total_min is not none else '' }}">
+        </label>
+      </div>
+      <label>
+        <span>Notes</span>
+        <input name="notes" value="{{ program.notes or '' }}">
+      </label>
+      <div class="row-actions">
+        <button class="btn btn-small" type="submit">Save</button>
+      </div>
+    </form>
+    <form method="post" action="/equipment/{{ program.id }}/archive">
+      <input type="hidden" name="archived" value="1">
+      <button class="btn btn-small btn-secondary" type="submit">Archive</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<section class="empty card">
+  <h2>Nothing entered yet</h2>
+  <p>Add the West Bend programs you actually use — "Basic", "Whole Wheat", "Dough".</p>
+</section>
+{% endif %}
+
+<h2 class="section-title">Add a program</h2>
+<form class="form card" method="post" action="/equipment/new">
+  <div class="field-row">
+    <label>
+      <span>Program</span>
+      <input name="name" required placeholder="e.g. Whole Wheat">
+    </label>
+    <label>
+      <span>Device</span>
+      <input name="device" placeholder="e.g. West Bend 41300">
+    </label>
+    <label>
+      <span>Total minutes <em>optional</em></span>
+      <input name="total_min" type="number" step="1" min="0" inputmode="numeric"
+             placeholder="230">
+    </label>
+  </div>
+  <label>
+    <span>Notes <em>optional</em></span>
+    <input name="notes" placeholder="e.g. 30 min preheat, 3 rises, 60 min bake">
+  </label>
+  <div class="row-actions">
+    <button class="btn" type="submit">Add program</button>
+  </div>
+</form>
+
+{% if archived %}
+<section class="archived-list">
+  <h2 class="section-title">Archived</h2>
+  <ul class="plain">
+    {% for program in archived %}
+    <li>
+      {{ program.name }}
+      {% if program.device %}<span class="muted">· {{ program.device }}</span>{% endif %}
+      <form method="post" action="/equipment/{{ program.id }}/archive" class="inline">
+        <input type="hidden" name="archived" value="0">
+        <button class="btn btn-small btn-secondary" type="submit">Restore</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

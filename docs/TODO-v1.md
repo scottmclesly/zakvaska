@@ -47,10 +47,10 @@ Work phase by phase. Each phase ends with its acceptance checks passing, tests g
 - **Accept:** with a 1-minute test interval, an alert fires, shows in-app and as a browser notification, snooze delays it, and a feeding clears it; restart mid-countdown still fires.
 
 ## Phase 3: recipes
-- [ ] Recipe CRUD with ingredients in baker's % and ordered stages
-- [ ] Edit → new version; previous versions viewable read-only; diff between versions (ingredient and stage changes)
-- [ ] Scale-to view: enter total flour or target dough weight → grams per ingredient
-- [ ] Equipment programs CRUD (enter West Bend programs from the manual)
+- [x] Recipe CRUD with ingredients in baker's % and ordered stages
+- [x] Edit → new version; previous versions viewable read-only; diff between versions (ingredient and stage changes)
+- [x] Scale-to view: enter total flour or target dough weight → grams per ingredient
+- [x] Equipment programs CRUD (enter West Bend programs from the manual)
 - **Accept:** create a Borodinsky recipe with scald/sponge/final/proof/bake stages, edit it to v2, scale to 500 g flour with correct grams (unit-tested).
 
 ## Phase 4: bakes and results

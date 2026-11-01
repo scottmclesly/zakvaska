@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block nav %}
+<a class="btn btn-small" href="/recipes/new">New recipe</a>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Recipes</h1>
+  <p class="sub">Baker's percentages, versioned. Editing writes a new version.</p>
+</section>
+
+{% if recipes %}
+<ul class="jar-grid">
+  {% for recipe in recipes %}
+  {% set latest = recipe.latest_version %}
+  <li class="card">
+    <div class="jar-card-head">
+      <h2><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h2>
+      <span class="badge">{{ recipe.category.label }}</span>
+    </div>
+    <dl class="stats">
+      <div>
+        <dt>Latest</dt>
+        <dd>{{ latest.label if latest else "—" }}</dd>
+      </div>
+      <div>
+        <dt>Versions</dt>
+        <dd>{{ recipe.versions | length }}</dd>
+      </div>
+      {% if latest %}
+      <div>
+        <dt>Ingredients</dt>
+        <dd>{{ latest.ingredients | length }}</dd>
+      </div>
+      {% endif %}
+    </dl>
+    <div class="row-actions">
+      <a class="btn" href="/recipes/{{ recipe.id }}">Open</a>
+      {% if recipe.versions | length > 1 %}
+      <a class="btn btn-secondary" href="/recipes/{{ recipe.id }}/diff">Compare versions</a>
+      {% endif %}
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<section class="empty card">
+  <h2>No recipes yet</h2>
+  <p>Start with the Borodinsky you are working towards.</p>
+  <p><a class="btn" href="/recipes/new">Add a recipe</a></p>
+</section>
+{% endif %}
+
+{% if archived %}
+<section class="archived-list">
+  <h2 class="section-title">Archived</h2>
+  <ul class="plain">
+    {% for recipe in archived %}
+    <li><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a> <span class="muted">· archived</span></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

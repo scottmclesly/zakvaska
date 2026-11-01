@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block nav %}
+<a class="btn btn-small btn-secondary" href="/recipes/{{ recipe.id }}">Back to recipe</a>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>{{ recipe.name }}</h1>
+  <p class="sub">What changed from v{{ diff.from_version }} to v{{ diff.to_version }}.</p>
+</section>
+
+<form class="form card diff-picker" method="get" action="/recipes/{{ recipe.id }}/diff">
+  <div class="field-row">
+    <label>
+      <span>From</span>
+      <select name="from_version">
+        {% for number in versions %}
+        <option value="{{ number }}" {% if number == diff.from_version %}selected{% endif %}>
+          v{{ number }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>To</span>
+      <select name="to_version">
+        {% for number in versions %}
+        <option value="{{ number }}" {% if number == diff.to_version %}selected{% endif %}>
+          v{{ number }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="row-actions">
+    <button class="btn" type="submit">Compare</button>
+  </div>
+</form>
+
+{% if after.notes %}
+<p class="card notice"><strong>v{{ after.version }} note:</strong> {{ after.notes }}</p>
+{% endif %}
+
+{% if diff.is_empty %}
+<section class="card empty">
+  <h2>No differences</h2>
+  <p>v{{ diff.from_version }} and v{{ diff.to_version }} have the same ingredients and stages.</p>
+</section>
+{% else %}
+
+{% macro change_list(lines, empty_text) %}
+  {% if lines %}
+  <ul class="diff-list">
+    {% for line in lines %}
+    <li class="diff-line diff-{{ line.kind }}">
+      <span class="diff-kind" aria-hidden="true">
+        {%- if line.kind == "added" -%}+
+        {%- elif line.kind == "removed" -%}−
+        {%- elif line.kind == "moved" -%}↕
+        {%- else -%}~
+        {%- endif -%}
+      </span>
+      <span class="diff-body">
+        <strong>{{ line.name }}</strong>
+        {% if line.kind == "changed" %}
+        <ul class="diff-fields">
+          {% for change in line.changes %}
+          <li>
+            {{ change.label }}:
+            {# Temperatures are stored in Celsius; show them like every other page does. #}
+            {% if change.field == "temp_c" %}
+            <span class="was">{{ change.before | temp(temp_unit) }}</span>
+            →
+            <span class="now">{{ change.after | temp(temp_unit) }}</span>
+            {% else %}
+            <span class="was">{{ change.before if change.before not in (none, "") else "—" }}</span>
+            →
+            <span class="now">{{ change.after if change.after not in (none, "") else "—" }}</span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% elif line.kind == "moved" %}
+        <span class="muted">moved from position {{ line.before_seq + 1 }} to {{ line.after_seq + 1 }}</span>
+        {% elif line.kind == "added" %}
+        <span class="muted">added</span>
+        {% else %}
+        <span class="muted">removed</span>
+        {% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">{{ empty_text }}</p>
+  {% endif %}
+{% endmacro %}
+
+<h2 class="section-title">Ingredients</h2>
+<div class="card">{{ change_list(diff.ingredients, "No ingredient changes.") }}</div>
+
+<h2 class="section-title">Stages</h2>
+<div class="card">{{ change_list(diff.stages, "No stage changes.") }}</div>
+{% endif %}
+
+<nav class="row-actions">
+  <a class="btn btn-secondary" href="/recipes/{{ recipe.id }}/v/{{ diff.from_version }}">View v{{ diff.from_version }}</a>
+  <a class="btn btn-secondary" href="/recipes/{{ recipe.id }}/v/{{ diff.to_version }}">View v{{ diff.to_version }}</a>
+</nav>
+{% endblock %}

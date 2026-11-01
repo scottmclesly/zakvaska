@@ -35,6 +35,37 @@ class JarState(enum.StrEnum):
         }[self]
 
 
+class RecipeCategory(enum.StrEnum):
+    RYE = "rye"
+    WHEAT = "wheat"
+    ENRICHED = "enriched"
+    OTHER = "other"
+
+    @property
+    def label(self) -> str:
+        return self.value.capitalize()
+
+
+class IngredientRole(enum.StrEnum):
+    """What a line does in the dough.
+
+    Roles matter for more than tidiness: FLOUR lines are the 100% that every
+    other percentage is measured against.
+    """
+
+    FLOUR = "flour"
+    WATER = "water"
+    LEVAIN = "levain"
+    SALT = "salt"
+    SWEETENER = "sweetener"
+    FAT = "fat"
+    OTHER = "other"
+
+    @property
+    def label(self) -> str:
+        return self.value.capitalize()
+
+
 class AlertKind(enum.StrEnum):
     FEED_DUE = "feed_due"
 
@@ -56,6 +87,29 @@ class BubbleLevel(enum.StrEnum):
     def label(self) -> str:
         return self.value.capitalize()
 
+
+# Borodinsky's own shape, offered as suggestions on the stage form.
+STAGE_SUGGESTIONS = (
+    "scald (zavarka)",
+    "sponge",
+    "final dough",
+    "bulk ferment",
+    "proof",
+    "bake",
+    "cool",
+)
+
+INGREDIENT_SUGGESTIONS = (
+    "whole rye flour",
+    "bread flour",
+    "water",
+    "rye levain",
+    "salt",
+    "rye malt",
+    "molasses",
+    "honey",
+    "coriander",
+)
 
 # Suggestions offered via <datalist>; users may type anything.
 SMELL_SUGGESTIONS = (

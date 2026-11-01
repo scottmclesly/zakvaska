@@ -108,3 +108,35 @@ if ("serviceWorker" in navigator) {
   poll();
   setInterval(poll, POLL_MS);
 })();
+
+// --- Repeating form rows -------------------------------------------------
+// Ingredient and stage rows. The form works without this: the server drops
+// blank rows and ignores missing ones, so a browser with no JS just gets the
+// rows it was served. This only saves a round trip to add another.
+(function () {
+  function blankCopy(row) {
+    var copy = row.cloneNode(true);
+    copy.querySelectorAll("input").forEach(function (input) {
+      input.value = "";
+    });
+    copy.querySelectorAll("select").forEach(function (select) {
+      select.selectedIndex = 0;
+    });
+    return copy;
+  }
+
+  document.querySelectorAll("[data-repeat]").forEach(function (group) {
+    var rows = group.querySelector("[data-repeat-rows]");
+    var add = group.querySelector("[data-repeat-add]");
+    if (!rows || !add) return;
+
+    add.addEventListener("click", function () {
+      var last = rows.querySelector("[data-repeat-row]:last-of-type");
+      if (!last) return;
+      var copy = blankCopy(last);
+      rows.appendChild(copy);
+      var first = copy.querySelector("input, select");
+      if (first) first.focus();
+    });
+  });
+})();
