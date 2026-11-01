@@ -1,28 +1,78 @@
 {% extends "base.html" %}
 
+{% block nav %}
+<a class="btn btn-small" href="/jars/new">New jar</a>
+{% endblock %}
+
 {% block content %}
 <section class="hero">
   <h1>Starter jars</h1>
   <p class="sub">Feedings, observations and bakes, logged properly.</p>
 </section>
 
-{% if jars %}
+{% if cards %}
 <ul class="jar-grid">
-  {% for jar in jars %}
-  <li class="card">{{ jar.name }}</li>
+  {% for card in cards %}
+  {% set jar = card.jar %}
+  <li class="card jar-card {% if card.status.is_overdue %}is-overdue{% endif %}">
+    <div class="jar-card-head">
+      <h2><a href="/jars/{{ jar.id }}">{{ jar.name }}</a></h2>
+      {% if jar.is_control %}<span class="badge badge-control">control</span>{% endif %}
+    </div>
+
+    <p class="jar-meta">
+      <span class="badge badge-state state-{{ jar.state.value }}">{{ jar.state.label }}</span>
+      <span class="muted">{{ jar.origin.value }}{% if jar.flour_type %} · {{ jar.flour_type }}{% endif %}</span>
+    </p>
+
+    <dl class="stats">
+      <div>
+        <dt>Last fed</dt>
+        <dd>{{ card.status.last_fed_at | since(now) }}</dd>
+      </div>
+      <div>
+        <dt>Next due</dt>
+        <dd>
+          {% if card.status.next_due_at %}
+            <span class="{% if card.status.is_overdue %}overdue-text{% endif %}">
+              {{ card.status.next_due_at | until(now) }}
+            </span>
+          {% elif jar.state.wants_feeding %}
+            <span class="muted">after first feed</span>
+          {% else %}
+            <span class="muted">not while {{ jar.state.label.lower() }}</span>
+          {% endif %}
+        </dd>
+      </div>
+    </dl>
+
+    <div class="row-actions">
+      <a class="btn" href="/jars/{{ jar.id }}/feed">Fed it</a>
+      <a class="btn btn-secondary" href="/jars/{{ jar.id }}/observe">Observe</a>
+    </div>
+  </li>
   {% endfor %}
 </ul>
 {% else %}
 <section class="empty card">
   <h2>No jars yet</h2>
-  <p>
-    Jar tracking arrives in the next phase. The plan lives in
-    <code>docs/TODO-v1.md</code>.
-  </p>
+  <p>Add your first starter jar and start logging feedings.</p>
   <p class="muted">
-    Phase&nbsp;0 is done: the app boots, the database is migrated, and
-    <a href="/health">/health</a> is green.
+    Scott's setup is two rye jars side by side: a homemade whole-rye starter
+    and a purchased Soviet culture marked as the control.
   </p>
+  <p><a class="btn" href="/jars/new">Add a jar</a></p>
+</section>
+{% endif %}
+
+{% if archived %}
+<section class="archived-list">
+  <h2 class="section-title">Archived</h2>
+  <ul class="plain">
+    {% for jar in archived %}
+    <li><a href="/jars/{{ jar.id }}">{{ jar.name }}</a> <span class="muted">· archived</span></li>
+    {% endfor %}
+  </ul>
 </section>
 {% endif %}
 {% endblock %}

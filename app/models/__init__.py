@@ -1,6 +1,21 @@
 """ORM models. Import every model here so Alembic autogenerate sees them."""
 
 from app.models.base import Base
+from app.models.enums import BubbleLevel, JarOrigin, JarState
+from app.models.feeding import Feeding
+from app.models.jar import Jar
+from app.models.jar_state_change import JarStateChange
+from app.models.observation import Observation
 from app.models.setting import Setting
 
-__all__ = ["Base", "Setting"]
+__all__ = [
+    "Base",
+    "BubbleLevel",
+    "Feeding",
+    "Jar",
+    "JarOrigin",
+    "JarState",
+    "JarStateChange",
+    "Observation",
+    "Setting",
+]

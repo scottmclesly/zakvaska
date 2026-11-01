@@ -23,20 +23,20 @@ Work phase by phase. Each phase ends with its acceptance checks passing, tests g
 | `setting` | key, value (display temp unit, etc.) |
 
 ## Phase 0: scaffold and environment
-- [ ] Repo layout: `app/` (main.py, config.py, db.py, models/, routes/, services/, templates/, static/), `migrations/`, `tests/`, `scripts/`, `docs/`
-- [ ] `requirements.txt` with pinned versions; `.env.example`; `.gitignore` (.venv, data/, .env, __pycache__)
-- [ ] `scripts/setup.sh` (check Python ≥3.12, create .venv, install, `alembic upgrade head`) and `scripts/run.sh`
-- [ ] Base layout template, HTMX vendored, mobile-first CSS, PWA manifest and icon
-- [ ] `/health` endpoint
+- [x] Repo layout: `app/` (main.py, config.py, db.py, models/, routes/, services/, templates/, static/), `migrations/`, `tests/`, `scripts/`, `docs/`
+- [x] `requirements.txt` with pinned versions; `.env.example`; `.gitignore` (.venv, data/, .env, __pycache__)
+- [x] `scripts/setup.sh` (check Python ≥3.12, create .venv, install, `alembic upgrade head`) and `scripts/run.sh`
+- [x] Base layout template, HTMX vendored, mobile-first CSS, PWA manifest and icon
+- [x] `/health` endpoint
 - **Accept:** fresh clone → `setup.sh` → `run.sh` → home page loads at 127.0.0.1:8420 on desktop and phone width; `pytest` passes.
 
 ## Phase 1: jars, feedings, observations
-- [ ] Jar CRUD (archive, not delete), state changes logged, parent/child lineage, control flag
-- [ ] Quick "Fed it" form: defaults pre-filled from that jar's last feeding, one tap to log
-- [ ] Derived ratio and hydration display
-- [ ] Observation form (height before/after → rise %)
-- [ ] Jar detail page: timeline of feedings, observations and state changes, newest first
-- [ ] Dashboard: one card per active jar with state, time since last feed, next due, overdue highlight
+- [x] Jar CRUD (archive, not delete), state changes logged, parent/child lineage, control flag
+- [x] Quick "Fed it" form: defaults pre-filled from that jar's last feeding, one tap to log
+- [x] Derived ratio and hydration display
+- [x] Observation form (height before/after → rise %)
+- [x] Jar detail page: timeline of feedings, observations and state changes, newest first
+- [x] Dashboard: one card per active jar with state, time since last feed, next due, overdue highlight
 - **Accept:** create both jars (homemade + Soviet control), log feedings and observations, see them on the timeline; derived values are correct (unit-tested).
 
 ## Phase 2: alerts

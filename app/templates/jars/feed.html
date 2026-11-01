@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <h1>Fed it</h1>
+  <p class="sub">{{ jar.name }} — pre-filled from the last feeding, change what differs.</p>
+</section>
+
+{% if errors %}
+<div class="card errors" role="alert">
+  <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form class="card form" method="post" action="/jars/{{ jar.id }}/feed">
+  <fieldset class="grams">
+    <legend>Grams</legend>
+    <div class="field-row">
+      <label>
+        <span>Starter</span>
+        <input name="starter_g" type="number" step="0.1" min="0" required
+               inputmode="decimal" value="{{ defaults.starter_g | num }}">
+      </label>
+      <label>
+        <span>Flour</span>
+        <input name="flour_g" type="number" step="0.1" min="0" required
+               inputmode="decimal" value="{{ defaults.flour_g | num }}">
+      </label>
+      <label>
+        <span>Water</span>
+        <input name="water_g" type="number" step="0.1" min="0" required
+               inputmode="decimal" value="{{ defaults.water_g | num }}">
+      </label>
+    </div>
+  </fieldset>
+
+  <label>
+    <span>Flour <em>optional</em></span>
+    <input name="flour_type" value="{{ defaults.flour_type or '' }}"
+           placeholder="e.g. whole rye">
+  </label>
+
+  <div class="field-row">
+    <label>
+      <span>Water temp <em>°{{ temp_unit }}</em></span>
+      <input name="water_temp" type="number" step="1" inputmode="decimal"
+             value="{{ defaults.water_temp_c | temp_value(temp_unit) }}">
+    </label>
+    <label>
+      <span>Room temp <em>°{{ temp_unit }}</em></span>
+      <input name="ambient_temp" type="number" step="1" inputmode="decimal"
+             value="{{ defaults.ambient_temp_c | temp_value(temp_unit) }}">
+    </label>
+  </div>
+
+  <label>
+    <span>When</span>
+    <input name="fed_at" type="datetime-local" value="{{ now_local }}">
+  </label>
+
+  <label>
+    <span>Notes <em>optional</em></span>
+    <textarea name="notes" rows="2"></textarea>
+  </label>
+
+  <div class="row-actions">
+    <button class="btn btn-big" type="submit">Log the feeding</button>
+    <a class="btn btn-secondary" href="/jars/{{ jar.id }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

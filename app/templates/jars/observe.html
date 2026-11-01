@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% set v = values %}
+
+{% block content %}
+<section class="hero">
+  <h1>Observe</h1>
+  <p class="sub">{{ jar.name }} — how is it behaving?</p>
+</section>
+
+{% if errors %}
+<div class="card errors" role="alert">
+  <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form class="card form" method="post" action="/jars/{{ jar.id }}/observe">
+  <fieldset>
+    <legend>Height</legend>
+    <div class="field-row">
+      <label>
+        <span>At feeding <em>mm</em></span>
+        <input name="start_height_mm" type="number" step="1" min="0"
+               inputmode="decimal" value="{{ v.get('start_height_mm', '') }}">
+      </label>
+      <label>
+        <span>Now <em>mm</em></span>
+        <input name="height_mm" type="number" step="1" min="0"
+               inputmode="decimal" value="{{ v.get('height_mm', '') }}">
+      </label>
+    </div>
+    <p class="hint muted">Rise % is worked out from the pair.</p>
+  </fieldset>
+
+  <label>
+    <span>Bubbles</span>
+    <select name="bubbles">
+      <option value="">— not noted —</option>
+      {% for level in bubble_levels %}
+      <option value="{{ level.value }}" {% if v.get('bubbles') == level.value %}selected{% endif %}>
+        {{ level.label }}
+      </option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <div class="field-row">
+    <label>
+      <span>Smell</span>
+      <input name="smell" list="smells" value="{{ v.get('smell', '') }}">
+      <datalist id="smells">
+        {% for option in smells %}<option value="{{ option }}">{% endfor %}
+      </datalist>
+    </label>
+    <label>
+      <span>Texture</span>
+      <input name="texture" list="textures" value="{{ v.get('texture', '') }}">
+      <datalist id="textures">
+        {% for option in textures %}<option value="{{ option }}">{% endfor %}
+      </datalist>
+    </label>
+  </div>
+
+  <label>
+    <span>When</span>
+    <input name="observed_at" type="datetime-local" value="{{ now_local }}">
+  </label>
+
+  <label>
+    <span>Notes <em>optional</em></span>
+    <textarea name="notes" rows="2">{{ v.get('notes', '') }}</textarea>
+  </label>
+
+  <div class="row-actions">
+    <button class="btn btn-big" type="submit">Log the observation</button>
+    <a class="btn btn-secondary" href="/jars/{{ jar.id }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

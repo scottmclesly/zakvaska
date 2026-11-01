@@ -1,0 +1,57 @@
+{# One entry on a jar's timeline. Expects `event` plus `now` / `temp_unit`. #}
+<li class="timeline-item kind-{{ event.kind }}">
+  <div class="timeline-when">
+    <time datetime="{{ event.at.isoformat() }}">{{ event.at | local_day }}</time>
+    <span class="muted">{{ event.at | local_time }}</span>
+  </div>
+
+  <div class="timeline-body card">
+    {% if event.kind == "feeding" %}
+      {% set feeding = event.obj %}
+      <h3>Fed
+        {% if event.detail.ratio %}<span class="ratio">{{ event.detail.ratio }}</span>{% endif %}
+      </h3>
+      <p class="timeline-facts">
+        {{ feeding.starter_g | grams }} starter ·
+        {{ feeding.flour_g | grams }} flour ·
+        {{ feeding.water_g | grams }} water
+        {%- if feeding.flour_type %} · {{ feeding.flour_type }}{% endif %}
+      </p>
+      <p class="timeline-facts muted">
+        {{ event.detail.hydration_pct | percent }} hydration ·
+        {{ event.detail.total_g | grams }} total
+        {%- if feeding.water_temp_c is not none %} · water {{ feeding.water_temp_c | temp(temp_unit) }}{% endif %}
+        {%- if feeding.ambient_temp_c is not none %} · room {{ feeding.ambient_temp_c | temp(temp_unit) }}{% endif %}
+      </p>
+      {% if feeding.notes %}<p class="timeline-note">{{ feeding.notes }}</p>{% endif %}
+
+    {% elif event.kind == "observation" %}
+      {% set observation = event.obj %}
+      <h3>Observed
+        {% if event.detail.rise_pct is not none %}
+        <span class="ratio">{{ event.detail.rise_pct | percent }} rise</span>
+        {% endif %}
+      </h3>
+      <p class="timeline-facts">
+        {%- if observation.start_height_mm is not none and observation.height_mm is not none -%}
+          {{ observation.start_height_mm | mm }} → {{ observation.height_mm | mm }}
+        {%- endif -%}
+        {%- if observation.bubbles %} · {{ observation.bubbles.label }} bubbles{% endif -%}
+        {%- if observation.smell %} · smells {{ observation.smell }}{% endif -%}
+        {%- if observation.texture %} · {{ observation.texture }}{% endif -%}
+      </p>
+      {% if observation.notes %}<p class="timeline-note">{{ observation.notes }}</p>{% endif %}
+
+    {% else %}
+      {% set change = event.obj %}
+      <h3>
+        {% if change.from_state %}
+          Moved from {{ change.from_state.label.lower() }} to {{ change.to_state.label.lower() }}
+        {% else %}
+          Started as {{ change.to_state.label.lower() }}
+        {% endif %}
+      </h3>
+      {% if change.note %}<p class="timeline-note">{{ change.note }}</p>{% endif %}
+    {% endif %}
+  </div>
+</li>

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, MetaData
+from sqlalchemy import MetaData
 from sqlalchemy.orm import DeclarativeBase, mapped_column
+
+from app.models.types import UtcDateTime
 
 # Named constraints keep Alembic's SQLite batch migrations predictable.
 NAMING_CONVENTION = {
@@ -27,4 +29,4 @@ class Base(DeclarativeBase):
 
 
 def created_at_column():
-    return mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+    return mapped_column(UtcDateTime, default=utcnow, nullable=False)

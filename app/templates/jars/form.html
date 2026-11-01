@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% set v = values %}
+
+{% macro field(name, default) -%}
+{{ v.get(name) if v.get(name) is not none else (default if default is not none else '') }}
+{%- endmacro %}
+
+{% block content %}
+<section class="hero">
+  <h1>{{ "Edit jar" if jar else "New jar" }}</h1>
+</section>
+
+{% if errors %}
+<div class="card errors" role="alert">
+  <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form class="card form" method="post"
+      action="{{ '/jars/%d/edit' % jar.id if jar else '/jars/new' }}">
+
+  <label>
+    <span>Name</span>
+    <input name="name" required autofocus
+           value="{{ field('name', jar.name if jar else '') }}"
+           placeholder="e.g. Homemade whole rye">
+  </label>
+
+  <div class="field-row">
+    <label>
+      <span>Origin</span>
+      <select name="origin">
+        {% for option in origins %}
+        <option value="{{ option.value }}"
+          {% if (v.get('origin') or (jar.origin.value if jar else 'homemade')) == option.value %}selected{% endif %}>
+          {{ option.value }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label>
+      <span>State</span>
+      <select name="state">
+        {% for option in states %}
+        <option value="{{ option.value }}"
+          {% if (v.get('state') or (jar.state.value if jar else 'active')) == option.value %}selected{% endif %}>
+          {{ option.label }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+
+  <div class="field-row">
+    <label>
+      <span>Culture name <em>optional</em></span>
+      <input name="culture_name"
+             value="{{ field('culture_name', jar.culture_name if jar else '') }}"
+             placeholder="e.g. Soviet rye">
+    </label>
+    <label>
+      <span>Flour <em>optional</em></span>
+      <input name="flour_type"
+             value="{{ field('flour_type', jar.flour_type if jar else '') }}"
+             placeholder="e.g. whole rye">
+    </label>
+  </div>
+
+  <div class="field-row">
+    <label>
+      <span>Feed every (room, hours)</span>
+      <input name="feed_interval_room_h" type="number" min="1" step="1"
+             value="{{ field('feed_interval_room_h', jar.feed_interval_room_h if jar else 12) }}">
+    </label>
+    <label>
+      <span>Feed every (fridge, hours)</span>
+      <input name="feed_interval_fridge_h" type="number" min="1" step="1"
+             value="{{ field('feed_interval_fridge_h', jar.feed_interval_fridge_h if jar else 168) }}">
+    </label>
+  </div>
+
+  <label>
+    <span>Split from <em>optional</em></span>
+    <select name="parent_jar_id">
+      <option value="">— none —</option>
+      {% for candidate in parents %}
+      <option value="{{ candidate.id }}"
+        {% if (v.get('parent_jar_id')|string or (jar.parent_jar_id|string if jar and jar.parent_jar_id else '')) == candidate.id|string %}selected{% endif %}>
+        {{ candidate.name }}
+      </option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label class="checkbox">
+    <input type="checkbox" name="is_control" value="1"
+           {% if (v.get('is_control') if v.get('is_control') is not none else (jar.is_control if jar else False)) %}checked{% endif %}>
+    <span>This jar is the control</span>
+  </label>
+
+  <label>
+    <span>Notes <em>optional</em></span>
+    <textarea name="notes" rows="3">{{ field('notes', jar.notes if jar else '') }}</textarea>
+  </label>
+
+  <div class="row-actions">
+    <button class="btn" type="submit">{{ "Save changes" if jar else "Create jar" }}</button>
+    <a class="btn btn-secondary" href="{{ '/jars/%d' % jar.id if jar else '/' }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

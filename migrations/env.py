@@ -26,6 +26,18 @@ config.set_main_option("sqlalchemy.url", settings.db_url)
 target_metadata = Base.metadata
 
 
+def render_item(type_, obj, autogen_context):
+    """Keep application types out of generated migrations.
+
+    UtcDateTime is a TypeDecorator over DateTime, so it emits identical DDL.
+    Rendering it as sa.DateTime() means a migration never imports app code —
+    which matters because migrations are frozen history and app code is not.
+    """
+    if type_ == "type" and type(obj).__name__ == "UtcDateTime":
+        return "sa.DateTime()"
+    return False
+
+
 def run_migrations_offline() -> None:
     context.configure(
         url=config.get_main_option("sqlalchemy.url"),
@@ -34,6 +46,7 @@ def run_migrations_offline() -> None:
         dialect_opts={"paramstyle": "named"},
         render_as_batch=True,  # SQLite cannot ALTER in place
         compare_type=True,
+        render_item=render_item,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -52,6 +65,7 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             render_as_batch=True,
             compare_type=True,
+            render_item=render_item,
         )
         with context.begin_transaction():
             context.run_migrations()

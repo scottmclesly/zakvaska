@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block nav %}
+<a class="btn btn-small btn-secondary" href="/jars/{{ jar.id }}/edit">Edit</a>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="jar-title">
+    <h1>{{ jar.name }}</h1>
+    {% if jar.is_control %}<span class="badge badge-control">control</span>{% endif %}
+    {% if jar.archived %}<span class="badge">archived</span>{% endif %}
+  </div>
+  <p class="sub">
+    <span class="badge badge-state state-{{ jar.state.value }}">{{ jar.state.label }}</span>
+    {{ jar.origin.value }}{% if jar.culture_name %} · {{ jar.culture_name }}{% endif %}
+    {%- if jar.flour_type %} · {{ jar.flour_type }}{% endif %}
+    {%- if jar.parent %} · split from <a href="/jars/{{ jar.parent.id }}">{{ jar.parent.name }}</a>{% endif %}
+  </p>
+</section>
+
+<section class="card {% if card.status.is_overdue %}is-overdue{% endif %}">
+  <dl class="stats stats-wide">
+    <div>
+      <dt>Last fed</dt>
+      <dd>{{ card.status.last_fed_at | since(now) }}</dd>
+    </div>
+    <div>
+      <dt>Next due</dt>
+      <dd>
+        {% if card.status.next_due_at %}
+          <span class="{% if card.status.is_overdue %}overdue-text{% endif %}">
+            {{ card.status.next_due_at | until(now) }}
+          </span>
+        {% elif jar.state.wants_feeding %}
+          <span class="muted">after first feed</span>
+        {% else %}
+          <span class="muted">not while {{ jar.state.label.lower() }}</span>
+        {% endif %}
+      </dd>
+    </div>
+    {% if card.last_feeding %}
+    <div>
+      <dt>Last ratio</dt>
+      <dd>
+        {{ last_ratio or "—" }}
+        <span class="muted stat-sub">
+          {{ card.last_feeding.starter_g | grams }} · {{ card.last_feeding.flour_g | grams }} · {{ card.last_feeding.water_g | grams }}
+        </span>
+      </dd>
+    </div>
+    <div>
+      <dt>Hydration</dt>
+      <dd>{{ last_hydration | percent }}</dd>
+    </div>
+    {% endif %}
+  </dl>
+
+  <div class="row-actions">
+    <a class="btn" href="/jars/{{ jar.id }}/feed">Fed it</a>
+    <a class="btn btn-secondary" href="/jars/{{ jar.id }}/observe">Observe</a>
+  </div>
+</section>
+
+{% if jar.notes %}
+<section class="card">
+  <h2 class="section-title">Notes</h2>
+  <p>{{ jar.notes }}</p>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2 class="section-title">Move it</h2>
+  <form class="inline-form" method="post" action="/jars/{{ jar.id }}/state">
+    <label class="sr-only" for="state-select">New state</label>
+    <select id="state-select" name="state">
+      {% for option in states %}
+      <option value="{{ option.value }}" {% if option == jar.state %}selected{% endif %}>
+        {{ option.label }}
+      </option>
+      {% endfor %}
+    </select>
+    <input name="note" placeholder="Why? (optional)">
+    <button class="btn btn-secondary" type="submit">Record</button>
+  </form>
+
+  <form class="inline-form" method="post" action="/jars/{{ jar.id }}/archive">
+    <input type="hidden" name="archived" value="{{ '0' if jar.archived else '1' }}">
+    <button class="btn btn-secondary" type="submit">
+      {{ "Unarchive this jar" if jar.archived else "Archive this jar" }}
+    </button>
+    <span class="muted">Jars are archived, never deleted.</span>
+  </form>
+</section>
+
+<section>
+  <h2 class="section-title">Timeline</h2>
+  {% if events %}
+  <ol class="timeline">
+    {% for event in events %}
+    {% include "partials/timeline_event.html" %}
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="card muted">Nothing logged yet. Start with “Fed it”.</p>
+  {% endif %}
+</section>
+{% endblock %}
