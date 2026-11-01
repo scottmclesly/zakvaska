@@ -1,0 +1,53 @@
+{# Outstanding feeding alerts. Included on every page by templates_env.render. #}
+<aside class="alert-banner" role="alert" aria-label="Feeding alerts">
+  <div class="alert-banner-inner">
+    <p class="alert-banner-head">
+      <span class="alert-count">{{ alerts | length }}</span>
+      jar{{ "" if alerts | length == 1 else "s" }} need{{ "s" if alerts | length == 1 else "" }} feeding
+    </p>
+
+    <ul class="alert-list">
+      {% for alert in alerts %}
+      <li class="alert-item">
+        <div class="alert-what">
+          <a class="alert-jar" href="/jars/{{ alert.jar_id }}">{{ alert.jar.name }}</a>
+          <span class="muted">{{ alert.due_at | until(now) }}</span>
+        </div>
+
+        <div class="alert-actions">
+          <a class="btn btn-small" href="/jars/{{ alert.jar_id }}/feed">Fed it</a>
+
+          {% for minutes, label in snooze_choices %}
+          <form method="post" action="/alerts/{{ alert.id }}/snooze">
+            <input type="hidden" name="minutes" value="{{ minutes }}">
+            <input type="hidden" name="next" value="{{ request.url.path }}">
+            <button class="btn btn-small btn-secondary" type="submit">{{ label }}</button>
+          </form>
+          {% endfor %}
+
+          <form method="post" action="/alerts/{{ alert.id }}/snooze" class="snooze-custom">
+            <label class="sr-only" for="snooze-{{ alert.id }}">Snooze minutes</label>
+            <input id="snooze-{{ alert.id }}" name="minutes" type="number"
+                   min="1" step="1" placeholder="min" inputmode="numeric">
+            <input type="hidden" name="next" value="{{ request.url.path }}">
+            <button class="btn btn-small btn-secondary" type="submit">Snooze</button>
+          </form>
+
+          <form method="post" action="/alerts/{{ alert.id }}/ack">
+            <input type="hidden" name="next" value="{{ request.url.path }}">
+            <button class="btn btn-small btn-secondary" type="submit">Dismiss</button>
+          </form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <p class="alert-banner-foot">
+      <button class="btn btn-small btn-secondary" type="button"
+              data-notify-enable hidden>
+        Enable browser notifications
+      </button>
+      <span class="muted" data-notify-status></span>
+    </p>
+  </div>
+</aside>

@@ -11,6 +11,7 @@ from app.models.base import Base, created_at_column
 from app.models.enums import JarOrigin, JarState
 
 if TYPE_CHECKING:
+    from app.models.alert import Alert
     from app.models.feeding import Feeding
     from app.models.jar_state_change import JarStateChange
     from app.models.observation import Observation
@@ -82,6 +83,11 @@ class Jar(Base):
         back_populates="jar",
         cascade="all, delete-orphan",
         order_by="JarStateChange.changed_at.desc()",
+    )
+    alerts: Mapped[list[Alert]] = relationship(
+        back_populates="jar",
+        cascade="all, delete-orphan",
+        order_by="Alert.due_at.desc()",
     )
 
     @property

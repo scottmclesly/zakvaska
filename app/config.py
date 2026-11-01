@@ -19,6 +19,7 @@ DEFAULTS = {
     "JARLOG_HOST": "127.0.0.1",
     "JARLOG_PORT": "8420",
     "JARLOG_TZ": "America/New_York",
+    "JARLOG_SCHEDULER": "1",
 }
 
 
@@ -60,6 +61,8 @@ class Settings:
     host: str
     port: int
     tz_name: str
+    # Off in tests, which drive the alert pass themselves.
+    scheduler_enabled: bool = True
 
     @property
     def tz(self) -> ZoneInfo:
@@ -101,6 +104,7 @@ def build_settings() -> Settings:
         host=_env("JARLOG_HOST"),
         port=int(_env("JARLOG_PORT")),
         tz_name=tz_name,
+        scheduler_enabled=_env("JARLOG_SCHEDULER") not in ("0", "false", "no"),
     )
 
 

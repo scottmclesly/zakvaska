@@ -2,7 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from app.config import PROJECT_ROOT, Settings, build_settings, parse_dotenv
+from app.config import (
+    DEFAULTS,
+    PROJECT_ROOT,
+    Settings,
+    build_settings,
+    parse_dotenv,
+)
 
 
 def test_parse_dotenv_handles_comments_blanks_quotes_and_export():
@@ -75,11 +81,21 @@ def test_ensure_dirs_creates_the_data_and_photos_dirs(tmp_path):
 
 
 def test_env_example_documents_every_supported_key():
+    # Derived from DEFAULTS rather than a hand-written list, so adding a
+    # setting without documenting it fails here.
     documented = set(parse_dotenv(Path(PROJECT_ROOT / ".env.example").read_text()))
 
-    assert documented == {
-        "JARLOG_DATA_DIR",
-        "JARLOG_HOST",
-        "JARLOG_PORT",
-        "JARLOG_TZ",
-    }
+    assert documented == set(DEFAULTS)
+
+
+def test_the_alert_scheduler_is_on_by_default(monkeypatch):
+    monkeypatch.delenv("JARLOG_SCHEDULER", raising=False)
+
+    assert build_settings().scheduler_enabled is True
+
+
+@pytest.mark.parametrize("value", ["0", "false", "no"])
+def test_the_alert_scheduler_can_be_switched_off(monkeypatch, value):
+    monkeypatch.setenv("JARLOG_SCHEDULER", value)
+
+    assert build_settings().scheduler_enabled is False

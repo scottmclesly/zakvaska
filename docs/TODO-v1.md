@@ -40,10 +40,10 @@ Work phase by phase. Each phase ends with its acceptance checks passing, tests g
 - **Accept:** create both jars (homemade + Soviet control), log feedings and observations, see them on the timeline; derived values are correct (unit-tested).
 
 ## Phase 2: alerts
-- [ ] Next-due computed from last feeding + interval for the current state (dormant/dried: no alerts)
-- [ ] APScheduler job every minute creates or fires `alert` rows; state recomputed from DB on startup (no lost alerts after restart)
-- [ ] In-app banner/badge plus browser Notification API while a tab is open (permission requested on user action)
-- [ ] Acknowledge and snooze (30 min / 2 h / custom); logging a feeding auto-acknowledges
+- [x] Next-due computed from last feeding + interval for the current state (dormant/dried: no alerts)
+- [x] APScheduler job every minute creates or fires `alert` rows; state recomputed from DB on startup (no lost alerts after restart)
+- [x] In-app banner/badge plus browser Notification API while a tab is open (permission requested on user action)
+- [x] Acknowledge and snooze (30 min / 2 h / custom); logging a feeding auto-acknowledges
 - **Accept:** with a 1-minute test interval, an alert fires, shows in-app and as a browser notification, snooze delays it, and a feeding clears it; restart mid-countdown still fires.
 
 ## Phase 3: recipes

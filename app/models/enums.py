@@ -35,6 +35,10 @@ class JarState(enum.StrEnum):
         }[self]
 
 
+class AlertKind(enum.StrEnum):
+    FEED_DUE = "feed_due"
+
+
 class BubbleLevel(enum.StrEnum):
     """Ordinal on purpose, so two jars can be compared at a glance."""
 

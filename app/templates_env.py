@@ -11,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 
 from app import __version__
 from app.config import get_settings
+from app.services import alerts as alert_service
 from app.services.units import (
     format_temp,
     humanize_since,
@@ -130,6 +131,11 @@ def render(
         merged.setdefault("now", ctx.now)
         merged.setdefault("tz", ctx.tz)
         merged.setdefault("temp_unit", ctx.temp_unit)
+        # Every page carries the alert banner, so no page can forget it.
+        merged.setdefault(
+            "alerts", alert_service.showing(ctx.session, ctx.now)
+        )
+        merged.setdefault("snooze_choices", alert_service.SNOOZE_CHOICES)
     return templates.TemplateResponse(
         request=request, name=name, context=merged, status_code=status_code
     )

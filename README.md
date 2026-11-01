@@ -38,6 +38,30 @@ Set `JARLOG_HOST=0.0.0.0` in `.env`, restart, then open
 `http://<this-machine's-IP>:8420` on a phone on the same network. It is an
 installable PWA — "Add to Home Screen" gives it an icon and a standalone window.
 
+## Feeding alerts
+
+A job runs once a minute and marks a jar's feed as due, based on its last
+feeding and the interval for its current state. Dormant and dried jars are
+never chased. Alerts show as a banner on every page; you can snooze one
+(30 min, 2 h, or any number of minutes) or dismiss it, and **feeding the jar
+clears it automatically**.
+
+Alert state lives entirely in the database and is recomputed on startup, so
+restarting the app never loses one — anything that came due while it was down
+fires immediately on the next start. Set `JARLOG_SCHEDULER=0` to run without
+the job.
+
+### Browser notifications only work on this machine
+
+While a tab is open, the page can also raise a desktop notification. The
+browser Notification API is restricted to *secure contexts*, and
+`http://localhost` counts as one but `http://192.168.x.x` does not — so
+notifications work on the machine running the app and **not** on a phone over
+the LAN. The in-app banner works everywhere.
+
+Getting phone notifications means either serving over HTTPS or the ntfy push
+planned for v2 (`docs/TODO-v1.md`).
+
 ## Development
 
 ```bash

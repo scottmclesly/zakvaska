@@ -25,6 +25,10 @@
     </nav>
   </header>
 
+  {% if alerts %}
+  {% include "partials/alert_banner.html" %}
+  {% endif %}
+
   <main class="wrap">
     {% block content %}{% endblock %}
   </main>

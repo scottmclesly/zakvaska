@@ -19,7 +19,7 @@ from app.models.feeding import Feeding
 from app.models.jar import Jar
 from app.models.jar_state_change import JarStateChange
 from app.models.observation import Observation
-from app.services import derived
+from app.services import alerts as alert_service, derived
 from app.services.schedule import FeedStatus, feed_status, last_feeding
 
 EventKind = Literal["feeding", "observation", "state_change"]
@@ -98,6 +98,10 @@ def log_feeding(session: Session, jar: Jar, **fields: Any) -> Feeding:
     feeding = Feeding(jar_id=jar.id, **fields)
     session.add(feeding)
     session.flush()
+    # Feeding the jar is the real answer to "feed this jar", so it settles
+    # any alert that was asking. Done here rather than in the route so every
+    # caller gets it.
+    alert_service.acknowledge_for_jar(session, jar.id, utcnow())
     return feeding
 
 
