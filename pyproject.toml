@@ -2,5 +2,7 @@
 testpaths = ["tests"]
 addopts = "-q"
 # Our own code must not emit deprecation warnings. Third-party ones stay
-# visible on purpose — right now starlette is asking us to move to httpx2.
+# visible on purpose rather than being silenced.
+# Note: starlette's own StarletteDeprecationWarning subclasses UserWarning,
+# not DeprecationWarning, so a DeprecationWarning filter will not match it.
 filterwarnings = ["error::DeprecationWarning:app.*"]

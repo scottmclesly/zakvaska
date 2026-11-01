@@ -10,12 +10,13 @@ the **control**. He bakes in a cast-iron pot in the oven and in a **West Bend br
 Comparing jars and iterating recipes is the point, so the data must be structured, not free text.
 
 ## Stack (decided — do not swap without asking)
-- Python 3.12+, **FastAPI** + Uvicorn
+- Python 3.12+, **FastAPI** + Uvicorn (+ `python-multipart`, which FastAPI and
+  starlette both require for *any* form parsing, not only file uploads)
 - **SQLite** via **SQLAlchemy 2.0** (typed ORM), **Alembic** for migrations
 - Server-rendered **Jinja2** templates + **HTMX** (vendored into `static/`, no CDN, no JS build step)
 - **APScheduler** (in-process) for alerts
 - **Pillow** for photo thumbnails
-- **pytest** + httpx TestClient
+- **pytest** + **httpx2** TestClient (starlette 1.10 deprecated plain `httpx` here)
 - Installable **PWA** (manifest + minimal service worker) so a phone on the LAN can use it
 
 ## Conventions
