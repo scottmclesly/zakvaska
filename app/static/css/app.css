@@ -1,0 +1,150 @@
+/* jar-log — mobile-first, no framework. Light and dark both intentional. */
+
+:root {
+  --bg: #faf7f2;
+  --surface: #ffffff;
+  --border: #e4dcd0;
+  --text: #241d16;
+  --muted: #6d6054;
+  --accent: #7a4a22;
+  --accent-ink: #ffffff;
+  --radius: 12px;
+  --gutter: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17120e;
+    --surface: #211a15;
+    --border: #3a2f26;
+    --text: #f2ece4;
+    --muted: #a99a8b;
+    --accent: #d8a06a;
+    --accent-ink: #1c1510;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+a { color: var(--accent); }
+
+/* Header -------------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gutter);
+  padding: 12px var(--gutter);
+  padding-top: max(12px, env(safe-area-inset-top));
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 650;
+  font-size: 1.125rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.brand-mark { font-size: 1.3rem; }
+
+.topnav { display: flex; gap: 12px; }
+
+/* Layout -------------------------------------------------------------- */
+
+.wrap {
+  flex: 1;
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: var(--gutter);
+}
+
+.hero h1 { margin: 8px 0 4px; font-size: 1.5rem; }
+.hero .sub { margin: 0 0 20px; color: var(--muted); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.card h2 { margin-top: 0; font-size: 1.125rem; }
+
+.muted { color: var(--muted); font-size: 0.9375rem; }
+
+code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 5px;
+  font-size: 0.875em;
+}
+
+.jar-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .jar-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero h1 { font-size: 1.875rem; }
+}
+
+/* Buttons — sized for thumbs, since this gets used at the counter. ---- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.footer {
+  padding: 16px var(--gutter);
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  color: var(--muted);
+  font-size: 0.8125rem;
+  text-align: center;
+}

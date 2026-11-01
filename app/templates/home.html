@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <h1>Starter jars</h1>
+  <p class="sub">Feedings, observations and bakes, logged properly.</p>
+</section>
+
+{% if jars %}
+<ul class="jar-grid">
+  {% for jar in jars %}
+  <li class="card">{{ jar.name }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<section class="empty card">
+  <h2>No jars yet</h2>
+  <p>
+    Jar tracking arrives in the next phase. The plan lives in
+    <code>docs/TODO-v1.md</code>.
+  </p>
+  <p class="muted">
+    Phase&nbsp;0 is done: the app boots, the database is migrated, and
+    <a href="/health">/health</a> is green.
+  </p>
+</section>
+{% endif %}
+{% endblock %}

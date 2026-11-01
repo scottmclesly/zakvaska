@@ -1,0 +1,6 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+# Our own code must not emit deprecation warnings. Third-party ones stay
+# visible on purpose — right now starlette is asking us to move to httpx2.
+filterwarnings = ["error::DeprecationWarning:app.*"]

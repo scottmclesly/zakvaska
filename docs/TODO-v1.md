@@ -1,0 +1,80 @@
+# jar-log v1 plan
+
+Work phase by phase. Each phase ends with its acceptance checks passing, tests green, and a commit.
+
+## Data model (v1)
+
+| Table | Key fields |
+|---|---|
+| `jar` | name, origin (homemade / purchased), culture_name, flour_type, state (active / fridge / dormant / dried), feed_interval_room_h (default 12), feed_interval_fridge_h (default 168), parent_jar_id (lineage), is_control (bool), notes, archived, created_at |
+| `jar_state_change` | jar_id, from_state, to_state, changed_at, note |
+| `feeding` | jar_id, fed_at, starter_g, flour_g, flour_type, water_g, water_temp_c, ambient_temp_c, notes → derived ratio (e.g. 1:2:2) and hydration % |
+| `observation` | jar_id, observed_at, height_mm, start_height_mm, rise_pct (derived), bubbles, smell, texture, notes. Captured now; charted in v2. |
+| `recipe` | name, category (rye / wheat / enriched / other), archived |
+| `recipe_version` | recipe_id, version (int), notes, created_at |
+| `recipe_ingredient` | version_id, name, role (flour / water / levain / salt / sweetener / fat / other), baker_pct, notes |
+| `recipe_stage` | version_id, seq, name (e.g. scald/zavarka, sponge, final dough, proof, bake), duration_min, temp_c, notes |
+| `equipment_program` | name (e.g. West Bend "Basic", "Whole Wheat"), device, total_min, notes. User-entered from the manual. |
+| `bake` | recipe_version_id, jar_id (nullable), started_at, finished_at, method (oven / dutch oven / bread maker), equipment_program_id, crust_setting, loaf_size, oven_temp_c, bake_min, total_flour_g, status (planned / in progress / done / failed) |
+| `bake_stage_log` | bake_id, stage name, planned_start, actual_start, actual_end, notes |
+| `bake_result` | bake_id, rating (1–5), crust, crumb, taste, rise, next_time |
+| `photo` | owner_type (jar / feeding / observation / bake), owner_id, path, thumb_path, taken_at, caption |
+| `alert` | jar_id, kind (feed_due), due_at, fired_at, acknowledged_at, snoozed_until |
+| `setting` | key, value (display temp unit, etc.) |
+
+## Phase 0: scaffold and environment
+- [ ] Repo layout: `app/` (main.py, config.py, db.py, models/, routes/, services/, templates/, static/), `migrations/`, `tests/`, `scripts/`, `docs/`
+- [ ] `requirements.txt` with pinned versions; `.env.example`; `.gitignore` (.venv, data/, .env, __pycache__)
+- [ ] `scripts/setup.sh` (check Python ≥3.12, create .venv, install, `alembic upgrade head`) and `scripts/run.sh`
+- [ ] Base layout template, HTMX vendored, mobile-first CSS, PWA manifest and icon
+- [ ] `/health` endpoint
+- **Accept:** fresh clone → `setup.sh` → `run.sh` → home page loads at 127.0.0.1:8420 on desktop and phone width; `pytest` passes.
+
+## Phase 1: jars, feedings, observations
+- [ ] Jar CRUD (archive, not delete), state changes logged, parent/child lineage, control flag
+- [ ] Quick "Fed it" form: defaults pre-filled from that jar's last feeding, one tap to log
+- [ ] Derived ratio and hydration display
+- [ ] Observation form (height before/after → rise %)
+- [ ] Jar detail page: timeline of feedings, observations and state changes, newest first
+- [ ] Dashboard: one card per active jar with state, time since last feed, next due, overdue highlight
+- **Accept:** create both jars (homemade + Soviet control), log feedings and observations, see them on the timeline; derived values are correct (unit-tested).
+
+## Phase 2: alerts
+- [ ] Next-due computed from last feeding + interval for the current state (dormant/dried: no alerts)
+- [ ] APScheduler job every minute creates or fires `alert` rows; state recomputed from DB on startup (no lost alerts after restart)
+- [ ] In-app banner/badge plus browser Notification API while a tab is open (permission requested on user action)
+- [ ] Acknowledge and snooze (30 min / 2 h / custom); logging a feeding auto-acknowledges
+- **Accept:** with a 1-minute test interval, an alert fires, shows in-app and as a browser notification, snooze delays it, and a feeding clears it; restart mid-countdown still fires.
+
+## Phase 3: recipes
+- [ ] Recipe CRUD with ingredients in baker's % and ordered stages
+- [ ] Edit → new version; previous versions viewable read-only; diff between versions (ingredient and stage changes)
+- [ ] Scale-to view: enter total flour or target dough weight → grams per ingredient
+- [ ] Equipment programs CRUD (enter West Bend programs from the manual)
+- **Accept:** create a Borodinsky recipe with scald/sponge/final/proof/bake stages, edit it to v2, scale to 500 g flour with correct grams (unit-tested).
+
+## Phase 4: bakes and results
+- [ ] Start a bake from a recipe version: pick jar, method, equipment program, flour total; stages copied into `bake_stage_log` as the plan
+- [ ] Log actual stage start/end times on the fly (big buttons, phone-friendly)
+- [ ] Results form: rating, crust, crumb, taste, rise, next-time notes
+- [ ] Bake list filterable by recipe, jar and rating; recipe page shows its bakes
+- **Accept:** run a full bake end-to-end on a phone-width screen; it appears on the recipe, the jar and the bake list.
+
+## Phase 5: photos
+- [ ] Upload from phone camera (`accept="image/*" capture`), attach to jar, feeding, observation or bake
+- [ ] Thumbnails via Pillow; respect EXIF orientation; store under `data/photos/YYYY/MM/`
+- [ ] Gallery on each detail page; side-by-side compare of two bake crumb photos
+- **Accept:** photo shot on phone uploads, displays correctly rotated, and survives restart.
+
+## Phase 6: backup and polish
+- [ ] Export all data to JSON plus CSV per table; zip with photos
+- [ ] `scripts/backup.sh` (SQLite online backup + photos tarball)
+- [ ] README: setup, run, LAN access (`JARLOG_HOST=0.0.0.0`), backup
+- **Accept:** export → wipe data dir → import (or restore backup) brings everything back.
+
+## v2 backlog (do not build in v1)
+- Rise-curve charts, overlay homemade vs control
+- Back-scheduling from a target "bread out" time through recipe stages
+- `POST /api/readings` sensor ingest (ESP32: temp/humidity + ToF height)
+- ntfy push to phone
+- Raspberry Pi deploy (systemd unit, data dir on persistent storage)
