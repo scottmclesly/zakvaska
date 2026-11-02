@@ -85,6 +85,20 @@ def temp_value(celsius: float | None, unit: str) -> str:
     return "" if converted is None else f"{converted:.0f}"
 
 
+def filesize(value: int | None) -> str:
+    """Bytes in the units a person reads, not the ones a disk counts in."""
+    if not value:
+        return "0 KB"
+    size = float(value)
+    for unit in ("bytes", "KB", "MB", "GB"):
+        if size < 1024 or unit == "GB":
+            if unit == "bytes":
+                return f"{int(size)} bytes"
+            return f"{size:.1f}".rstrip("0").rstrip(".") + f" {unit}"
+        size /= 1024
+    return f"{size:.1f} GB"
+
+
 def since(value: datetime | None, now: datetime) -> str:
     if value is None:
         return "never"
@@ -102,6 +116,7 @@ templates.env.filters.update(
     local_day=local_day,
     local_time=local_time,
     grams=grams,
+    filesize=filesize,
     mm=mm,
     num=num,
     percent=percent,

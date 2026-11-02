@@ -7,6 +7,7 @@ is imported, so no test can ever touch the real ./data.
 from __future__ import annotations
 
 import os
+import shutil
 import tempfile
 from collections.abc import Iterator
 from pathlib import Path
@@ -38,12 +39,16 @@ def _schema():
 
 
 @pytest.fixture(autouse=True)
-def _clean_tables(_schema):
-    """Every test starts from an empty database."""
+def _clean_data(_schema):
+    """Every test starts from an empty data dir: no rows, no photo files."""
     engine = get_engine()
     with engine.begin() as conn:
         for table in reversed(Base.metadata.sorted_tables):
             conn.execute(table.delete())
+    photos = get_settings().photos_dir
+    if photos.is_dir():
+        shutil.rmtree(photos)
+    photos.mkdir(parents=True, exist_ok=True)
     yield
 
 

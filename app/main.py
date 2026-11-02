@@ -14,6 +14,7 @@ from app.config import get_settings
 from app.logging_config import setup_logging
 from app.routes import (
     alerts,
+    backup,
     bakes,
     equipment,
     health,
@@ -58,6 +59,7 @@ def create_app() -> FastAPI:
     app.include_router(equipment.router)
     app.include_router(bakes.router)
     app.include_router(photos.router)
+    app.include_router(backup.router)
 
     # Served from the root so the service worker's scope covers the whole app.
     @app.api_route("/sw.js", methods=["GET", "HEAD"], include_in_schema=False)

@@ -1,7 +1,18 @@
 """HTTP routers."""
 
-from app.routes import alerts, bakes, equipment, health, home, jars, photos, recipes
+from app.routes import (
+    alerts,
+    backup,
+    bakes,
+    equipment,
+    health,
+    home,
+    jars,
+    photos,
+    recipes,
+)
 
 __all__ = [
-    "alerts", "bakes", "equipment", "health", "home", "jars", "photos", "recipes",
+    "alerts", "backup", "bakes", "equipment", "health", "home", "jars",
+    "photos", "recipes",
 ]

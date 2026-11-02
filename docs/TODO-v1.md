@@ -67,9 +67,9 @@ Work phase by phase. Each phase ends with its acceptance checks passing, tests g
 - **Accept:** photo shot on phone uploads, displays correctly rotated, and survives restart.
 
 ## Phase 6: backup and polish
-- [ ] Export all data to JSON plus CSV per table; zip with photos
-- [ ] `scripts/backup.sh` (SQLite online backup + photos tarball)
-- [ ] README: setup, run, LAN access (`JARLOG_HOST=0.0.0.0`), backup
+- [x] Export all data to JSON plus CSV per table; zip with photos
+- [x] `scripts/backup.sh` (SQLite online backup + photos tarball)
+- [x] README: setup, run, LAN access (`JARLOG_HOST=0.0.0.0`), backup
 - **Accept:** export → wipe data dir → import (or restore backup) brings everything back.
 
 ## v2 backlog (do not build in v1)

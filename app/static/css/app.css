@@ -766,3 +766,41 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
   border: 1px dashed var(--border);
   border-radius: var(--radius);
 }
+
+/* --- Backup ------------------------------------------------------------ */
+
+.ok-notice { border-left: 3px solid var(--ok); }
+.ok-notice p { margin: 0; }
+
+.table-counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px 16px;
+  margin: 12px 0 18px;
+}
+.table-counts li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.875rem;
+  border-bottom: 1px solid var(--border);
+  padding: 4px 0;
+}
+
+/* A checkbox reads as one line, not as a stacked field. */
+.form label.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+.form label.check input { width: 20px; height: 20px; min-height: 0; }
+
+/* An outline button, so the destructive one is never the easy one to hit. */
+.btn-danger {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.btn-danger:hover { background: var(--danger-bg); }
+
+.footer-link { color: inherit; }

@@ -121,6 +121,38 @@ Photos are the one thing here that really deletes — a blurry shot of a jar lid
 is not lab-notebook history, and a misfired upload needs an undo. Jars,
 recipes and bakes are still archived, never deleted.
 
+## Backup
+
+Two ways out, for two different jobs.
+
+**The export**, from the Backup page in the footer, is one zip holding every
+table as JSON, the same rows again as CSV, and the photo files. The JSON is
+what restores; the CSV is for whoever opens this in ten years without the app.
+The same page reads an export back, which replaces everything currently in the
+notebook — rows and photos alike. An export only restores into the schema it
+came from, so run the migrations that match it first; it says so if they do not
+agree.
+
+**The script** takes a straight snapshot instead, and is the one to put on a
+timer:
+
+```bash
+./scripts/backup.sh                 # into ./backups
+./scripts/backup.sh /Volumes/stick  # somewhere else
+./scripts/backup.sh --keep 14       # and prune to the newest 14
+```
+
+It copies the database through SQLite's online-backup API, so it is safe to run
+while jar-log is serving, and tars it up with the photos. To put one back, stop
+jar-log and untar it over the data directory:
+
+```bash
+tar -xzf backups/jarlog-backup-20261101-1930.tar.gz -C data
+```
+
+Everything worth keeping is in `JARLOG_DATA_DIR` (`./data` by default): back up
+that directory and you have backed up the notebook.
+
 ## Development
 
 ```bash

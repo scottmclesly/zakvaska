@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <h1>Backup</h1>
+  <p class="sub">
+    Everything in one zip: the rows as JSON, the same rows as CSV, and the
+    photo files.
+  </p>
+</section>
+
+{% if done %}
+<div class="card ok-notice" role="status">
+  <p><strong>Restored.</strong> {{ done }}</p>
+</div>
+{% endif %}
+
+{% if errors %}
+<div class="card errors" role="alert">
+  <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<section class="card">
+  <h2 class="section-title">What is here</h2>
+  <dl class="stats stats-wide">
+    <div>
+      <dt>Rows</dt>
+      <dd>{{ rows }}</dd>
+    </div>
+    <div>
+      <dt>Photos</dt>
+      <dd>{{ photos }}<span class="stat-sub">{{ photo_bytes | filesize }}</span></dd>
+    </div>
+  </dl>
+
+  {% if counts %}
+  <ul class="plain table-counts">
+    {% for name, n in counts.items() %}
+    <li><span class="muted">{{ name }}</span> <strong>{{ n }}</strong></li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Nothing logged yet — an export would be empty.</p>
+  {% endif %}
+
+  <div class="row-actions">
+    <a class="btn" href="/backup/export" download>Download everything</a>
+  </div>
+  <p class="hint muted small">Saves as {{ suggested_name }}.</p>
+</section>
+
+<section class="card">
+  <h2 class="section-title">Restore</h2>
+  <p class="muted">
+    Reading an export back <strong>replaces everything</strong> that is in
+    this notebook now — rows and photos alike. Download first if you are not
+    sure.
+  </p>
+  <form class="form" method="post" action="/backup/restore"
+        enctype="multipart/form-data">
+    <label>
+      <span>Export file</span>
+      <input type="file" name="archive" accept=".zip,application/zip" required>
+    </label>
+    <label class="check">
+      <input type="checkbox" name="confirm" value="replace">
+      <span>Yes, replace what is here with this file.</span>
+    </label>
+    <div class="row-actions">
+      <button class="btn btn-danger" type="submit">Restore</button>
+    </div>
+  </form>
+</section>
+
+<section class="card">
+  <h2 class="section-title">From the command line</h2>
+  <p class="muted">
+    <code>./scripts/backup.sh</code> takes a straight copy instead: the
+    SQLite file through the online-backup API, so it is safe to run while
+    jar-log is up, plus the photos, as one <code>.tar.gz</code>. That is the
+    one to put on a timer.
+  </p>
+</section>
+{% endblock %}
