@@ -97,6 +97,29 @@ def serve_thumb(ctx: Ctx, photo_id: int) -> FileResponse:
     return FileResponse(path, media_type="image/jpeg", headers=CACHE_FOREVER)
 
 
+@router.get("/{photo_id}/original")
+def serve_original(ctx: Ctx, photo_id: int) -> FileResponse:
+    """The file exactly as it was uploaded — HEIC included.
+
+    A download rather than something a page embeds: most browsers cannot
+    render HEIC, and this is the copy that still carries the camera's EXIF.
+    """
+    photo = _load(ctx, photo_id)
+    if not photo.original_path:
+        raise HTTPException(
+            status_code=404, detail="That photo was stored before originals were kept"
+        )
+    path = photo_service.absolute(photo.original_path)
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="That photo's file is missing")
+    return FileResponse(
+        path,
+        media_type=photo_service.media_type_for(photo.original_path),
+        filename=f"zakvaska-photo-{photo.id}{path.suffix}",
+        headers=CACHE_FOREVER,
+    )
+
+
 @router.post("/{photo_id}/caption")
 def caption(ctx: Ctx, photo_id: int, caption: Annotated[str, Form()] = ""):
     photo = _load(ctx, photo_id)

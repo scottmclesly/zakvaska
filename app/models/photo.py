@@ -37,6 +37,9 @@ class Photo(Base):
     # Raspberry Pi, say — does not invalidate a single row.
     path: Mapped[str] = mapped_column(String(255), nullable=False)
     thumb_path: Mapped[str] = mapped_column(String(255), nullable=False)
+    # The file exactly as it was uploaded. Nullable because photos stored
+    # before originals were kept have none, and those rows stay valid.
+    original_path: Mapped[str | None] = mapped_column(String(255))
 
     # From the camera's EXIF when it has it, otherwise the upload time.
     taken_at: Mapped[datetime] = mapped_column(
@@ -52,6 +55,14 @@ class Photo(Base):
     @property
     def thumb_url(self) -> str:
         return f"/photos/{self.id}/thumb"
+
+    @property
+    def original_url(self) -> str:
+        return f"/photos/{self.id}/original"
+
+    @property
+    def has_original(self) -> bool:
+        return bool(self.original_path)
 
     def __repr__(self) -> str:
         return (

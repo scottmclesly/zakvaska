@@ -1,0 +1,31 @@
+# West Bend L5951 cycle time chart, transcribed from the manual's last page (p.68).
+# Minutes unless noted. "x" = segment not in this program. Transcribed by Claude from a scan: VERIFY against the PDF.
+program_no,program,loaf_lb,knead1,rest,knead2,rise2,stir_down,rise3,bake,total_hmm,keep_warm,delay_max_h
+1,Basic,2.0,10,25,15,20,30s,41,69,3:00,60,13
+1,Basic,2.5,10,25,15,20,30s,41,74,3:05,60,13
+1,Basic,3.0,10,25,15,20,30s,41,79,3:10,60,13
+2,French,2.0,11,38,11,34,30s,36,68,3:18,60,13
+2,French,2.5,11,38,13,35,30s,36,72,3:25,60,13
+2,French,3.0,11,40,13,35,30s,36,75,3:30,60,13
+3,Whole Wheat,2.0,10,35,10,41,30s,51,58,3:25,60,13
+3,Whole Wheat,2.5,10,40,13,41,30s,51,60,3:30,60,13
+3,Whole Wheat,3.0,10,40,13,41,30s,51,65,3:40,60,13
+4,Sweet,2.0,10,30,13,30,30s,36,56,2:55,60,13
+4,Sweet,2.5,10,30,13,33,30s,36,58,3:00,60,13
+4,Sweet,3.0,10,30,13,36,30s,36,60,3:05,60,13
+5,Super Rapid,2.0,9,x,7,x,x,20,50,1:25,60,13
+5,Super Rapid,2.5,9,x,7,x,x,20,53,1:28,60,13
+5,Super Rapid,3.0,9,x,7,x,x,20,55,1:30,60,13
+6,Sandwich,2.0,10,33,12,30,30s,36,59,3:00,60,13
+6,Sandwich,2.5,10,34,13,30,30s,36,62,3:05,60,13
+6,Sandwich,3.0,10,36,13,30,30s,36,65,3:10,60,13
+7,Gluten Free,2.0,10,x,x,x,x,48,66,2:04,60,13
+7,Gluten Free,2.5,10,x,x,x,x,48,68,2:06,60,13
+7,Gluten Free,3.0,10,x,x,x,x,48,70,2:08,60,13
+8,Mix,,15,x,x,x,x,x,x,0:15,x,13
+9,Dough,,12,20,8,25,x,45,x,1:50,x,13
+10,Cake,2.0,15,x,x,x,x,x,75,1:40,60,x
+10,Cake,2.5,15,x,x,x,x,x,80,1:45,60,x
+10,Cake,3.0,15,x,x,x,x,x,85,1:50,60,x
+11,Custom,,3-14,20-60,0-24,1-60,30s,0-120,0-80,3:05 default,0-120,13
+12,Bake,,x,x,x,x,x,x,10-60,1:00,60,13

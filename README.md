@@ -141,12 +141,27 @@ and observation forms take one as you log, so a jar gets photographed at the
 moment it is worth photographing; everything else uploads from the gallery on
 the detail page. On a phone the file field opens the camera directly.
 
-Every upload is re-encoded to JPEG on the way in, which does three things at
-once: the EXIF rotation is applied to the pixels, so the photo is the right
-way up in any browser; the rest of the EXIF block, GPS included, is dropped;
-and a 12-megapixel phone photo stops being a 12-megapixel file. Files land in
-`data/photos/YYYY/MM/` by the date the photo was *taken*, not uploaded, with a
-480 px thumbnail beside each one.
+Three files are written per upload, into `data/photos/YYYY/MM/` by the date the
+photo was *taken*, not uploaded:
+
+| File | What it is |
+|---|---|
+| `<id>_original.<ext>` | The upload, byte for byte. The lab record. |
+| `<id>.jpg` | What pages show: oriented, EXIF stripped, 2048 px max. |
+| `<id>_thumb.jpg` | 480 px, for galleries. |
+
+Re-encoding the display copy does three things at once: the EXIF rotation is
+applied to the pixels, so the photo is the right way up in any browser; the
+rest of the EXIF block, GPS included, is dropped from the copy that gets
+served; and a 12-megapixel phone photo stops being a 12-megapixel download on
+every page view.
+
+**HEIC** — what an iPhone shoots by default — is accepted, and is the reason
+the display rendition exists rather than being a nicety: outside Safari, no
+browser renders HEIC. Pages always show the JPEG; **Original** beside each
+photo downloads the file as it arrived. Note that the original still carries
+the camera's EXIF, GPS included; it lives in your data directory and is only
+ever served by that explicit download.
 
 `/photos/compare` puts two bake photos side by side with their ratings and
 their "next time" notes, which is the only honest way to see a change in

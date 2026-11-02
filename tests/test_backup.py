@@ -96,7 +96,7 @@ class TestWhatGoesIn:
         assert manifest.tables["jar"] == 1
         assert manifest.tables["feeding"] == 1
         assert manifest.tables["recipe_ingredient"] == 2
-        assert manifest.photos == 2  # the photo and its thumbnail
+        assert manifest.photos == 3  # the original, the rendition, the thumbnail
         assert manifest.rows == sum(manifest.tables.values())
 
     def test_the_rows_are_really_in_there(self, session, tmp_path):
@@ -196,7 +196,7 @@ class TestRoundTrip:
 
         report = backup_service.restore(session, path)
 
-        assert report.photos == 2
+        assert report.photos == 3
         assert photo_service.absolute(relative).read_bytes() == original
 
     def test_restoring_replaces_what_is_here(self, session, tmp_path):

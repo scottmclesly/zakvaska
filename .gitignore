@@ -7,3 +7,6 @@ __pycache__/
 .DS_Store
 *.egg-info/
 backups/
+
+# Third-party manuals: keep local, do not commit
+docs/reference/*.pdf

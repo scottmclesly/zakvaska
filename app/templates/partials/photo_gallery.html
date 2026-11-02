@@ -19,6 +19,9 @@
       </form>
       <p class="shot-when muted small">
         {{ photo.taken_at | local_dt }}
+        {% if photo.has_original %}
+        <a href="{{ photo.original_url }}" download>Original</a>
+        {% endif %}
         <form method="post" action="/photos/{{ photo.id }}/delete"
               onsubmit="return confirm('Delete this photo? The file goes too.')">
           <button class="linkish" type="submit">Delete</button>
@@ -37,7 +40,7 @@
       <label>
         <span>Add a photo</span>
         {# capture lets a phone go straight to the camera. #}
-        <input type="file" name="photo" accept="image/*" capture="environment" required>
+        <input type="file" name="photo" accept="image/*,.heic,.heif" capture="environment" required>
       </label>
       <label>
         <span>Caption <em>optional</em></span>

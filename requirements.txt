@@ -18,6 +18,9 @@ APScheduler==3.11.3
 
 # Photos (Phase 5)
 pillow==13.0.0
+# iPhones shoot HEIC and Pillow cannot read it alone. Ships wheels for
+# macOS arm64 and linux aarch64, so the Pi needs no toolchain either.
+pillow-heif==1.8.1
 
 # Tests
 pytest==9.2.0

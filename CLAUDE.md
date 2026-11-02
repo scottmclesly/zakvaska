@@ -15,7 +15,7 @@ Comparing jars and iterating recipes is the point, so the data must be structure
 - **SQLite** via **SQLAlchemy 2.0** (typed ORM), **Alembic** for migrations
 - Server-rendered **Jinja2** templates + **HTMX** (vendored into `static/`, no CDN, no JS build step)
 - **APScheduler** (in-process) for alerts
-- **Pillow** for photo thumbnails
+- **Pillow** (+ **pillow-heif**, so iPhone HEIC opens) for photo renditions and thumbnails
 - **pytest** + **httpx2** TestClient (starlette 1.10 deprecated plain `httpx` here)
 - Installable **PWA** (manifest + minimal service worker) so a phone on the LAN can use it
 
