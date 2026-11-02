@@ -221,6 +221,59 @@ class TestTheShelf:
         assert "shelf-plank-sm" in client.get(f"/jars/{jar.id}").text
 
 
+class TestTheShelfOfPutAwayJars:
+    """Jars are archived, never deleted, so they get a shelf of their own."""
+
+    def put_away(self, session, name="Old starter"):
+        jar = make_jar(session, name=name)
+        jar_service.set_archived(session, jar, True)
+        session.commit()
+        return jar
+
+    def test_an_archived_jar_stands_on_the_shelf_below(self, client, session):
+        jar = self.put_away(session)
+
+        body = client.get("/").text
+
+        assert "shelf-put-away" in body
+        assert "jar-art-put-away" in body
+        assert f'class="shelf-jar" href="/jars/{jar.id}"' in body
+
+    def test_a_put_away_jar_is_drawn_dusty_and_a_live_one_is_not(
+        self, client, session
+    ):
+        make_jar(session, name="Still going")
+        live_only = client.get("/").text
+
+        self.put_away(session)
+        both = client.get("/").text
+
+        assert "jar-dust" not in live_only
+        assert "jar-dust" in both
+
+    def test_it_is_still_labelled_with_its_name(self, client, session):
+        self.put_away(session, name="Old starter")
+
+        assert ">Old starter</text>" in client.get("/").text
+
+    def test_an_archived_jar_is_not_also_on_the_live_shelf(
+        self, client, session
+    ):
+        """Once, on the lower shelf — a second copy would read as two jars."""
+        jar = self.put_away(session)
+
+        body = client.get("/").text
+
+        assert body.count(f'id="jarbody-{jar.id}"') == 1
+
+    def test_there_is_no_lower_shelf_when_nothing_is_archived(
+        self, client, session
+    ):
+        make_jar(session)
+
+        assert "shelf-put-away" not in client.get("/").text
+
+
 class TestCozyFurniture:
     def test_the_brand_mark_is_drawn_not_an_emoji(self, client):
         body = client.get("/").text

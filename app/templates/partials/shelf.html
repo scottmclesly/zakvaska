@@ -1,11 +1,16 @@
-{# The jars, standing side by side on a shelf. Expects `cards` (JarCards).
+{# The jars, standing side by side on a shelf.
 
-   One shared plank is the point: Scott runs two rye jars against each other,
-   and the shelf is where you read them off side by side. #}
-<section class="shelf" aria-label="The jars on the shelf">
+   Expects either `shelf_cards` (JarCards: the live shelf, with tags and
+   measured levels) or `shelf_jars` (bare jars for the put-away shelf
+   below it). Optionally `shelf_class`, `shelf_label` and `dusty`.
+
+   One shared plank is the point: Scott runs two rye jars against each
+   other, and the shelf is where you read them off side by side. #}
+<section class="{{ ('shelf ' ~ (shelf_class or '')) | trim }}"
+         aria-label="{{ shelf_label or 'The jars on the shelf' }}">
   <div class="shelf-inner">
     <ul class="shelf-jars">
-      {% for card in cards %}
+      {% for card in shelf_cards or [] %}
       {% set jar = card.jar %}
       <li class="shelf-slot {% if card.status.is_overdue %}is-overdue{% endif %}">
         {% if card.status.is_overdue %}
@@ -18,7 +23,18 @@
         </a>
       </li>
       {% endfor %}
-      <li class="shelf-prop">{% include "partials/sprig.html" %}</li>
+
+      {% for jar in shelf_jars or [] %}
+      <li class="shelf-slot">
+        <a class="shelf-jar" href="/jars/{{ jar.id }}">
+          {% with art_class = "jar-art-put-away" %}
+            {% include "partials/jar_art.html" %}
+          {% endwith %}
+        </a>
+      </li>
+      {% endfor %}
+
+      {% if shelf_cards %}<li class="shelf-prop">{% include "partials/sprig.html" %}</li>{% endif %}
     </ul>
     <div class="shelf-plank" aria-hidden="true"></div>
   </div>

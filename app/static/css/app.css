@@ -932,10 +932,13 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .jar-hooch { fill: color-mix(in srgb, #4a3220 62%, transparent); }
 .jar-rubber { fill: color-mix(in srgb, var(--text) 28%, transparent); }
 .jar-frost { fill: #ffffff; opacity: 0.45; }
+.jar-dust { fill: #d8d0c3; opacity: 0.62; }
+.jar-motes { opacity: 0.45; }
 
 @media (prefers-color-scheme: dark) {
   .jar-art,
   .scene-art { --glass: color-mix(in srgb, var(--text) 11%, transparent); }
+  .jar-dust { fill: #9b9284; opacity: 0.42; }
 }
 
 .jar-art.state-active { --contents: #c98b4b; }
@@ -1104,6 +1107,13 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .shelf-plank-sm::after { display: none; }
 
 .shelf-bare { opacity: 0.7; }
+
+/* The shelf below: jars that have been put away. Smaller and dustier, but
+   still on show — jars are archived here, never deleted. */
+.shelf-put-away { margin-top: 2px; padding-top: 8px; }
+.shelf-put-away .jar-art { filter: saturate(0.5); }
+.shelf-put-away .shelf-plank { filter: saturate(0.5) brightness(0.94); }
+.jar-art-put-away { width: 88px; }
 
 .hero-jar {
   display: flex;

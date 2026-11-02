@@ -11,7 +11,7 @@
 </section>
 
 {% if cards %}
-{% include "partials/shelf.html" %}
+{% with shelf_cards = cards %}{% include "partials/shelf.html" %}{% endwith %}
 
 {# The shelf shows the jars; the cards below carry the numbers. #}
 <ul class="jar-grid">
@@ -90,13 +90,10 @@
 {% endif %}
 
 {% if archived %}
-<section class="archived-list">
-  <h2 class="section-title">Archived</h2>
-  <ul class="plain">
-    {% for jar in archived %}
-    <li><a href="/jars/{{ jar.id }}">{{ jar.name }}</a> <span class="muted">· archived</span></li>
-    {% endfor %}
-  </ul>
-</section>
+<h2 class="section-title">Put away</h2>
+{% with shelf_jars = archived, shelf_class = "shelf-put-away", dusty = true,
+        shelf_label = "Archived jars, put away on the shelf below" %}
+  {% include "partials/shelf.html" %}
+{% endwith %}
 {% endif %}
 {% endblock %}

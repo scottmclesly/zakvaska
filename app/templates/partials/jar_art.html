@@ -4,12 +4,14 @@
      rise_pct    the last measured rise, which sets the level in the glass
      art_class   a size class (jar-art-lg, jar-art-shelf)
      with_label  false to leave the taped label off
+     dusty       true for a jar that has been put away a while
 
    Inline SVG so it themes with the page and costs no request. Every id is
    suffixed with the jar id: a repeated one would clip two jars alike.
 #}
 {%- set state = jar.state.value -%}
 {%- set measured = rise_pct is defined and rise_pct is not none -%}
+{%- set dusty = dusty is defined and dusty -%}
 {%- set labelled = with_label is not defined or with_label -%}
 {#- The glass reads y 70 as the fill line a feed leaves behind, and y 32 as a
     150% rise up at the shoulder. Unmeasured jars sit where their state puts
@@ -112,6 +114,18 @@
     <rect class="jar-shine" x="18.5" y="26" width="4.6" height="54" rx="2.3"/>
     <rect class="jar-shine jar-shine-thin" x="26" y="28" width="1.8" height="48" rx="0.9"/>
 
+    {%- if dusty %}
+    <!-- the dust a jar gathers once it is put away -->
+    <ellipse class="jar-dust" cx="36" cy="30" rx="21" ry="3.8"/>
+    <g class="jar-dust jar-motes">
+      <circle cx="22" cy="41" r="1"/>
+      <circle cx="47" cy="37" r="0.8"/>
+      <circle cx="31" cy="52" r="0.7"/>
+      <circle cx="51" cy="57" r="0.9"/>
+      <circle cx="19" cy="62" r="0.7"/>
+    </g>
+    {%- endif %}
+
     {%- if state == "fridge" %}
     <!-- frost, because this one lives in the cold -->
     <g class="jar-frost">
@@ -125,6 +139,10 @@
   </g>
 
   <path class="jar-outline" d="{{ body }}"/>
+
+  {%- if dusty %}
+  <rect class="jar-dust" x="20" y="4" width="32" height="3.2" rx="1.6"/>
+  {%- endif %}
 
   {%- if labelled %}
   <!-- masking tape, stuck on a little crooked, as it always is -->
