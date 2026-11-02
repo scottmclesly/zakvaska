@@ -93,6 +93,13 @@
   </form>
 </section>
 
+{% if bakes %}
+<section>
+  <h2 class="section-title">Bakes it raised</h2>
+  {% with hide_jar = true %}{% include "partials/bake_rows.html" %}{% endwith %}
+</section>
+{% endif %}
+
 <section>
   <h2 class="section-title">Timeline</h2>
   {% if events %}

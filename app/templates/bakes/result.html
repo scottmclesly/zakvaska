@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <h1>How was it?</h1>
+  <p class="sub">
+    <a href="/bakes/{{ bake.id }}">{{ bake.label }}</a>
+    {%- if bake.jar %}, raised by <a href="/jars/{{ bake.jar.id }}">{{ bake.jar.name }}</a>{% endif %}.
+  </p>
+</section>
+
+{% if errors %}
+<div class="card errors" role="alert">
+  <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form class="form" method="post" action="/bakes/{{ bake.id }}/result">
+  <fieldset class="card rating-field">
+    <legend>Rating</legend>
+    <div class="rating-choices">
+      {% for stars in [1, 2, 3, 4, 5] %}
+      <label class="rating-choice">
+        <input type="radio" name="rating" value="{{ stars }}"
+               {% if values.rating == stars or values.rating == stars | string %}checked{% endif %}>
+        <span>{{ stars }}</span>
+      </label>
+      {% endfor %}
+      <label class="rating-choice">
+        <input type="radio" name="rating" value=""
+               {% if not values.rating %}checked{% endif %}>
+        <span>—</span>
+      </label>
+    </div>
+  </fieldset>
+
+  <div class="card form">
+    <div class="field-row">
+      <label>
+        <span>Crust</span>
+        <input name="crust" list="crust-options" value="{{ values.crust or '' }}">
+      </label>
+      <label>
+        <span>Crumb</span>
+        <input name="crumb" list="crumb-options" value="{{ values.crumb or '' }}">
+      </label>
+    </div>
+    <div class="field-row">
+      <label>
+        <span>Taste</span>
+        <input name="taste" list="taste-options" value="{{ values.taste or '' }}">
+      </label>
+      <label>
+        <span>Rise</span>
+        <input name="rise" list="rise-options" value="{{ values.rise or '' }}">
+      </label>
+    </div>
+    <label>
+      <span>Next time <em>the point of writing it down</em></span>
+      <textarea name="next_time"
+                placeholder="e.g. less water, longer scald, bake 10 min hotter">{{ values.next_time or '' }}</textarea>
+    </label>
+  </div>
+
+  <datalist id="crust-options">{% for option in crusts %}<option value="{{ option }}">{% endfor %}</datalist>
+  <datalist id="crumb-options">{% for option in crumbs %}<option value="{{ option }}">{% endfor %}</datalist>
+  <datalist id="taste-options">{% for option in tastes %}<option value="{{ option }}">{% endfor %}</datalist>
+  <datalist id="rise-options">{% for option in rises %}<option value="{{ option }}">{% endfor %}</datalist>
+
+  <div class="row-actions">
+    <button class="btn btn-big" type="submit">Save the result</button>
+    <a class="btn btn-secondary" href="/bakes/{{ bake.id }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

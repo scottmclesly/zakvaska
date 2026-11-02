@@ -16,7 +16,7 @@ from app.models.enums import (
 )
 from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
-from app.services import derived, jars as jar_service
+from app.services import bakes as bake_service, derived, jars as jar_service
 from app.services.units import temp_to_celsius
 from app.templates_env import render
 
@@ -140,6 +140,7 @@ def jar_detail(request: Request, ctx: Ctx, jar_id: int) -> HTMLResponse:
             "last_hydration": last.get("hydration_pct"),
             "events": jar_service.timeline(ctx.session, jar),
             "states": list(JarState),
+            "bakes": bake_service.list_bakes(ctx.session, jar_id=jar.id),
         },
     )
 

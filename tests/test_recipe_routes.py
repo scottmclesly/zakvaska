@@ -133,8 +133,10 @@ class TestVersionPage:
     def test_the_stages_are_in_order(self, client):
         recipe_id = create(client)
         text = client.get(f"/recipes/{recipe_id}/v/1").text
+        # Matched on the heading, not the bare name: "bake" also appears in
+        # the /bakes links on this page.
         positions = [
-            text.index(name)
+            text.index(f"<h3>{name}</h3>")
             for name in ["scald (zavarka)", "sponge", "final dough", "proof", "bake"]
         ]
         assert positions == sorted(positions)

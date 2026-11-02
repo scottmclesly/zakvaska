@@ -66,6 +66,47 @@ class IngredientRole(enum.StrEnum):
         return self.value.capitalize()
 
 
+class BakeMethod(enum.StrEnum):
+    """How the loaf is actually cooked. Scott uses all three."""
+
+    OVEN = "oven"
+    DUTCH_OVEN = "dutch_oven"
+    BREAD_MAKER = "bread_maker"
+
+    @property
+    def label(self) -> str:
+        return {
+            BakeMethod.OVEN: "Oven",
+            BakeMethod.DUTCH_OVEN: "Cast-iron pot",
+            BakeMethod.BREAD_MAKER: "Bread maker",
+        }[self]
+
+    @property
+    def uses_program(self) -> bool:
+        """Only the bread maker runs a named program from its manual."""
+        return self is BakeMethod.BREAD_MAKER
+
+
+class BakeStatus(enum.StrEnum):
+    PLANNED = "planned"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    FAILED = "failed"
+
+    @property
+    def label(self) -> str:
+        return {
+            BakeStatus.PLANNED: "Planned",
+            BakeStatus.IN_PROGRESS: "In progress",
+            BakeStatus.DONE: "Done",
+            BakeStatus.FAILED: "Failed",
+        }[self]
+
+    @property
+    def is_finished(self) -> bool:
+        return self in (BakeStatus.DONE, BakeStatus.FAILED)
+
+
 class AlertKind(enum.StrEnum):
     FEED_DUE = "feed_due"
 
@@ -119,4 +160,24 @@ SMELL_SUGGESTIONS = (
 
 TEXTURE_SUGGESTIONS = (
     "thick", "thin", "runny", "stiff", "webby", "foamy", "stringy", "hooch",
+)
+
+CRUST_SUGGESTIONS = (
+    "thin", "thick", "chewy", "crisp", "soft", "pale", "dark", "blistered",
+    "burnt",
+)
+
+CRUMB_SUGGESTIONS = (
+    "dense", "tight", "even", "open", "gummy", "moist", "dry", "crumbly",
+    "sticky",
+)
+
+TASTE_SUGGESTIONS = (
+    "sour", "mildly sour", "sweet", "malty", "molasses", "coriander",
+    "bitter", "bland", "boozy",
+)
+
+RISE_SUGGESTIONS = (
+    "flat", "modest", "good", "tall", "over-proofed", "under-proofed",
+    "blew out the side",
 )

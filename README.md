@@ -82,6 +82,23 @@ matching lines by name rather than by position.
 Equipment programs are the bread maker's programs, typed in from its manual,
 so a bake can record which one was used.
 
+## Bakes
+
+A bake starts from a recipe *version*, never from the recipe, and the
+version's stages are copied into it as a plan. Editing the recipe afterwards
+leaves every bake alone — last month's loaf still means what it meant.
+
+The bake page is a running sheet: tap a stage started, tap it done, and it
+records the real times beside the planned ones with the difference. Notes go
+in per stage. If the flour total is set, the page also shows the grams to
+weigh out for that loaf.
+
+The result is a rating out of five plus crust, crumb, taste, rise and — the
+part that matters — what to change next time. Saving one marks the bake done.
+
+The bake list filters by recipe, jar, rating and status, and each bake also
+shows up on the recipe version it came from and on the jar that raised it.
+
 ## Development
 
 ```bash

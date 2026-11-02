@@ -12,6 +12,7 @@ from app.models.enums import JarOrigin, JarState
 
 if TYPE_CHECKING:
     from app.models.alert import Alert
+    from app.models.bake import Bake
     from app.models.feeding import Feeding
     from app.models.jar_state_change import JarStateChange
     from app.models.observation import Observation
@@ -88,6 +89,10 @@ class Jar(Base):
         back_populates="jar",
         cascade="all, delete-orphan",
         order_by="Alert.due_at.desc()",
+    )
+    # Archiving a jar must not take its bakes with it, so no cascade here.
+    bakes: Mapped[list[Bake]] = relationship(
+        back_populates="jar", order_by="Bake.created_at.desc()"
     )
 
     @property

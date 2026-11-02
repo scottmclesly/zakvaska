@@ -54,10 +54,10 @@ Work phase by phase. Each phase ends with its acceptance checks passing, tests g
 - **Accept:** create a Borodinsky recipe with scald/sponge/final/proof/bake stages, edit it to v2, scale to 500 g flour with correct grams (unit-tested).
 
 ## Phase 4: bakes and results
-- [ ] Start a bake from a recipe version: pick jar, method, equipment program, flour total; stages copied into `bake_stage_log` as the plan
-- [ ] Log actual stage start/end times on the fly (big buttons, phone-friendly)
-- [ ] Results form: rating, crust, crumb, taste, rise, next-time notes
-- [ ] Bake list filterable by recipe, jar and rating; recipe page shows its bakes
+- [x] Start a bake from a recipe version: pick jar, method, equipment program, flour total; stages copied into `bake_stage_log` as the plan
+- [x] Log actual stage start/end times on the fly (big buttons, phone-friendly)
+- [x] Results form: rating, crust, crumb, taste, rise, next-time notes
+- [x] Bake list filterable by recipe, jar and rating; recipe page shows its bakes
 - **Accept:** run a full bake end-to-end on a phone-width screen; it appears on the recipe, the jar and the bake list.
 
 ## Phase 5: photos

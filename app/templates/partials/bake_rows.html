@@ -1,0 +1,26 @@
+{# A compact list of bakes. Expects `bakes`, plus `now`.
+   Set `hide_version` on a version's own page and `hide_jar` on a jar's,
+   where repeating them adds nothing. #}
+<ul class="plain bake-list">
+  {% for bake in bakes %}
+  <li class="bake-line">
+    <a class="bake-line-main" href="/bakes/{{ bake.id }}">
+      <span class="bake-line-when">{{ bake.at | local_day }}</span>
+      <span class="bake-line-what">
+        {%- set bits = [] -%}
+        {%- if not hide_version %}{% set _ = bits.append(bake.version.label) %}{% endif -%}
+        {%- set _ = bits.append(bake.method.label) -%}
+        {%- if bake.jar and not hide_jar %}{% set _ = bits.append(bake.jar.name) %}{% endif -%}
+        {{ bits | join(" · ") }}
+      </span>
+    </a>
+    <span class="bake-line-end">
+      {% if bake.result and bake.result.rating %}
+      {% include "partials/stars.html" with context %}
+      {% else %}
+      <span class="badge badge-status status-{{ bake.status.value }}">{{ bake.status.label }}</span>
+      {% endif %}
+    </span>
+  </li>
+  {% endfor %}
+</ul>

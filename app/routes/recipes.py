@@ -15,6 +15,7 @@ from app.models.enums import (
 )
 from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
+from app.services import bakes as bake_service
 from app.services import recipes as recipe_service
 from app.services import scaling
 from app.services.recipe_diff import diff_versions
@@ -261,6 +262,8 @@ def version_detail(
             "scale_error": scale_error,
             "flour_input": flour,
             "dough_input": dough,
+            # Bakes from this exact version, newest first.
+            "bakes": [b for b in found.bakes if not b.archived],
         },
     )
 

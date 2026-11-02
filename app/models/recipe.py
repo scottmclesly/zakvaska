@@ -25,7 +25,7 @@ from app.models.base import Base, created_at_column
 from app.models.enums import IngredientRole, RecipeCategory
 
 if TYPE_CHECKING:
-    pass
+    from app.models.bake import Bake
 
 
 def _enum(python_enum: type, length: int = 16) -> Enum:
@@ -84,6 +84,10 @@ class RecipeVersion(Base):
         back_populates="version",
         cascade="all, delete-orphan",
         order_by="RecipeStage.seq",
+    )
+    # No cascade: a version with bakes against it is never deleted.
+    bakes: Mapped[list[Bake]] = relationship(
+        back_populates="version", order_by="Bake.created_at.desc()"
     )
 
     @property

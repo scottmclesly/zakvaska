@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
 {% block nav %}
-{% if is_latest %}<a class="btn btn-small" href="/recipes/{{ recipe.id }}/edit">Edit</a>{% endif %}
+<a class="btn btn-small" href="/bakes/new?recipe_id={{ recipe.id }}&amp;version={{ version.version }}">Bake this</a>
+{% if is_latest %}<a class="btn btn-small btn-secondary" href="/recipes/{{ recipe.id }}/edit">Edit</a>{% endif %}
 <a class="btn btn-small btn-secondary" href="/recipes">All recipes</a>
 {% endblock %}
 
@@ -146,6 +147,16 @@
 </ol>
 {% else %}
 <p class="card empty">No stages on this version.</p>
+{% endif %}
+
+<h2 class="section-title">Bakes from {{ version.label }}</h2>
+{% if bakes %}
+{% with hide_version = true %}{% include "partials/bake_rows.html" %}{% endwith %}
+{% else %}
+<p class="card muted">
+  Nothing baked from this version yet.
+  <a href="/bakes/new?recipe_id={{ recipe.id }}&amp;version={{ version.version }}">Start one</a>.
+</p>
 {% endif %}
 
 <section class="danger-zone">

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <h1>Start a bake</h1>
+  <p class="sub">
+    <a href="/recipes/{{ recipe.id }}/v/{{ version.version }}">{{ recipe.name }} {{ version.label }}</a>
+    — its {{ version.stages | length }} stage{{ "" if version.stages | length == 1 else "s" }}
+    become the running sheet, copied as they are now.
+  </p>
+</section>
+
+{% if errors %}
+<div class="card errors" role="alert">
+  <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<form class="form" method="post" action="/bakes/new">
+  <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
+  <input type="hidden" name="version" value="{{ version.version }}">
+
+  <div class="card form">
+    <div class="field-row">
+      <label>
+        <span>How</span>
+        <select name="method" data-method>
+          {% for option in methods %}
+          <option value="{{ option.value }}"
+                  {% if values.get('method') == option.value %}selected{% endif %}>
+            {{ option.label }}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Jar <em>which starter raised it</em></span>
+        <select name="jar_id">
+          <option value="">None / commercial yeast</option>
+          {% for jar in jars %}
+          <option value="{{ jar.id }}"
+                  {% if values.get('jar_id') == jar.id | string %}selected{% endif %}>
+            {{ jar.name }}{% if jar.is_control %} (control){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Total flour <em>grams</em></span>
+        <input name="total_flour_g" type="number" step="1" min="0" inputmode="decimal"
+               value="{{ values.get('total_flour_g') | num }}" placeholder="500">
+      </label>
+    </div>
+  </div>
+
+  <div class="card form">
+    <h2 class="section-title">The oven, or the machine</h2>
+    <div class="field-row">
+      <label>
+        <span>Bread maker program</span>
+        <select name="equipment_program_id">
+          <option value="">Not using one</option>
+          {% for program in programs %}
+          <option value="{{ program.id }}"
+                  {% if values.get('equipment_program_id') == program.id | string %}selected{% endif %}>
+            {{ program.name }}{% if program.device %} · {{ program.device }}{% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Crust setting</span>
+        <input name="crust_setting" value="{{ values.get('crust_setting') or '' }}"
+               placeholder="e.g. dark">
+      </label>
+      <label>
+        <span>Loaf size</span>
+        <input name="loaf_size" value="{{ values.get('loaf_size') or '' }}"
+               placeholder="e.g. 2 lb">
+      </label>
+    </div>
+    <div class="field-row">
+      <label>
+        <span>Oven temperature <em>°{{ temp_unit }}</em></span>
+        <input name="oven_temp" type="number" step="1" inputmode="decimal"
+               value="{{ values.get('oven_temp') | num }}" placeholder="400">
+      </label>
+      <label>
+        <span>Bake time <em>minutes</em></span>
+        <input name="bake_min" type="number" step="1" min="0" inputmode="numeric"
+               value="{{ values.get('bake_min') | num }}" placeholder="60">
+      </label>
+    </div>
+    {% if programs | length == 0 %}
+    <p class="muted small">
+      No bread maker programs entered yet —
+      <a href="/equipment">add them from the manual</a>.
+    </p>
+    {% endif %}
+  </div>
+
+  <div class="card form">
+    <h2 class="section-title">When</h2>
+    <label class="checkbox">
+      <input type="checkbox" name="start_now" value="1"
+             {% if values.get('start_now') %}checked{% endif %}>
+      <span>Starting right now</span>
+    </label>
+    <label>
+      <span>Or a time <em>leave both alone to just plan it</em></span>
+      <input name="started_at" type="datetime-local"
+             value="{{ values.get('started_at') or '' }}">
+    </label>
+  </div>
+
+  <div class="row-actions">
+    <button class="btn btn-big" type="submit">Create the bake</button>
+    <a class="btn btn-secondary"
+       href="/recipes/{{ recipe.id }}/v/{{ version.version }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

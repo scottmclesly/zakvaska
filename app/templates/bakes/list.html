@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+  <h1>Bakes</h1>
+  <p class="sub">Every loaf, the version it came from and how it turned out.</p>
+</section>
+
+<form class="form card filters" method="get" action="/bakes">
+  <div class="field-row">
+    <label>
+      <span>Recipe</span>
+      <select name="recipe">
+        <option value="">Any</option>
+        {% for option in options.recipes %}
+        <option value="{{ option.id }}" {% if filters.recipe == option.id %}selected{% endif %}>
+          {{ option.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>Jar</span>
+      <select name="jar">
+        <option value="">Any</option>
+        {% for option in options.jars %}
+        <option value="{{ option.id }}" {% if filters.jar == option.id %}selected{% endif %}>
+          {{ option.name }}{% if option.is_control %} (control){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>Rating</span>
+      <select name="rating">
+        <option value="">Any</option>
+        {% for stars in [5, 4, 3, 2, 1] %}
+        <option value="{{ stars }}" {% if filters.rating == stars %}selected{% endif %}>
+          {{ stars }}+
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>Status</span>
+      <select name="status">
+        <option value="">Any</option>
+        {% for option in options.statuses %}
+        <option value="{{ option.value }}" {% if filters.status == option.value %}selected{% endif %}>
+          {{ option.label }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="row-actions">
+    <button class="btn" type="submit">Filter</button>
+    {% if any_filter %}<a class="btn btn-secondary" href="/bakes">Clear</a>{% endif %}
+  </div>
+</form>
+
+{% if bakes %}
+<ul class="plain bake-list">
+  {% for bake in bakes %}
+  <li class="card bake-row">
+    <div class="bake-row-head">
+      <h2><a href="/bakes/{{ bake.id }}">{{ bake.label }}</a></h2>
+      <span class="badge badge-status status-{{ bake.status.value }}">{{ bake.status.label }}</span>
+    </div>
+    <p class="bake-meta muted">
+      {{ bake.at | local_day }} ·
+      {{ bake.method.label }}
+      {%- if bake.jar %} · <a href="/jars/{{ bake.jar.id }}">{{ bake.jar.name }}</a>{% endif -%}
+      {%- if bake.total_flour_g %} · {{ bake.total_flour_g | grams }} flour{% endif -%}
+    </p>
+    {% if bake.result %}
+    <p class="bake-verdict">
+      {% if bake.result.rating %}
+      {% include "partials/stars.html" with context %}
+      {% endif %}
+      {% if bake.result.next_time %}
+      <span class="muted">Next time: {{ bake.result.next_time }}</span>
+      {% endif %}
+    </p>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<section class="empty card">
+  <h2>{{ "Nothing matches that" if any_filter else "No bakes yet" }}</h2>
+  <p>
+    {% if any_filter %}
+      Try widening the filters.
+    {% else %}
+      Open a recipe version and start one — the stages become your running sheet.
+    {% endif %}
+  </p>
+  {% if not any_filter %}<p><a class="btn" href="/recipes">Go to recipes</a></p>{% endif %}
+</section>
+{% endif %}
+{% endblock %}

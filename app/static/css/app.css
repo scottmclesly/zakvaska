@@ -577,3 +577,88 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
     border-top: 1px solid var(--border);
   }
 }
+
+/* --- Bakes ------------------------------------------------------------- */
+
+.badge-status { font-weight: 600; }
+.status-planned { border-color: var(--border); color: var(--muted); }
+.status-in_progress { border-color: var(--warn); color: var(--warn); }
+.status-done { border-color: var(--ok); color: var(--ok); }
+.status-failed { border-color: var(--danger); color: var(--danger); }
+
+.filters { margin-bottom: 20px; }
+
+.bake-list { display: flex; flex-direction: column; }
+.bake-row { padding: 16px; }
+.bake-row-head { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.bake-row-head h2 { margin: 0; font-size: 1.0625rem; }
+.bake-verdict { margin: 10px 0 0; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+
+/* The compact list used on a recipe version and on a jar. */
+.bake-line {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+.bake-line-main { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; text-decoration: none; color: var(--text); }
+.bake-line-when { font-weight: 650; white-space: nowrap; }
+.bake-line-what { color: var(--muted); font-size: 0.9375rem; }
+.bake-line-end { white-space: nowrap; }
+
+.stars { color: var(--warn); letter-spacing: 1px; }
+
+/* Running sheet. Tapped with flour on your hands, so the buttons are big. */
+.stage-run { list-style: none; counter-reset: step; margin: 0; padding: 0; }
+
+.stage-step { counter-increment: step; }
+.stage-step .stage-head h3::before { content: counter(step) ". "; color: var(--muted); font-weight: 400; }
+.stage-step.is-running { border-color: var(--warn); }
+.stage-step.is-done { opacity: 0.82; }
+.stage-step .row-actions form { display: contents; }
+
+.stage-actual { margin: 10px 0 0; }
+.stage-actual strong { font-variant-numeric: tabular-nums; }
+
+.drift {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  border: 1px solid currentColor;
+}
+.drift.over { color: var(--warn); }
+.drift.under { color: var(--ok); }
+
+.stage-note { margin-top: 12px; }
+
+/* Result */
+.rating-field legend { padding: 0 4px; }
+.rating-choices { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.rating-choice { position: relative; }
+.rating-choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.rating-choice span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  min-height: 52px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  font-weight: 650;
+  font-size: 1.0625rem;
+}
+.rating-choice input:checked + span {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.rating-choice input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.result-rating { margin: 0 0 12px; font-size: 1.25rem; }
+.next-time { margin: 12px 0 0; }
+
+.bake-meta { margin: 8px 0 0; }

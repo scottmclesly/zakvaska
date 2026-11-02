@@ -1,0 +1,5 @@
+{# A rating out of five. Expects `bake.result.rating`. #}
+<span class="stars" title="{{ bake.result.rating }} out of 5">
+  <span aria-hidden="true">{{ "★" * bake.result.rating }}{{ "☆" * (5 - bake.result.rating) }}</span>
+  <span class="sr-only">{{ bake.result.rating }} out of 5</span>
+</span>

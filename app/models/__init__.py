@@ -1,9 +1,12 @@
 """ORM models. Import every model here so Alembic autogenerate sees them."""
 
 from app.models.alert import Alert
+from app.models.bake import Bake, BakeResult, BakeStageLog
 from app.models.base import Base
 from app.models.enums import (
     AlertKind,
+    BakeMethod,
+    BakeStatus,
     BubbleLevel,
     IngredientRole,
     JarOrigin,
@@ -26,6 +29,11 @@ from app.models.setting import Setting
 __all__ = [
     "Alert",
     "AlertKind",
+    "Bake",
+    "BakeMethod",
+    "BakeResult",
+    "BakeStageLog",
+    "BakeStatus",
     "Base",
     "BubbleLevel",
     "EquipmentProgram",
