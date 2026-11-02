@@ -110,6 +110,10 @@ def test_the_alert_scheduler_can_be_switched_off(monkeypatch, value):
 
 
 def test_the_old_env_keys_still_work(monkeypatch, tmp_path):
+    # An installed copy has a .env naming the new keys, and that file would
+    # supply them before the fallback is ever reached. This is about the
+    # fallback, so take the file out of it.
+    monkeypatch.setattr("app.config.load_dotenv", lambda path=None: {})
     monkeypatch.delenv("ZAKVASKA_DATA_DIR", raising=False)
     monkeypatch.delenv("ZAKVASKA_PORT", raising=False)
     monkeypatch.setenv("JARLOG_DATA_DIR", str(tmp_path))
@@ -122,6 +126,7 @@ def test_the_old_env_keys_still_work(monkeypatch, tmp_path):
 
 
 def test_the_new_key_wins_when_both_are_set(monkeypatch, tmp_path):
+    monkeypatch.setattr("app.config.load_dotenv", lambda path=None: {})
     monkeypatch.setenv("JARLOG_PORT", "9001")
     monkeypatch.setenv("ZAKVASKA_PORT", "9002")
 
