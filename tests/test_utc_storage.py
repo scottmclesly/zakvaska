@@ -1,4 +1,4 @@
-"""CLAUDE.md: store timestamps in UTC, display in JARLOG_TZ.
+"""CLAUDE.md: store timestamps in UTC, display in ZAKVASKA_TZ.
 
 SQLite has no timestamp type, so a plain DateTime column hands back a *naive*
 value and a later .astimezone() would silently read it as local time. These

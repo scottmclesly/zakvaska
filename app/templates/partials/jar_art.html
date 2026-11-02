@@ -1,0 +1,47 @@
+{# A jar, drawn. Expects `jar`; optionally `rise_pct` to set the level and
+   `art_class` for sizing. Inline SVG so it themes with the page and costs
+   no request. #}
+{%- set state = jar.state.value -%}
+{%- if rise_pct is defined and rise_pct is not none -%}
+  {# 0% rise sits at the fill line, 150% is near the shoulder. #}
+  {%- set level = [[rise_pct, 0] | max, 150] | min -%}
+  {%- set fill_top = 50 - (level / 150 * 22) -%}
+{%- else -%}
+  {%- set fill_top = 32 if state in ("active", "fridge") else 42 -%}
+{%- endif -%}
+<svg class="jar-art {{ art_class or '' }} state-{{ state }}" viewBox="0 0 48 68"
+     role="img" aria-label="{{ jar.name }} — {{ jar.state.label.lower() }}">
+  <defs>
+    <clipPath id="jarbody-{{ jar.id }}">
+      <path d="M10 17 h28 v34 a7 7 0 0 1 -7 7 h-14 a7 7 0 0 1 -7 -7 z"/>
+    </clipPath>
+  </defs>
+
+  <!-- lid -->
+  <rect class="jar-lid" x="11" y="3" width="26" height="8" rx="2.5"/>
+  <rect class="jar-neck" x="14" y="11" width="20" height="5" rx="1.5"/>
+
+  <!-- glass -->
+  <path class="jar-glass"
+        d="M10 17 h28 v34 a7 7 0 0 1 -7 7 h-14 a7 7 0 0 1 -7 -7 z"/>
+
+  <g clip-path="url(#jarbody-{{ jar.id }})">
+    <rect class="jar-contents" x="10" y="{{ fill_top }}" width="28" height="60"/>
+    <!-- the domed top a living starter makes -->
+    <ellipse class="jar-contents jar-dome" cx="24" cy="{{ fill_top }}" rx="14" ry="2.6"/>
+    {% if state == "active" %}
+    <circle class="jar-bubble" cx="17" cy="{{ fill_top + 9 }}" r="2.1"/>
+    <circle class="jar-bubble" cx="27" cy="{{ fill_top + 15 }}" r="1.5"/>
+    <circle class="jar-bubble" cx="31" cy="{{ fill_top + 6 }}" r="1.1"/>
+    <circle class="jar-bubble" cx="21" cy="{{ fill_top + 19 }}" r="1.3"/>
+    {% elif state == "fridge" %}
+    <circle class="jar-bubble" cx="19" cy="{{ fill_top + 12 }}" r="1.1"/>
+    <circle class="jar-bubble" cx="29" cy="{{ fill_top + 18 }}" r="0.9"/>
+    {% endif %}
+    <!-- a highlight down the glass -->
+    <rect class="jar-shine" x="13" y="19" width="3.5" height="34" rx="1.75"/>
+  </g>
+
+  <path class="jar-outline"
+        d="M10 17 h28 v34 a7 7 0 0 1 -7 7 h-14 a7 7 0 0 1 -7 -7 z"/>
+</svg>

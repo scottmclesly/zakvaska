@@ -24,7 +24,7 @@ def home(request: Request, ctx: Ctx) -> HTMLResponse:
         ctx=ctx,
         name="home.html",
         context={
-            "title": "jar-log",
+            "title": "zakvaska",
             "cards": cards,
             "archived": [
                 jar

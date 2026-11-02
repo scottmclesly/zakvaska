@@ -1,9 +1,9 @@
-// jar-log service worker.
+// zakvaska service worker.
 // Minimal on purpose: cache the static shell so the app opens instantly and
 // is installable. Pages and API responses always go to the network, because a
 // stale feeding log would be worse than no log.
 
-const CACHE = "jarlog-shell-v1";
+const CACHE = "zakvaska-shell-v1";
 const SHELL = [
   "/static/css/app.css",
   "/static/js/app.js",

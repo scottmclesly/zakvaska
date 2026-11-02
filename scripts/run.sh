@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Start the jar-log server on JARLOG_HOST:JARLOG_PORT.
+# Start the zakvaska server on ZAKVASKA_HOST:ZAKVASKA_PORT.
 #   ./scripts/run.sh                      # normal
-#   JARLOG_PORT=9000 ./scripts/run.sh     # environment overrides .env
+#   ZAKVASKA_PORT=9000 ./scripts/run.sh     # environment overrides .env
 #   ./scripts/run.sh --reload             # auto-reload (needs: pip install watchfiles)
 set -euo pipefail
 
@@ -42,10 +42,10 @@ load_env_file() {
 
 load_env_file "$ROOT/.env"
 
-HOST="${JARLOG_HOST:-127.0.0.1}"
-PORT="${JARLOG_PORT:-8420}"
+HOST="${ZAKVASKA_HOST:-127.0.0.1}"
+PORT="${ZAKVASKA_PORT:-8420}"
 
-echo "==> jar-log on http://${HOST}:${PORT}"
+echo "==> zakvaska on http://${HOST}:${PORT}"
 if [ "$HOST" = "0.0.0.0" ]; then
   echo "    LAN access is on. On your phone, use this machine's IP:${PORT}."
 fi

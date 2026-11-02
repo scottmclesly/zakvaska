@@ -1,6 +1,6 @@
 {
-  "name": "jar-log",
-  "short_name": "jar-log",
+  "name": "zakvaska",
+  "short_name": "zakvaska",
   "description": "A baking lab notebook: starter jars, feedings, recipes and bakes.",
   "start_url": "/",
   "scope": "/",

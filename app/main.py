@@ -22,6 +22,7 @@ from app.routes import (
     jars,
     photos,
     recipes,
+    settings,
 )
 from app.services import scheduler
 
@@ -43,7 +44,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="jar-log",
+        title="zakvaska",
         description="A baking lab notebook: starter jars, feedings, recipes, bakes.",
         version=__version__,
         lifespan=lifespan,
@@ -60,6 +61,7 @@ def create_app() -> FastAPI:
     app.include_router(bakes.router)
     app.include_router(photos.router)
     app.include_router(backup.router)
+    app.include_router(settings.router)
 
     # Served from the root so the service worker's scope covers the whole app.
     @app.api_route("/sw.js", methods=["GET", "HEAD"], include_in_schema=False)

@@ -55,7 +55,7 @@
     {% if bake.total_flour_g %}
     <div>
       <dt>Flour</dt>
-      <dd>{{ bake.total_flour_g | grams }}</dd>
+      <dd>{{ bake.total_flour_g | weigh_total(weight_unit) }}</dd>
     </div>
     {% endif %}
     {% if bake.oven_temp_c is not none %}
@@ -149,7 +149,7 @@
       <tr>
         <th scope="col">Ingredient</th>
         <th scope="col" class="numeric">Baker's %</th>
-        <th scope="col" class="numeric">Grams</th>
+        <th scope="col" class="numeric">{{ unit_label(weight_unit) | capitalize }}</th>
       </tr>
     </thead>
     <tbody>
@@ -157,7 +157,7 @@
       <tr>
         <td>{{ line.name }}</td>
         <td class="numeric">{{ line.baker_pct | percent(1) }}</td>
-        <td class="numeric strong">{{ line.grams | grams }}</td>
+        <td class="numeric strong">{{ line.grams | weigh(weight_unit, line.name, line.role) }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -165,7 +165,7 @@
       <tr>
         <th scope="row">Total dough</th>
         <td class="numeric">{{ scaled.total_pct | percent(1) }}</td>
-        <td class="numeric strong">{{ scaled.total_dough_g | grams }}</td>
+        <td class="numeric strong">{{ scaled.total_dough_g | weigh_total(weight_unit) }}</td>
       </tr>
     </tfoot>
   </table>

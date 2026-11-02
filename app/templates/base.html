@@ -7,18 +7,19 @@
 
   <meta name="theme-color" content="#7a4a22">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="jar-log">
+  <meta name="apple-mobile-web-app-title" content="zakvaska">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="{{ url_for('static', path='/icons/icon-192.png') }}">
   <link rel="icon" href="{{ url_for('static', path='/icons/icon-192.png') }}">
-  <link rel="stylesheet" href="{{ url_for('static', path='/css/app.css') }}">
+  {# ?v= so an updated app does not serve yesterday's CSS from the cache. #}
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/app.css') }}?v={{ asset_version }}">
   <script src="{{ url_for('static', path='/js/htmx.min.js') }}" defer></script>
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="/">
       <span class="brand-mark" aria-hidden="true">🫙</span>
-      <span class="brand-name">jar-log</span>
+      <span class="brand-name">zakvaska</span>
     </a>
     <nav class="topnav">
       {% block nav %}{% endblock %}
@@ -28,6 +29,25 @@
       <a class="navlink" href="/recipes">Recipes</a>
       <a class="navlink" href="/bakes">Bakes</a>
       <a class="navlink" href="/equipment">Equipment</a>
+
+      {# Recipes come in grams, cups and pounds; read them in whichever. #}
+      {% set here = request.url.path ~ ('?' ~ request.url.query if request.url.query else '') %}
+      <div class="unitswitch">
+        <form method="post" action="/settings/weight-unit">
+          <input type="hidden" name="next" value="{{ here }}">
+          <button class="unitbtn" type="submit"
+                  title="Showing {{ unit_label(weight_unit) }} — tap for {{ unit_label(next_unit(weight_unit)) }}">
+            {{ unit_label(weight_unit) }}
+          </button>
+        </form>
+        <form method="post" action="/settings/temp-unit">
+          <input type="hidden" name="next" value="{{ here }}">
+          <button class="unitbtn" type="submit"
+                  title="Showing °{{ temp_unit }} — tap for °{{ 'C' if temp_unit == 'F' else 'F' }}">
+            °{{ temp_unit }}
+          </button>
+        </form>
+      </div>
     </nav>
   </header>
 
@@ -40,11 +60,11 @@
   </main>
 
   <footer class="footer">
-    <span>jar-log v{{ app_version }}</span>
+    <span>zakvaska v{{ app_version }}</span>
     <span aria-hidden="true">·</span>
     <a class="footer-link" href="/backup">Backup</a>
   </footer>
 
-  <script src="{{ url_for('static', path='/js/app.js') }}" defer></script>
+  <script src="{{ url_for('static', path='/js/app.js') }}?v={{ asset_version }}" defer></script>
 </body>
 </html>

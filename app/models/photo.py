@@ -33,7 +33,7 @@ class Photo(Base):
     )
     owner_id: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    # Relative to JARLOG_DATA_DIR/photos, so moving the data dir — onto a
+    # Relative to ZAKVASKA_DATA_DIR/photos, so moving the data dir — onto a
     # Raspberry Pi, say — does not invalidate a single row.
     path: Mapped[str] = mapped_column(String(255), nullable=False)
     thumb_path: Mapped[str] = mapped_column(String(255), nullable=False)

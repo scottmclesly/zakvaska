@@ -1,0 +1,40 @@
+{# A 16px glyph for an ingredient role. Expects `role`. Drawn with
+   currentColor so it inherits whatever the role badge is tinted. #}
+{%- set r = role.value -%}
+<svg class="role-icon role-{{ r }}" viewBox="0 0 16 16" aria-hidden="true"
+     fill="none" stroke="currentColor" stroke-width="1.4"
+     stroke-linecap="round" stroke-linejoin="round">
+  {%- if r == "flour" -%}
+    {# an ear of grain #}
+    <path d="M8 14V5"/>
+    <path d="M8 5c0-2 1.6-3.4 3.2-3.6C11 3.4 9.8 5 8 5z"/>
+    <path d="M8 5c0-2-1.6-3.4-3.2-3.6C4.8 3.4 6.2 5 8 5z"/>
+    <path d="M8 9.5c0-1.7 1.4-2.9 2.8-3.1-.2 1.7-1.4 3.1-2.8 3.1z"/>
+    <path d="M8 9.5c0-1.7-1.4-2.9-2.8-3.1.2 1.7 1.4 3.1 2.8 3.1z"/>
+  {%- elif r == "water" -%}
+    <path d="M8 2.2s4 4.3 4 7a4 4 0 0 1-8 0c0-2.7 4-7 4-7z"/>
+  {%- elif r == "levain" -%}
+    {# bubbles rising #}
+    <circle cx="6" cy="10.5" r="2.6"/>
+    <circle cx="10.8" cy="6.8" r="1.8"/>
+    <circle cx="6.4" cy="4.6" r="1.1"/>
+  {%- elif r == "salt" -%}
+    {# a crystal #}
+    <path d="M8 2l5 3v6l-5 3-5-3V5z"/>
+    <path d="M3 5l5 3 5-3M8 8v6"/>
+  {%- elif r == "sweetener" -%}
+    {# a drip off a spoon #}
+    <path d="M3 4.5h8a2.5 2.5 0 0 1 0 5H7"/>
+    <path d="M7 9.5s-1.8 2.3-1.8 3.4a1.8 1.8 0 0 0 3.6 0C8.8 11.8 7 9.5 7 9.5z"/>
+  {%- elif r == "fat" -%}
+    <path d="M2.5 9.5h11v3a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z"/>
+    <path d="M2.5 9.5l2.5-5h6l2.5 5"/>
+  {%- else -%}
+    {# a pinch of something #}
+    <circle cx="5.2" cy="6" r="1"/>
+    <circle cx="9.4" cy="4.6" r="1"/>
+    <circle cx="11" cy="8.6" r="1"/>
+    <circle cx="7" cy="10.4" r="1"/>
+    <circle cx="10.2" cy="12" r="1"/>
+  {%- endif -%}
+</svg>

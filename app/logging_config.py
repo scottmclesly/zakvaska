@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import logging
 
-LOGGER_NAME = "jarlog"
+LOGGER_NAME = "zakvaska"
 FORMAT = "%(asctime)s %(levelname)-7s %(name)s: %(message)s"
 
 
 def setup_logging(level: int = logging.INFO) -> logging.Logger:
-    """Give jar-log's own logger a destination, whoever is hosting us.
+    """Give zakvaska's own logger a destination, whoever is hosting us.
 
     Uvicorn configures its own loggers and leaves the root logger bare, so
     without this the scheduler's output goes nowhere.

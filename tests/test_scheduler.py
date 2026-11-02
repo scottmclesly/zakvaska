@@ -1,6 +1,6 @@
 """The APScheduler job itself.
 
-Tests run with JARLOG_SCHEDULER=0 (see conftest), so anything that needs a
+Tests run with ZAKVASKA_SCHEDULER=0 (see conftest), so anything that needs a
 real scheduler turns it on deliberately and shuts it down again.
 """
 
@@ -21,11 +21,11 @@ from app.services import scheduler
 
 @pytest.fixture
 def scheduler_enabled(monkeypatch):
-    monkeypatch.setenv("JARLOG_SCHEDULER", "1")
+    monkeypatch.setenv("ZAKVASKA_SCHEDULER", "1")
     get_settings.cache_clear()
     yield
     scheduler.shutdown()
-    monkeypatch.setenv("JARLOG_SCHEDULER", "0")
+    monkeypatch.setenv("ZAKVASKA_SCHEDULER", "0")
     get_settings.cache_clear()
 
 
@@ -105,7 +105,7 @@ def test_the_scheduler_logs_when_an_alert_fires(caplog):
     # Nobody is watching a background job; the log is the only evidence.
     overdue_jar()
 
-    with caplog.at_level("INFO", logger="jarlog.alerts"):
+    with caplog.at_level("INFO", logger="zakvaska.alerts"):
         scheduler.reconcile_now()
 
     assert any("alert fired" in record.message for record in caplog.records)

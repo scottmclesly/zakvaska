@@ -12,12 +12,12 @@ import tempfile
 from collections.abc import Iterator
 from pathlib import Path
 
-_TMP_DATA_DIR = Path(tempfile.mkdtemp(prefix="jarlog-tests-"))
-os.environ["JARLOG_DATA_DIR"] = str(_TMP_DATA_DIR)
-os.environ.setdefault("JARLOG_TZ", "America/New_York")
+_TMP_DATA_DIR = Path(tempfile.mkdtemp(prefix="zakvaska-tests-"))
+os.environ["ZAKVASKA_DATA_DIR"] = str(_TMP_DATA_DIR)
+os.environ.setdefault("ZAKVASKA_TZ", "America/New_York")
 # No background ticking in tests: every test drives reconcile itself, so
 # timing is explicit rather than a race with a real clock.
-os.environ["JARLOG_SCHEDULER"] = "0"
+os.environ["ZAKVASKA_SCHEDULER"] = "0"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

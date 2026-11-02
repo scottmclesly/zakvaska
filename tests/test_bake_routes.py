@@ -463,3 +463,35 @@ class TestTheListsDoNotRepeatThemselves:
         recipe = seed_recipe(session)
         bake_id = start(client, recipe, start_now="1")
         assert "planned 690 min" in client.get(f"/bakes/{bake_id}").text
+
+
+class TestLoafButtons:
+    """A bread maker is sold by loaf size, not by flour weight."""
+
+    def test_the_form_offers_the_three_machine_sizes(self, client, session):
+        recipe = seed_recipe(session)
+
+        page = client.get(f"/bakes/new?recipe_id={recipe.id}&version=1")
+
+        assert "2 lb" in page.text
+        assert "2.5 lb" in page.text
+        assert "3 lb" in page.text
+
+    def test_each_button_carries_the_flour_it_needs(self, client, session):
+        recipe = seed_recipe(session)
+
+        page = client.get(f"/bakes/new?recipe_id={recipe.id}&version=1")
+
+        # The seeded recipe is 212% of flour, so a 2 lb (907 g) pan wants
+        # about 428 g. The button hands that to the JS as data-flour.
+        assert re.search(r'data-flour="4[0-9]{2}(\.\d)?"', page.text), page.text
+
+    def test_a_flour_weight_typed_in_is_still_what_gets_saved(
+        self, client, session
+    ):
+        """The buttons only fill the field; the form still decides."""
+        recipe = seed_recipe(session)
+        bake_id = start(client, recipe, total_flour_g="497", loaf_size="2.5 lb")
+
+        page = client.get(f"/bakes/{bake_id}").text
+        assert "497 g" in page

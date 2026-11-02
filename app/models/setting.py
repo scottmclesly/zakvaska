@@ -7,8 +7,10 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
 
-# Display unit defaults to Fahrenheit even though we store Celsius.
-DEFAULT_SETTINGS = {"temp_unit": "F"}
+# Display units. Temperatures are stored in Celsius and weights in grams;
+# these say how to show them. Fahrenheit by default because that is the
+# kitchen this runs in; grams because that is how the rye recipes are written.
+DEFAULT_SETTINGS = {"temp_unit": "F", "weight_unit": "g"}
 
 
 class Setting(Base):

@@ -19,7 +19,7 @@ router = APIRouter(prefix="/backup")
 
 Ctx = Annotated[ViewContext, Depends(get_view_context)]
 
-log = logging.getLogger("jarlog.backup")
+log = logging.getLogger("zakvaska.backup")
 
 # Big enough for a notebook with years of photos in it, small enough that a
 # wrong file does not fill the disk before it is rejected.
@@ -91,7 +91,7 @@ async def restore(
         return _page(request, ctx, errors=["Choose an export to restore."], status_code=400)
 
     handle = tempfile.NamedTemporaryFile(
-        prefix="jarlog-restore-", suffix=".zip", delete=False
+        prefix="zakvaska-restore-", suffix=".zip", delete=False
     )
     path = Path(handle.name)
     try:

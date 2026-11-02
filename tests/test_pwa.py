@@ -8,7 +8,7 @@ def test_manifest_is_served_and_valid(client):
     assert response.headers["content-type"].startswith("application/manifest+json")
 
     manifest = json.loads(response.text)
-    assert manifest["name"] == "jar-log"
+    assert manifest["name"] == "zakvaska"
     assert manifest["start_url"] == "/"
     assert manifest["display"] == "standalone"
 

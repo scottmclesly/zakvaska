@@ -81,7 +81,7 @@
       <tr>
         <th scope="col">Ingredient</th>
         <th scope="col" class="numeric">Baker's %</th>
-        {% if scaled %}<th scope="col" class="numeric">Grams</th>{% endif %}
+        {% if scaled %}<th scope="col" class="numeric">{{ unit_label(weight_unit) | capitalize }}</th>{% endif %}
         <th scope="col">Role</th>
       </tr>
     </thead>
@@ -94,9 +94,16 @@
         </td>
         <td class="numeric">{{ line.baker_pct | percent(1) }}</td>
         {% if scaled %}
-        <td class="numeric strong">{{ scaled.ingredients[loop.index0].grams | grams }}</td>
+        <td class="numeric strong">
+          {{ scaled.ingredients[loop.index0].grams | weigh(weight_unit, line.name, line.role) }}
+        </td>
         {% endif %}
-        <td><span class="badge badge-role role-{{ line.role.value }}">{{ line.role.label }}</span></td>
+        <td>
+          <span class="badge badge-role role-{{ line.role.value }}">
+            {%- with role = line.role %}{% include "partials/role_icon.html" %}{% endwith -%}
+            {{ line.role.label }}
+          </span>
+        </td>
       </tr>
       {% endfor %}
     </tbody>
@@ -104,13 +111,13 @@
       <tr>
         <th scope="row">Flour</th>
         <td class="numeric">{{ flour_pct | percent(1) }}</td>
-        {% if scaled %}<td class="numeric strong">{{ scaled.total_flour_g | grams }}</td>{% endif %}
+        {% if scaled %}<td class="numeric strong">{{ scaled.total_flour_g | weigh_total(weight_unit) }}</td>{% endif %}
         <td></td>
       </tr>
       <tr>
         <th scope="row">Total dough</th>
         <td class="numeric">{{ total_pct | percent(1) }}</td>
-        {% if scaled %}<td class="numeric strong">{{ scaled.total_dough_g | grams }}</td>{% endif %}
+        {% if scaled %}<td class="numeric strong">{{ scaled.total_dough_g | weigh_total(weight_unit) }}</td>{% endif %}
         <td></td>
       </tr>
       {% if scaled and scaled.hydration_pct is not none %}

@@ -29,6 +29,7 @@ def _sqlite_pragmas(dbapi_connection, connection_record) -> None:
 def make_engine(settings: Settings | None = None) -> Engine:
     settings = settings or get_settings()
     settings.ensure_dirs()
+    settings.adopt_legacy_db()
     return create_engine(settings.db_url, future=True)
 
 

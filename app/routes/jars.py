@@ -31,7 +31,7 @@ from app.services import photos as photo_service
 from app.services.units import temp_to_celsius
 from app.templates_env import render
 
-log = logging.getLogger("jarlog.photos")
+log = logging.getLogger("zakvaska.photos")
 
 router = APIRouter(prefix="/jars")
 
@@ -172,6 +172,16 @@ def jar_detail(request: Request, ctx: Ctx, jar_id: int) -> HTMLResponse:
         PhotoOwner.OBSERVATION,
         [e.obj.id for e in events if e.kind == "observation"],
     )
+    # The drawn jar fills to the last rise that was actually measured, so
+    # the picture says something rather than just decorating.
+    latest_rise = next(
+        (
+            e.detail.get("rise_pct")
+            for e in events
+            if e.kind == "observation" and e.detail.get("rise_pct") is not None
+        ),
+        None,
+    )
     return render(
         request=request,
         ctx=ctx,
@@ -179,6 +189,7 @@ def jar_detail(request: Request, ctx: Ctx, jar_id: int) -> HTMLResponse:
         context={
             "title": jar.name,
             "jar": jar,
+            "rise_pct": latest_rise,
             "card": card,
             "last_ratio": last.get("ratio"),
             "last_hydration": last.get("hydration_pct"),

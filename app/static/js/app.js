@@ -1,10 +1,10 @@
-// jar-log front-end. No build step and no framework (see CLAUDE.md).
+// zakvaska front-end. No build step and no framework (see CLAUDE.md).
 
 // --- Service worker, so the app is installable on a phone ---------------
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", function () {
     navigator.serviceWorker.register("/sw.js").catch(function (err) {
-      console.warn("jar-log: service worker registration failed", err);
+      console.warn("zakvaska: service worker registration failed", err);
     });
   });
 }
@@ -15,7 +15,7 @@ if ("serviceWorker" in navigator) {
 // never lose an alert, which is why nothing here creates or clears one.
 (function () {
   var POLL_MS = 60000;
-  var SEEN_KEY = "jarlog.notified";
+  var SEEN_KEY = "zakvaska.notified";
   var button = document.querySelector("[data-notify-enable]");
   var status = document.querySelector("[data-notify-status]");
 
@@ -71,9 +71,9 @@ if ("serviceWorker" in navigator) {
   }
 
   function notify(alert) {
-    var note = new Notification("jar-log: feed " + alert.jar_name, {
+    var note = new Notification("zakvaska: feed " + alert.jar_name, {
       body: alert.jar_name + " is " + alert.overdue_by + ".",
-      tag: "jarlog-alert-" + alert.id,
+      tag: "zakvaska-alert-" + alert.id,
       icon: "/static/icons/icon-192.png",
     });
     note.onclick = function () {
@@ -140,3 +140,26 @@ if ("serviceWorker" in navigator) {
     });
   });
 })();
+
+
+// Loaf-size hot buttons on the start-a-bake form: a bread maker is sold by
+// the pound its pan takes, so fill in the flour that gets you there.
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-loaf]");
+  if (!button) return;
+
+  const form = button.closest("form");
+  if (!form) return;
+
+  const flour = form.querySelector('[name="total_flour_g"]');
+  const size = form.querySelector('[name="loaf_size"]');
+  if (flour) {
+    flour.value = Math.round(parseFloat(button.dataset.flour));
+    flour.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  if (size) size.value = button.dataset.size;
+
+  form.querySelectorAll("[data-loaf]").forEach((other) => {
+    other.classList.toggle("is-chosen", other === button);
+  });
+});

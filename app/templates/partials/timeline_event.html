@@ -12,14 +12,14 @@
         {% if event.detail.ratio %}<span class="ratio">{{ event.detail.ratio }}</span>{% endif %}
       </h3>
       <p class="timeline-facts">
-        {{ feeding.starter_g | grams }} starter ·
-        {{ feeding.flour_g | grams }} flour ·
-        {{ feeding.water_g | grams }} water
+        {{ feeding.starter_g | weigh(weight_unit, "starter", "levain") }} starter ·
+        {{ feeding.flour_g | weigh(weight_unit, feeding.flour_type or jar.flour_type or "flour", "flour") }} flour ·
+        {{ feeding.water_g | weigh(weight_unit, "water", "water") }} water
         {%- if feeding.flour_type %} · {{ feeding.flour_type }}{% endif %}
       </p>
       <p class="timeline-facts muted">
         {{ event.detail.hydration_pct | percent }} hydration ·
-        {{ event.detail.total_g | grams }} total
+        {{ event.detail.total_g | weigh_total(weight_unit) }} total
         {%- if feeding.water_temp_c is not none %} · water {{ feeding.water_temp_c | temp(temp_unit) }}{% endif %}
         {%- if feeding.ambient_temp_c is not none %} · room {{ feeding.ambient_temp_c | temp(temp_unit) }}{% endif %}
       </p>

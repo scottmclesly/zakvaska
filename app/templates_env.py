@@ -12,6 +12,7 @@ from fastapi.templating import Jinja2Templates
 from app import __version__
 from app.config import get_settings
 from app.services import alerts as alert_service
+from app.services import measures
 from app.services.units import (
     format_temp,
     humanize_since,
@@ -25,7 +26,7 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
 def local_dt(value: datetime | None, fmt: str = "%Y-%m-%d %H:%M") -> str:
-    """Render a stored UTC timestamp in JARLOG_TZ."""
+    """Render a stored UTC timestamp in ZAKVASKA_TZ."""
     if value is None:
         return "—"
     return value.astimezone(get_settings().tz).strftime(fmt)
@@ -85,6 +86,27 @@ def temp_value(celsius: float | None, unit: str) -> str:
     return "" if converted is None else f"{converted:.0f}"
 
 
+def weigh(
+    value: float | None,
+    unit: str = measures.METRIC,
+    name: str | None = None,
+    role: object | None = None,
+) -> str:
+    """A stored weight in whichever unit the reader has chosen."""
+    if value is None:
+        return "\u2014"
+    shown = measures.measure(value, unit, name=name, role=role)
+    return shown.text if shown else "\u2014"
+
+
+def weigh_total(value: float | None, unit: str = measures.METRIC) -> str:
+    """A total, which never makes sense in cups. See measures.measure_total."""
+    if value is None:
+        return "\u2014"
+    shown = measures.measure_total(value, unit)
+    return shown.text if shown else "\u2014"
+
+
 def filesize(value: int | None) -> str:
     """Bytes in the units a person reads, not the ones a disk counts in."""
     if not value:
@@ -116,6 +138,8 @@ templates.env.filters.update(
     local_day=local_day,
     local_time=local_time,
     grams=grams,
+    weigh=weigh,
+    weigh_total=weigh_total,
     filesize=filesize,
     mm=mm,
     num=num,
@@ -126,6 +150,29 @@ templates.env.filters.update(
     temp_value=temp_value,
 )
 templates.env.globals["app_version"] = __version__
+
+
+def _asset_version() -> str:
+    """Changes whenever the CSS or JS does, so caches let go of the old one.
+
+    The version number alone is not enough: it does not move between
+    releases, and a Raspberry Pi that has been running for a month will
+    happily keep serving last month's stylesheet.
+    """
+    newest = 0.0
+    static = Path(__file__).resolve().parent / "static"
+    for folder in ("css", "js"):
+        for asset in (static / folder).glob("*"):
+            if asset.is_file():
+                newest = max(newest, asset.stat().st_mtime)
+    return f"{__version__}-{int(newest)}"
+
+
+templates.env.globals["asset_version"] = _asset_version()
+templates.env.globals["unit_label"] = lambda unit: measures.UNIT_LABELS.get(
+    unit, measures.UNIT_LABELS[measures.METRIC]
+)
+templates.env.globals["next_unit"] = measures.next_unit
 
 
 def render(
@@ -146,6 +193,7 @@ def render(
         merged.setdefault("now", ctx.now)
         merged.setdefault("tz", ctx.tz)
         merged.setdefault("temp_unit", ctx.temp_unit)
+        merged.setdefault("weight_unit", ctx.weight_unit)
         # Every page carries the alert banner, so no page can forget it.
         merged.setdefault(
             "alerts", alert_service.showing(ctx.session, ctx.now)

@@ -1,10 +1,15 @@
-# jar-log
+# zakvaska
 
 A local, single-user **baking lab notebook**: sourdough starter jars, feedings,
 feeding alerts, recipes (versioned, baker's %), bakes and their results, with photos.
 
 Built to compare a homemade whole-rye starter against a purchased Soviet rye
 culture (the control) on the way to a decent Borodinsky.
+
+> Renamed from **jar-log**. An existing install needs nothing done to it: the old
+> `JARLOG_*` environment keys are still read, and a `jarlog.db` is renamed to
+> `zakvaska.db` the first time the app or a migration opens it. The git repository
+> and its folder still say `jar-log`; rename those yourself if you want to.
 
 ## Requirements
 
@@ -27,16 +32,38 @@ Set in `.env` (see `.env.example`):
 
 | Key | Default | Notes |
 |---|---|---|
-| `JARLOG_DATA_DIR` | `./data` | SQLite database and photos. Gitignored. |
-| `JARLOG_HOST` | `127.0.0.1` | Use `0.0.0.0` to reach it from a phone. |
-| `JARLOG_PORT` | `8420` | |
-| `JARLOG_TZ` | `America/New_York` | Timestamps are stored in UTC, shown in this zone. |
+| `ZAKVASKA_DATA_DIR` | `./data` | SQLite database and photos. Gitignored. |
+| `ZAKVASKA_HOST` | `127.0.0.1` | Use `0.0.0.0` to reach it from a phone. |
+| `ZAKVASKA_PORT` | `8420` | |
+| `ZAKVASKA_TZ` | `America/New_York` | Timestamps are stored in UTC, shown in this zone. |
 
 ## Using it from your phone
 
-Set `JARLOG_HOST=0.0.0.0` in `.env`, restart, then open
+Set `ZAKVASKA_HOST=0.0.0.0` in `.env`, restart, then open
 `http://<this-machine's-IP>:8420` on a phone on the same network. It is an
 installable PWA — "Add to Home Screen" gives it an icon and a standalone window.
+
+## Units
+
+Weights are stored in grams, always. The chip in the header cycles what you
+*read* them as:
+
+| Shown as | Good for |
+|---|---|
+| `grams` | the rye recipes, and the scale on the counter |
+| `cups` | an American recipe written in cups and spoons |
+| `oz / lb` | a bread-maker manual, or a scale set to imperial |
+
+Cups and spoons are volume, so they need a density per ingredient — a cup of
+rye flour is 103 g and a cup of water is 237 g. Those live in
+`app/services/measures.py`, keyed by ingredient name with a fallback per role.
+They are approximate on purpose: how hard you pack a cup of flour moves it by
+a fifth, which is exactly why grams are what gets stored. Totals never show as
+cups, because cups of mixed dough would be a made-up number.
+
+The `°F` chip beside it does the same for temperatures.
+
+Typing a weight in is still grams — that is what a kitchen scale reads.
 
 ## Feeding alerts
 
@@ -48,7 +75,7 @@ clears it automatically**.
 
 Alert state lives entirely in the database and is recomputed on startup, so
 restarting the app never loses one — anything that came due while it was down
-fires immediately on the next start. Set `JARLOG_SCHEDULER=0` to run without
+fires immediately on the next start. Set `ZAKVASKA_SCHEDULER=0` to run without
 the job.
 
 ### Browser notifications only work on this machine
@@ -95,6 +122,12 @@ weigh out for that loaf.
 
 The result is a rating out of five plus crust, crumb, taste, rise and — the
 part that matters — what to change next time. Saving one marks the bake done.
+
+A bread maker is sold by the pound its pan takes, so the start form has hot
+buttons for the 2, 2.5 and 3 lb settings. Each one works backwards through the
+recipe's percentages to the flour that fills that pan, and fills in the loaf
+size too. The rating is the *dough* the pan holds; the baked loaf comes out
+about a tenth lighter.
 
 The bake list filters by recipe, jar, rating and status, and each bake also
 shows up on the recipe version it came from and on the jar that raised it.
@@ -143,14 +176,14 @@ timer:
 ```
 
 It copies the database through SQLite's online-backup API, so it is safe to run
-while jar-log is serving, and tars it up with the photos. To put one back, stop
-jar-log and untar it over the data directory:
+while zakvaska is serving, and tars it up with the photos. To put one back, stop
+zakvaska and untar it over the data directory:
 
 ```bash
-tar -xzf backups/jarlog-backup-20261101-1930.tar.gz -C data
+tar -xzf backups/zakvaska-backup-20261101-1930.tar.gz -C data
 ```
 
-Everything worth keeping is in `JARLOG_DATA_DIR` (`./data` by default): back up
+Everything worth keeping is in `ZAKVASKA_DATA_DIR` (`./data` by default): back up
 that directory and you have backed up the notebook.
 
 ## Development

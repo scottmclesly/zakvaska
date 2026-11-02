@@ -150,7 +150,7 @@ def photo_files() -> list[Path]:
 
 def export_filename(now: datetime | None = None) -> str:
     local = (now or utcnow()).astimezone(get_settings().tz)
-    return f"jarlog-export-{local:%Y%m%d-%H%M}.zip"
+    return f"zakvaska-export-{local:%Y%m%d-%H%M}.zip"
 
 
 def write_export(destination: Path, session: Session, *, now: datetime | None = None) -> Manifest:
@@ -197,7 +197,7 @@ def write_export(destination: Path, session: Session, *, now: datetime | None = 
 def export_to_temp(session: Session, *, now: datetime | None = None) -> tuple[Path, Manifest]:
     """Build an export in a temp file, for handing straight to a download."""
     handle = tempfile.NamedTemporaryFile(
-        prefix="jarlog-export-", suffix=".zip", delete=False
+        prefix="zakvaska-export-", suffix=".zip", delete=False
     )
     handle.close()
     path = Path(handle.name)
@@ -225,12 +225,12 @@ def read_manifest(path: Path) -> Manifest:
             raw = archive.read(MANIFEST_NAME).decode("utf-8")
         except KeyError:
             raise BackupError(
-                "That zip has no manifest.json, so it is not a jar-log export."
+                "That zip has no manifest.json, so it is not a zakvaska export."
             ) from None
     manifest = Manifest.from_json(raw)
     if manifest.format != FORMAT_VERSION:
         raise BackupError(
-            f"That export is format {manifest.format}; this jar-log reads "
+            f"That export is format {manifest.format}; this zakvaska reads "
             f"format {FORMAT_VERSION}."
         )
     return manifest
@@ -260,7 +260,7 @@ def _decode_row(table: Table, row: dict[str, Any], dates: dict[str, Any]) -> dic
     unknown = set(row) - known
     if unknown:
         raise BackupError(
-            f"{table.name} in that export has columns this jar-log does not "
+            f"{table.name} in that export has columns this zakvaska does not "
             f"know: {', '.join(sorted(unknown))}."
         )
     decoded: dict[str, Any] = {}
@@ -308,7 +308,7 @@ def restore(session: Session, path: Path) -> RestoreReport:
     unknown = set(manifest.tables) - known
     if unknown:
         raise BackupError(
-            "That export holds tables this jar-log does not know: "
+            "That export holds tables this zakvaska does not know: "
             f"{', '.join(sorted(unknown))}."
         )
 
@@ -354,7 +354,7 @@ def _restore_photos(archive: zipfile.ZipFile) -> int:
         if name.startswith(f"{PHOTO_DIR}/") and not name.endswith("/")
     ]
 
-    staging = Path(tempfile.mkdtemp(prefix="jarlog-photos-", dir=root.parent))
+    staging = Path(tempfile.mkdtemp(prefix="zakvaska-photos-", dir=root.parent))
     try:
         for name in members:
             relative = name[len(PHOTO_DIR) + 1 :]

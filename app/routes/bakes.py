@@ -22,6 +22,7 @@ from app.services import bakes as bake_service
 from app.services import jars as jar_service
 from app.services import photos as photo_service
 from app.services import recipes as recipe_service
+from app.services import scaling
 from app.services.units import temp_to_celsius
 from app.templates_env import render
 
@@ -100,6 +101,7 @@ def _start_context(ctx: ViewContext, version, *, values=None, errors=None) -> di
         "methods": list(BakeMethod),
         "programs": recipe_service.list_programs(ctx.session),
         "jars": jar_service.list_jars(ctx.session),
+        "loaf_presets": scaling.loaf_presets(version.ingredients),
         "values": values or {},
         "errors": errors or [],
         "now_local": f.utc_to_local_input(ctx.now, ctx.tz),

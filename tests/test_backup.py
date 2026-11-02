@@ -143,7 +143,7 @@ class TestWhatGoesIn:
     def test_the_filename_says_when(self, session):
         when = datetime(2026, 3, 15, 12, 0, tzinfo=UTC)
         # 12:00 UTC is 08:00 in New York, and the name is local.
-        assert backup_service.export_filename(when) == "jarlog-export-20260315-0800.zip"
+        assert backup_service.export_filename(when) == "zakvaska-export-20260315-0800.zip"
 
 
 class TestRoundTrip:
@@ -359,7 +359,7 @@ class TestThePage:
 
         assert response.status_code == 200
         assert response.headers["content-type"] == "application/zip"
-        assert "jarlog-export-" in response.headers["content-disposition"]
+        assert "zakvaska-export-" in response.headers["content-disposition"]
         assert zipfile.ZipFile(io.BytesIO(response.content)).read("manifest.json")
 
     def test_restoring_through_the_form(self, client, session, tmp_path):
@@ -422,7 +422,7 @@ class TestPhaseSixAcceptance:
         before = backup_service.current_counts(session)
 
         archive = client.get("/backup/export").content
-        held = tmp_path / "jarlog-export.zip"
+        held = tmp_path / "zakvaska-export.zip"
         held.write_bytes(archive)
 
         # Wipe the data dir: every row, every photo file.

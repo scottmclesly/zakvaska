@@ -5,7 +5,11 @@
 {% endblock %}
 
 {% block content %}
-<section class="hero">
+<section class="hero hero-art">
+  {% with art_class = "jar-art-lg" %}
+    {% include "partials/jar_art.html" %}
+  {% endwith %}
+  <div>
   <div class="jar-title">
     <h1>{{ jar.name }}</h1>
     {% if jar.is_control %}<span class="badge badge-control">control</span>{% endif %}
@@ -17,6 +21,7 @@
     {%- if jar.flour_type %} · {{ jar.flour_type }}{% endif %}
     {%- if jar.parent %} · split from <a href="/jars/{{ jar.parent.id }}">{{ jar.parent.name }}</a>{% endif %}
   </p>
+  </div>
 </section>
 
 <section class="card {% if card.status.is_overdue %}is-overdue{% endif %}">
@@ -45,7 +50,9 @@
       <dd>
         {{ last_ratio or "—" }}
         <span class="muted stat-sub">
-          {{ card.last_feeding.starter_g | grams }} · {{ card.last_feeding.flour_g | grams }} · {{ card.last_feeding.water_g | grams }}
+          {{ card.last_feeding.starter_g | weigh(weight_unit, "starter", "levain") }} ·
+          {{ card.last_feeding.flour_g | weigh(weight_unit, card.last_feeding.flour_type or jar.flour_type or "flour", "flour") }} ·
+          {{ card.last_feeding.water_g | weigh(weight_unit, "water", "water") }}
         </span>
       </dd>
     </div>

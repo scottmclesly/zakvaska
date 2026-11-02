@@ -25,7 +25,7 @@ find_python() {
 }
 
 if ! PY="$(find_python)"; then
-  echo "error: jar-log needs Python ${MIN_MAJOR}.${MIN_MINOR} or newer." >&2
+  echo "error: zakvaska needs Python ${MIN_MAJOR}.${MIN_MINOR} or newer." >&2
   echo "       Found: $(python3 --version 2>&1 || echo 'no python3 on PATH')" >&2
   echo "       Install it (macOS: brew install python@3.12) or set PYTHON=/path/to/python3.12" >&2
   exit 1

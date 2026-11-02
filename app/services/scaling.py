@@ -109,6 +109,49 @@ def scale_to_flour(
     )
 
 
+# What a West Bend (and every other bread maker) offers as a loaf setting.
+LOAF_SIZES_LB: tuple[float, ...] = (2.0, 2.5, 3.0)
+GRAMS_PER_POUND = 453.59237
+
+
+@dataclass(frozen=True)
+class LoafPreset:
+    """A machine loaf size, and the flour this recipe needs to fill it."""
+
+    label: str
+    pounds: float
+    dough_g: float
+    flour_g: float
+
+
+def loaf_presets(
+    ingredients: Sequence[RecipeIngredient],
+    sizes: Sequence[float] = LOAF_SIZES_LB,
+) -> list[LoafPreset]:
+    """One preset per machine setting, worked back through the percentages.
+
+    The pound rating is the dough the pan takes, not the baked loaf — the
+    loaf leaves 10% or so of that behind as steam.
+    """
+    presets: list[LoafPreset] = []
+    for pounds in sizes:
+        dough = pounds * GRAMS_PER_POUND
+        try:
+            scaled = scale_to_dough_weight(ingredients, dough)
+        except ValueError:
+            # A recipe whose percentages add to nothing has no answer here.
+            continue
+        presets.append(
+            LoafPreset(
+                label=f"{pounds:g} lb",
+                pounds=pounds,
+                dough_g=dough,
+                flour_g=scaled.total_flour_g,
+            )
+        )
+    return presets
+
+
 def scale_to_dough_weight(
     ingredients: Sequence[RecipeIngredient], target_dough_g: float
 ) -> ScaledRecipe:

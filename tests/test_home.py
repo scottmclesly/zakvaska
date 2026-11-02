@@ -3,7 +3,7 @@ def test_home_renders(client):
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/html")
-    assert "jar-log" in response.text
+    assert "zakvaska" in response.text
 
 
 def test_home_is_mobile_first(client):

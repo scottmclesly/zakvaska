@@ -1,6 +1,6 @@
 """Alembic environment.
 
-The database URL is not in alembic.ini: it is derived from JARLOG_DATA_DIR so
+The database URL is not in alembic.ini: it is derived from ZAKVASKA_DATA_DIR so
 that migrations always hit the same file the app does.
 """
 
@@ -20,6 +20,11 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 settings = get_settings()
+# A database still called jarlog.db is this one, under its old name. Adopt
+# it before connecting, or alembic creates an empty zakvaska.db beside it
+# and reports the schema as unmigrated.
+settings.ensure_dirs()
+settings.adopt_legacy_db()
 settings.ensure_dirs()
 config.set_main_option("sqlalchemy.url", settings.db_url)
 

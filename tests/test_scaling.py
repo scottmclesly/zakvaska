@@ -151,3 +151,47 @@ class TestPercentageHelpers:
         assert scaling.flour_percentage(specs) == pytest.approx(100.0)
         scaled = scaling.scale_to_flour(specs, 200)
         assert [i.grams for i in scaled.ingredients] == [200.0, 160.0]
+
+
+# --- Bread maker loaf sizes ------------------------------------------------
+#
+# A machine is sold by the pound its pan takes, never by flour weight, so the
+# hot buttons have to work backwards through the percentages.
+
+
+class TestLoafPresets:
+    def _borodinsky(self):
+        return borodinsky()
+
+    def test_the_three_machine_settings(self):
+        presets = scaling.loaf_presets(self._borodinsky())
+
+        assert [p.label for p in presets] == ["2 lb", "2.5 lb", "3 lb"]
+
+    def test_the_dough_weight_is_the_pounds_asked_for(self):
+        for preset in scaling.loaf_presets(self._borodinsky()):
+            assert preset.dough_g == pytest.approx(
+                preset.pounds * scaling.GRAMS_PER_POUND
+            )
+
+    def test_the_flour_really_makes_that_much_dough(self):
+        """Round-trip: scale by the preset's flour, get the pan's weight back."""
+        ingredients = self._borodinsky()
+
+        for preset in scaling.loaf_presets(ingredients):
+            scaled = scaling.scale_to_flour(ingredients, preset.flour_g)
+            assert scaled.total_dough_g == pytest.approx(preset.dough_g)
+
+    def test_a_two_pound_loaf_of_borodinsky(self):
+        two_lb = scaling.loaf_presets(self._borodinsky())[0]
+
+        # 907 g of dough at 223% of flour.
+        assert two_lb.flour_g == pytest.approx(406.8, abs=0.5)
+
+    def test_a_recipe_that_adds_up_to_nothing_offers_no_presets(self):
+        assert scaling.loaf_presets([]) == []
+
+    def test_the_sizes_can_be_asked_for_explicitly(self):
+        presets = scaling.loaf_presets(self._borodinsky(), sizes=(1.5,))
+
+        assert [p.label for p in presets] == ["1.5 lb"]

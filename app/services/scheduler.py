@@ -18,7 +18,7 @@ from app.db import get_sessionmaker
 from app.models.base import utcnow
 from app.services import alerts
 
-log = logging.getLogger("jarlog.alerts")
+log = logging.getLogger("zakvaska.alerts")
 
 JOB_ID = "reconcile_alerts"
 TICK_SECONDS = 60
@@ -40,7 +40,7 @@ def reconcile_now() -> alerts.ReconcileResult:
 
 
 def start() -> BackgroundScheduler | None:
-    """Start ticking. Returns None when disabled (JARLOG_SCHEDULER=0)."""
+    """Start ticking. Returns None when disabled (ZAKVASKA_SCHEDULER=0)."""
     global _scheduler
 
     if not get_settings().scheduler_enabled:

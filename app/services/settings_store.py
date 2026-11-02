@@ -31,3 +31,11 @@ def all_settings(session: Session) -> dict[str, str]:
 
 def temp_unit(session: Session) -> str:
     return (get_setting(session, "temp_unit") or "F").upper()
+
+
+def weight_unit(session: Session) -> str:
+    """How to show a weight: grams, US cups or US ounces and pounds."""
+    from app.services.measures import METRIC, UNIT_CYCLE
+
+    stored = get_setting(session, "weight_unit") or METRIC
+    return stored if stored in UNIT_CYCLE else METRIC

@@ -1,4 +1,4 @@
-# jar-log v1 — pinned. See CLAUDE.md "Stack"; ask before adding anything here.
+# zakvaska v1 — pinned. See CLAUDE.md "Stack"; ask before adding anything here.
 # Install: ./scripts/setup.sh  (or .venv/bin/pip install -r requirements.txt)
 
 # Web

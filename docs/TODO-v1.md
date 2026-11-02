@@ -1,4 +1,4 @@
-# jar-log v1 plan
+# zakvaska v1 plan
 
 Work phase by phase. Each phase ends with its acceptance checks passing, tests green, and a commit.
 
@@ -69,8 +69,14 @@ Work phase by phase. Each phase ends with its acceptance checks passing, tests g
 ## Phase 6: backup and polish
 - [x] Export all data to JSON plus CSV per table; zip with photos
 - [x] `scripts/backup.sh` (SQLite online backup + photos tarball)
-- [x] README: setup, run, LAN access (`JARLOG_HOST=0.0.0.0`), backup
+- [x] README: setup, run, LAN access (`ZAKVASKA_HOST=0.0.0.0`), backup
 - **Accept:** export → wipe data dir → import (or restore backup) brings everything back.
+
+## After v1
+- [x] Renamed jar-log → zakvaska (old env keys and database name still adopted)
+- [x] Weight display cycles grams → US cups/spoons → oz/lb, with per-ingredient densities
+- [x] Bread maker 2 / 2.5 / 3 lb loaf buttons on the start-a-bake form
+- [x] Drawn jars that fill to the measured rise, and ingredient role glyphs
 
 ## v2 backlog (do not build in v1)
 - Rise-curve charts, overlay homemade vs control

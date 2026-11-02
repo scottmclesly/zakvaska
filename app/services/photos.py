@@ -74,7 +74,7 @@ def _taken_at(image: Image.Image, fallback: datetime) -> datetime:
     """When the shutter went, if the camera recorded it.
 
     EXIF timestamps carry no timezone, so they are read as local time in
-    JARLOG_TZ and converted — same assumption the rest of the app makes
+    ZAKVASKA_TZ and converted — same assumption the rest of the app makes
     about a wall-clock time the user gives us.
     """
     try:

@@ -1,4 +1,4 @@
-# jar-log — Claude Code context
+# zakvaska — Claude Code context
 
 A local, single-user **baking lab notebook**: sourdough starter jars, feedings, feeding alerts,
 recipes (versioned, baker's %), bakes and their results, with photos. Owner: Scott McLeslie.
@@ -20,11 +20,15 @@ Comparing jars and iterating recipes is the point, so the data must be structure
 - Installable **PWA** (manifest + minimal service worker) so a phone on the LAN can use it
 
 ## Conventions
-- All runtime data lives in `JARLOG_DATA_DIR` (default `./data/`, gitignored): `jarlog.db`, `photos/`.
-- Config via `.env` (commit `.env.example` only). Keys: `JARLOG_DATA_DIR`, `JARLOG_HOST`,
-  `JARLOG_PORT`, `JARLOG_TZ` (default `America/New_York`).
-- Store timestamps in **UTC**; display in `JARLOG_TZ`.
-- Store weights in **grams**, temperatures in **°C**; display unit is a user setting, **default °F**.
+- All runtime data lives in `ZAKVASKA_DATA_DIR` (default `./data/`, gitignored): `zakvaska.db`, `photos/`.
+- Config via `.env` (commit `.env.example` only). Keys: `ZAKVASKA_DATA_DIR`, `ZAKVASKA_HOST`,
+  `ZAKVASKA_PORT`, `ZAKVASKA_TZ` (default `America/New_York`). The old `JARLOG_*` keys are
+  still read as a fallback, and a `jarlog.db` is renamed to `zakvaska.db` on first open.
+- Store timestamps in **UTC**; display in `ZAKVASKA_TZ`.
+- Store weights in **grams**, temperatures in **°C**. Both have a display setting: temperature
+  **default °F**, weight **default grams**, cycling grams → US cups/spoons → oz/lb. Volume
+  readings use the per-ingredient densities in `app/services/measures.py` and are approximate
+  by nature; never store or round-trip through them.
 - Recipes are stored as **baker's percentages** relative to total flour; grams are derived.
 - Recipes are **versioned**: editing a recipe creates a new version; bakes point at a version.
 - Never hard-delete jars, recipes or bakes — archive them. Lab-notebook history matters.
@@ -35,7 +39,7 @@ Comparing jars and iterating recipes is the point, so the data must be structure
 ## Run
 ```
 ./scripts/setup.sh   # create .venv, install requirements, run migrations
-./scripts/run.sh     # start on JARLOG_HOST:JARLOG_PORT (default 127.0.0.1:8420)
+./scripts/run.sh     # start on ZAKVASKA_HOST:ZAKVASKA_PORT (default 127.0.0.1:8420)
 ```
 
 ## Out of scope for v1 (planned v2 — don't build yet, but don't block them)

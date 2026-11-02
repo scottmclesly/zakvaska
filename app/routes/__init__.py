@@ -10,9 +10,10 @@ from app.routes import (
     jars,
     photos,
     recipes,
+    settings,
 )
 
 __all__ = [
     "alerts", "backup", "bakes", "equipment", "health", "home", "jars",
-    "photos", "recipes",
+    "photos", "recipes", "settings",
 ]

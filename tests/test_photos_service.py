@@ -176,7 +176,7 @@ class TestRefusals:
 
     def test_a_path_outside_the_photo_directory(self):
         with pytest.raises(photo_service.PhotoError):
-            photo_service.absolute("../jarlog.db")
+            photo_service.absolute("../zakvaska.db")
 
 
 class TestAttaching:
