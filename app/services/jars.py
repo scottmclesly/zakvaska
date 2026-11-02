@@ -198,6 +198,16 @@ class JarCard:
     last_feeding: Feeding | None
     last_observation: Observation | None
 
+    @property
+    def rise_pct(self) -> float | None:
+        """How far it climbed when last measured, so the drawn jar can fill."""
+        if self.last_observation is None:
+            return None
+        return derived.rise_pct(
+            self.last_observation.start_height_mm,
+            self.last_observation.height_mm,
+        )
+
 
 def jar_card(session: Session, jar: Jar, now: datetime) -> JarCard:
     previous = last_feeding(session, jar.id)

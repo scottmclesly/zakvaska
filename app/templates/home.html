@@ -11,13 +11,13 @@
 </section>
 
 {% if cards %}
+{% include "partials/shelf.html" %}
+
+{# The shelf shows the jars; the cards below carry the numbers. #}
 <ul class="jar-grid">
   {% for card in cards %}
   {% set jar = card.jar %}
   <li class="card jar-card {% if card.status.is_overdue %}is-overdue{% endif %}">
-    <div class="jar-withart">
-      {% include "partials/jar_art.html" %}
-      <div>
     <div class="jar-card-head">
       <h2><a href="/jars/{{ jar.id }}">{{ jar.name }}</a></h2>
       {% if jar.is_control %}<span class="badge badge-control">control</span>{% endif %}
@@ -47,10 +47,13 @@
           {% endif %}
         </dd>
       </div>
-    </dl>
-
+      {% if card.rise_pct is not none %}
+      <div>
+        <dt>Last rise</dt>
+        <dd>{{ card.rise_pct | percent }}</dd>
       </div>
-    </div>
+      {% endif %}
+    </dl>
 
     <div class="row-actions">
       <a class="btn" href="/jars/{{ jar.id }}/feed">Fed it</a>
@@ -60,6 +63,21 @@
   {% endfor %}
 </ul>
 {% else %}
+<section class="shelf shelf-bare" aria-hidden="true">
+  <div class="shelf-inner">
+    <ul class="shelf-jars">
+      <li class="shelf-slot">
+        <svg class="jar-ghost" viewBox="0 0 72 103" aria-hidden="true" focusable="false">
+          <rect x="20" y="4" width="32" height="10" rx="3"/>
+          <path d="M24 18 h24 v4 q0 3 5 6 q5 3 5 10 v52 q0 8 -8 8 h-28 q-8 0 -8 -8 v-52 q0 -7 5 -10 q5 -3 5 -6 z"/>
+        </svg>
+      </li>
+      <li class="shelf-prop">{% include "partials/sprig.html" %}</li>
+    </ul>
+    <div class="shelf-plank"></div>
+  </div>
+</section>
+
 <section class="empty card">
   <h2>No jars yet</h2>
   <p>Add your first starter jar and start logging feedings.</p>

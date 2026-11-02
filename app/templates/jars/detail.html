@@ -6,9 +6,12 @@
 
 {% block content %}
 <section class="hero hero-art">
-  {% with art_class = "jar-art-lg" %}
-    {% include "partials/jar_art.html" %}
-  {% endwith %}
+  <div class="hero-jar">
+    {% with art_class = "jar-art-lg" %}
+      {% include "partials/jar_art.html" %}
+    {% endwith %}
+    <div class="shelf-plank shelf-plank-sm" aria-hidden="true"></div>
+  </div>
   <div>
   <div class="jar-title">
     <h1>{{ jar.name }}</h1>

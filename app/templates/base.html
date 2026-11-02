@@ -18,7 +18,7 @@
 <body>
   <header class="topbar">
     <a class="brand" href="/">
-      <span class="brand-mark" aria-hidden="true">🫙</span>
+      {% include "partials/brand_mark.html" %}
       <span class="brand-name">zakvaska</span>
     </a>
     <nav class="topnav">
@@ -60,6 +60,9 @@
   </main>
 
   <footer class="footer">
+    {% with sprig_class = "sprig-footer" %}
+      {% include "partials/sprig.html" %}
+    {% endwith %}
     <span>zakvaska v{{ app_version }}</span>
     <span aria-hidden="true">·</span>
     <a class="footer-link" href="/about">About</a>

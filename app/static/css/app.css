@@ -10,6 +10,13 @@
   --accent-ink: #ffffff;
   --radius: 12px;
   --gutter: 16px;
+
+  /* A bakery wants a little warmth: a serif for the headings and a shelf
+     made of pine. System fonts only — no web font to download. */
+  --display: ui-serif, Georgia, "Iowan Old Style", Palatino, serif;
+  --wood: #bd8d58;
+  --wood-top: #d3a876;
+  --wood-edge: #9a6f41;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,6 +28,9 @@
     --muted: #a99a8b;
     --accent: #d8a06a;
     --accent-ink: #1c1510;
+    --wood: #6f5032;
+    --wood-top: #87613d;
+    --wood-edge: #4f3823;
   }
 }
 
@@ -30,8 +40,19 @@ html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
-  background: var(--bg);
   color: var(--text);
+  /* A faint dusting of flour over the counter. */
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle,
+      color-mix(in srgb, var(--accent) 9%, transparent) 0.9px,
+      transparent 1.1px),
+    radial-gradient(circle,
+      color-mix(in srgb, var(--accent) 6%, transparent) 0.9px,
+      transparent 1.1px);
+  background-size: 48px 48px, 73px 73px;
+  background-position: 0 0, 24px 33px;
+  background-attachment: fixed;
   font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   display: flex;
   flex-direction: column;
@@ -40,6 +61,13 @@ body {
 }
 
 a { color: var(--accent); }
+
+h1,
+h2:not(.section-title),
+.brand-name {
+  font-family: var(--display);
+  letter-spacing: -0.01em;
+}
 
 /* Header -------------------------------------------------------------- */
 
@@ -70,8 +98,6 @@ a { color: var(--accent); }
   white-space: nowrap;
 }
 
-.brand-mark { font-size: 1.3rem; }
-
 .topnav { display: flex; gap: 12px; }
 
 /* Layout -------------------------------------------------------------- */
@@ -92,6 +118,9 @@ a { color: var(--accent); }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--text) 6%, transparent),
+    0 10px 22px -16px color-mix(in srgb, var(--text) 40%, transparent);
 }
 
 .card h2 { margin-top: 0; font-size: 1.125rem; }
@@ -873,7 +902,7 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 /* --- Drawings ----------------------------------------------------------- */
 
 .jar-art {
-  width: 46px;
+  width: 58px;
   height: auto;
   flex: 0 0 auto;
   /* The glass is the same in every state; only the contents change. */
@@ -881,9 +910,12 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
   --contents: #c08a4e;
   --bubble: color-mix(in srgb, #ffffff 55%, transparent);
 }
-.jar-art-lg { width: 72px; }
+.jar-art-lg { width: 108px; }
+.jar-art-shelf { width: 132px; }
 
+.jar-shadow { fill: color-mix(in srgb, var(--text) 18%, transparent); }
 .jar-lid { fill: var(--muted); opacity: 0.55; }
+.jar-band { fill: var(--muted); opacity: 0.42; }
 .jar-neck { fill: var(--muted); opacity: 0.3; }
 .jar-glass { fill: var(--glass); }
 .jar-outline { fill: none; stroke: var(--border); stroke-width: 1.5; }
@@ -891,6 +923,20 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .jar-dome { opacity: 0.55; }
 .jar-bubble { fill: var(--bubble); }
 .jar-shine { fill: #ffffff; opacity: 0.12; }
+.jar-shine-thin { opacity: 0.07; }
+
+/* State, drawn rather than written: flakes when it is dried down, hooch on
+   a jar left too long, frost on the one in the cold, and the rubber band
+   round the glass marking where the last feed left it. */
+.jar-flake { fill: var(--contents); opacity: 0.9; }
+.jar-hooch { fill: color-mix(in srgb, #4a3220 62%, transparent); }
+.jar-rubber { fill: color-mix(in srgb, var(--text) 28%, transparent); }
+.jar-frost { fill: #ffffff; opacity: 0.45; }
+
+@media (prefers-color-scheme: dark) {
+  .jar-art,
+  .scene-art { --glass: color-mix(in srgb, var(--text) 11%, transparent); }
+}
 
 .jar-art.state-active { --contents: #c98b4b; }
 .jar-art.state-fridge { --contents: #7d9bb5; }
@@ -898,7 +944,178 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .jar-art.state-dried { --contents: #cbb89a; }
 
 /* Overdue jars get a warmer, more insistent jar. */
-.jar-card.is-overdue .jar-art { --contents: #b4531c; }
+.jar-card.is-overdue .jar-art,
+.shelf-slot.is-overdue .jar-art { --contents: #b4531c; }
+
+/* Masking tape, written on in pen. Cream in either theme: it is an object
+   stuck to the jar, not part of the page's chrome. */
+.jar-label {
+  fill: #f3e7d1;
+  stroke: rgba(60, 40, 20, 0.2);
+  stroke-width: 0.6;
+}
+.jar-label-name,
+.jar-label-sub {
+  fill: #58402c;
+  font-family: var(--display);
+}
+/* Sizes come from the markup: a long name shrinks to fit the tape. */
+.jar-label-name { font-weight: 600; }
+.jar-label-sub { opacity: 0.8; }
+.jar-label-sub.is-control {
+  fill: #8d4a15;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* The empty shelf's outline of a jar, for when there are none yet. */
+.jar-ghost {
+  width: 132px;
+  height: auto;
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1.8;
+  stroke-dasharray: 5 4;
+}
+
+.sprig { width: 40px; height: auto; flex: 0 0 auto; opacity: 0.85; }
+.sprig-stem {
+  fill: none;
+  stroke: var(--wood-edge);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.sprig-grains ellipse { fill: color-mix(in srgb, var(--accent) 70%, transparent); }
+.sprig-footer { display: block; width: 18px; margin: 0 auto 8px; opacity: 0.7; }
+
+.brand-art { width: 28px; height: 28px; flex: 0 0 auto; }
+.brand-stem {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  opacity: 0.75;
+}
+.brand-wheat ellipse { fill: var(--accent); opacity: 0.5; }
+.brand-lid { fill: var(--muted); opacity: 0.6; }
+.brand-glass { fill: color-mix(in srgb, var(--text) 8%, transparent); }
+.brand-starter { fill: #c8893f; }
+.brand-bubble { fill: color-mix(in srgb, #ffffff 60%, transparent); }
+.brand-outline {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  opacity: 0.5;
+}
+
+/* --- The shelf ---------------------------------------------------------- */
+
+/* One shared plank, because comparing two jars side by side is the point.
+   It bleeds to the screen edges and scrolls sideways once there are more
+   jars than fit, so the plank always runs the whole width of them. */
+.shelf {
+  margin: 0 calc(var(--gutter) * -1) 24px;
+  padding: 16px 0 28px;
+  overflow-x: auto;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 6%, transparent) 0,
+    transparent 70%
+  );
+}
+
+.shelf-inner { display: inline-block; min-width: 100%; }
+
+.shelf-jars {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--gutter);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 14px;
+}
+
+.shelf-slot {
+  position: relative;
+  padding-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.shelf-jar { display: block; line-height: 0; }
+.shelf-jar .jar-art { transition: transform 120ms ease-out; }
+.shelf-jar:hover .jar-art,
+.shelf-jar:focus-visible .jar-art { transform: translateY(-3px); }
+
+/* A paper tag tied to a jar that is late for its feed. */
+.shelf-tag {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) rotate(-4deg);
+  padding: 2px 9px;
+  border-radius: 3px;
+  background: #f3e7d1;
+  border: 1px solid color-mix(in srgb, var(--danger) 55%, transparent);
+  color: #9c3b1c;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.shelf-prop { align-self: flex-end; }
+
+.shelf-plank {
+  position: relative;
+  height: 15px;
+  margin: 0 8px;
+  border-radius: 3px 3px 6px 6px;
+  background:
+    repeating-linear-gradient(90deg,
+      color-mix(in srgb, var(--wood-edge) 30%, transparent) 0 1px,
+      transparent 1px 9px),
+    linear-gradient(180deg, var(--wood-top) 0 52%, var(--wood) 52%);
+  box-shadow:
+    0 3px 0 var(--wood-edge),
+    0 12px 18px -10px rgba(0, 0, 0, 0.45);
+}
+
+/* Two brackets holding it to the wall. */
+.shelf-plank::before,
+.shelf-plank::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  margin-top: 3px;
+  width: 9px;
+  height: 13px;
+  background: var(--wood-edge);
+  clip-path: polygon(0 0, 100% 0, 55% 100%, 0 100%);
+}
+.shelf-plank::before { left: 10%; }
+.shelf-plank::after { right: 10%; transform: scaleX(-1); }
+
+/* The jar on its own page stands on a short offcut of the same plank. */
+.shelf-plank-sm { height: 9px; width: 104px; margin: -3px 0 0; }
+.shelf-plank-sm::before,
+.shelf-plank-sm::after { display: none; }
+
+.shelf-bare { opacity: 0.7; }
+
+.hero-jar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 560px) {
+  .shelf-prop { display: none; }
+  .shelf-jars { gap: 6px; }
+}
 
 .role-icon {
   width: 15px;
@@ -911,10 +1128,7 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 /* The badge already carries the role colour; the glyph just follows it. */
 .badge-role .role-icon { margin-right: 4px; }
 
-/* A jar beside its heading, on the dashboard and the jar page. */
 .jar-card-head { display: flex; align-items: center; gap: 10px; }
-.jar-withart { display: flex; align-items: flex-start; gap: 14px; }
-.jar-withart > div { min-width: 0; }
 
 .hero-art { display: flex; align-items: center; gap: 16px; }
 
@@ -941,12 +1155,15 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
   opacity: 0.5;
 }
 .scene-seed { fill: #e8d6b4; opacity: 0.75; }
-.scene-board {
+/* The same pine as the dashboard's shelf, so the two read as one place. */
+.scene-shelf { fill: var(--wood-top); }
+.scene-shelf-edge {
   fill: none;
-  stroke: var(--border);
+  stroke: var(--wood-edge);
   stroke-width: 2.5;
   stroke-linecap: round;
 }
+.jar-label-name.is-control { fill: #8d4a15; }
 
 .about-why { display: flex; align-items: center; gap: 20px; }
 .about-why > div { min-width: 0; }

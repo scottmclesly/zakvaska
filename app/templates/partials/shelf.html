@@ -1,0 +1,25 @@
+{# The jars, standing side by side on a shelf. Expects `cards` (JarCards).
+
+   One shared plank is the point: Scott runs two rye jars against each other,
+   and the shelf is where you read them off side by side. #}
+<section class="shelf" aria-label="The jars on the shelf">
+  <div class="shelf-inner">
+    <ul class="shelf-jars">
+      {% for card in cards %}
+      {% set jar = card.jar %}
+      <li class="shelf-slot {% if card.status.is_overdue %}is-overdue{% endif %}">
+        {% if card.status.is_overdue %}
+        <span class="shelf-tag">feed me</span>
+        {% endif %}
+        <a class="shelf-jar" href="/jars/{{ jar.id }}">
+          {% with rise_pct = card.rise_pct, art_class = "jar-art-shelf" %}
+            {% include "partials/jar_art.html" %}
+          {% endwith %}
+        </a>
+      </li>
+      {% endfor %}
+      <li class="shelf-prop">{% include "partials/sprig.html" %}</li>
+    </ul>
+    <div class="shelf-plank" aria-hidden="true"></div>
+  </div>
+</section>

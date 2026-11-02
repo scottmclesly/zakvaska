@@ -1,47 +1,142 @@
-{# A jar, drawn. Expects `jar`; optionally `rise_pct` to set the level and
-   `art_class` for sizing. Inline SVG so it themes with the page and costs
-   no request. #}
+{# A jar, drawn: labelled glass with the starter's own state showing in it.
+
+   Expects `jar`. Optionally:
+     rise_pct    the last measured rise, which sets the level in the glass
+     art_class   a size class (jar-art-lg, jar-art-shelf)
+     with_label  false to leave the taped label off
+
+   Inline SVG so it themes with the page and costs no request. Every id is
+   suffixed with the jar id: a repeated one would clip two jars alike.
+#}
 {%- set state = jar.state.value -%}
-{%- if rise_pct is defined and rise_pct is not none -%}
-  {# 0% rise sits at the fill line, 150% is near the shoulder. #}
+{%- set measured = rise_pct is defined and rise_pct is not none -%}
+{%- set labelled = with_label is not defined or with_label -%}
+{#- The glass reads y 70 as the fill line a feed leaves behind, and y 32 as a
+    150% rise up at the shoulder. Unmeasured jars sit where their state puts
+    them, so the picture is never silent. The tape starts at y 77, so even a
+    flat jar shows some starter above it. -#}
+{%- if measured -%}
   {%- set level = [[rise_pct, 0] | max, 150] | min -%}
-  {%- set fill_top = 50 - (level / 150 * 22) -%}
+  {%- set fill_top = 70 - (level / 150 * 38) -%}
 {%- else -%}
-  {%- set fill_top = 32 if state in ("active", "fridge") else 42 -%}
+  {%- set fill_top = {"active": 52, "fridge": 62, "dormant": 68, "dried": 68}[state] -%}
 {%- endif -%}
-<svg class="jar-art {{ art_class or '' }} state-{{ state }}" viewBox="0 0 48 68"
-     role="img" aria-label="{{ jar.name }} — {{ jar.state.label.lower() }}">
+{%- set lively = (rise_pct > 40) if measured else (state == "active") -%}
+{%- set dome_ry = 4.2 if lively else 1.8 -%}
+{%- set body = "M24 18 h24 v4 q0 3 5 6 q5 3 5 10 v52 q0 8 -8 8 h-28 q-8 0 -8 -8 v-52 q0 -7 5 -10 q5 -3 5 -6 z" -%}
+{%- if jar.is_control -%}
+  {%- set caption = "control" -%}
+{%- else -%}
+  {%- set caption = jar.flour_type or jar.culture_name or jar.origin.value -%}
+{%- endif -%}
+{%- set label_name = jar.name | truncate(15, True, "…", 0) -%}
+{%- set label_sub = caption | truncate(18, True, "…", 0) -%}
+{#- The tape gives the writing 40 units. The widest glyphs this serif has
+    run about 0.66em, so sizing off that keeps even the worst name on the
+    tape instead of running off the glass. -#}
+{%- set name_size = [6.8, 60 / ([label_name | length, 1] | max)] | min -%}
+{%- set sub_size = [5.2, 55 / ([label_sub | length, 1] | max)] | min -%}
+<svg class="jar-art {{ art_class or '' }} state-{{ state }}" viewBox="0 0 72 103"
+     data-fill="{{ fill_top }}" role="img"
+     aria-label="{{ jar.name }} — {{ jar.state.label.lower() }}">
   <defs>
     <clipPath id="jarbody-{{ jar.id }}">
-      <path d="M10 17 h28 v34 a7 7 0 0 1 -7 7 h-14 a7 7 0 0 1 -7 -7 z"/>
+      <path d="{{ body }}"/>
     </clipPath>
   </defs>
 
-  <!-- lid -->
-  <rect class="jar-lid" x="11" y="3" width="26" height="8" rx="2.5"/>
-  <rect class="jar-neck" x="14" y="11" width="20" height="5" rx="1.5"/>
+  <!-- the shadow it casts on the shelf -->
+  <ellipse class="jar-shadow" cx="36" cy="99" rx="23" ry="3"/>
+
+  <!-- screw band, ring and neck -->
+  <rect class="jar-lid" x="20" y="4" width="32" height="10" rx="3"/>
+  <rect class="jar-band" x="22" y="12.5" width="28" height="5.5" rx="2"/>
+  <rect class="jar-neck" x="24" y="17" width="24" height="3"/>
 
   <!-- glass -->
-  <path class="jar-glass"
-        d="M10 17 h28 v34 a7 7 0 0 1 -7 7 h-14 a7 7 0 0 1 -7 -7 z"/>
+  <path class="jar-glass" d="{{ body }}"/>
 
   <g clip-path="url(#jarbody-{{ jar.id }})">
-    <rect class="jar-contents" x="10" y="{{ fill_top }}" width="28" height="60"/>
+    {%- if state == "dried" %}
+    <!-- dried down for keeps: flakes, which neither pour nor dome -->
+    <g class="jar-flakes">
+      <rect class="jar-flake" x="17" y="71" width="11" height="3.2" rx="1.4" transform="rotate(-7 22 72)"/>
+      <rect class="jar-flake" x="30" y="72" width="13" height="3" rx="1.4" transform="rotate(4 36 73)"/>
+      <rect class="jar-flake" x="42" y="70" width="10" height="3.2" rx="1.4" transform="rotate(-11 47 71)"/>
+      <rect class="jar-flake" x="21" y="66" width="12" height="3" rx="1.4" transform="rotate(6 27 67)"/>
+      <rect class="jar-flake" x="35" y="65" width="14" height="3.2" rx="1.4" transform="rotate(-5 42 66)"/>
+      <rect class="jar-flake" x="26" y="60" width="10" height="3" rx="1.4" transform="rotate(-9 31 61)"/>
+      <rect class="jar-flake" x="38" y="59" width="11" height="3" rx="1.4" transform="rotate(8 43 60)"/>
+    </g>
+    {%- else %}
+    <rect class="jar-contents" x="14" y="{{ fill_top }}" width="44" height="60"/>
     <!-- the domed top a living starter makes -->
-    <ellipse class="jar-contents jar-dome" cx="24" cy="{{ fill_top }}" rx="14" ry="2.6"/>
-    {% if state == "active" %}
-    <circle class="jar-bubble" cx="17" cy="{{ fill_top + 9 }}" r="2.1"/>
-    <circle class="jar-bubble" cx="27" cy="{{ fill_top + 15 }}" r="1.5"/>
-    <circle class="jar-bubble" cx="31" cy="{{ fill_top + 6 }}" r="1.1"/>
-    <circle class="jar-bubble" cx="21" cy="{{ fill_top + 19 }}" r="1.3"/>
-    {% elif state == "fridge" %}
-    <circle class="jar-bubble" cx="19" cy="{{ fill_top + 12 }}" r="1.1"/>
-    <circle class="jar-bubble" cx="29" cy="{{ fill_top + 18 }}" r="0.9"/>
-    {% endif %}
-    <!-- a highlight down the glass -->
-    <rect class="jar-shine" x="13" y="19" width="3.5" height="34" rx="1.75"/>
+    <ellipse class="jar-contents jar-dome" cx="36" cy="{{ fill_top }}" rx="22" ry="{{ dome_ry }}"/>
+    {%- endif %}
+
+    {%- if state == "dormant" %}
+    <!-- hooch: the grey liquor a neglected jar throws on top -->
+    <rect class="jar-hooch" x="14" y="{{ fill_top - 3.4 }}" width="44" height="3.6"/>
+    <ellipse class="jar-hooch" cx="36" cy="{{ fill_top - 3.4 }}" rx="22" ry="1.4"/>
+    {%- endif %}
+
+    {%- if state == "active" %}
+    <!-- a crown of foam at the surface, and bubbles all through it -->
+    <g class="jar-foam">
+      <circle class="jar-bubble" cx="21" cy="{{ fill_top + 0.8 }}" r="2.6"/>
+      <circle class="jar-bubble" cx="28" cy="{{ fill_top - 0.9 }}" r="1.9"/>
+      <circle class="jar-bubble" cx="36" cy="{{ fill_top + 0.4 }}" r="3"/>
+      <circle class="jar-bubble" cx="44" cy="{{ fill_top - 1.1 }}" r="2.2"/>
+      <circle class="jar-bubble" cx="51" cy="{{ fill_top + 1 }}" r="2.4"/>
+    </g>
+    <circle class="jar-bubble" cx="24" cy="{{ fill_top + 11 }}" r="3.1"/>
+    <circle class="jar-bubble" cx="43" cy="{{ fill_top + 17 }}" r="2.2"/>
+    <circle class="jar-bubble" cx="50" cy="{{ fill_top + 8 }}" r="1.6"/>
+    <circle class="jar-bubble" cx="31" cy="{{ fill_top + 24 }}" r="1.9"/>
+    <circle class="jar-bubble" cx="20" cy="{{ fill_top + 21 }}" r="1.3"/>
+    <circle class="jar-bubble" cx="38" cy="{{ fill_top + 31 }}" r="1.5"/>
+    {%- elif state == "fridge" %}
+    <circle class="jar-bubble" cx="24" cy="{{ fill_top + 9 }}" r="1.7"/>
+    <circle class="jar-bubble" cx="45" cy="{{ fill_top + 15 }}" r="1.2"/>
+    <circle class="jar-bubble" cx="33" cy="{{ fill_top + 22 }}" r="1"/>
+    {%- elif state == "dormant" %}
+    <circle class="jar-bubble" cx="27" cy="{{ fill_top + 13 }}" r="1.2"/>
+    {%- endif %}
+
+    {%- if state in ("active", "fridge", "dormant") and fill_top < 67.5 %}
+    <!-- the rubber band left at the last feed's level, as on the real jar -->
+    <rect class="jar-rubber" x="14" y="68.6" width="44" height="2.2"/>
+    {%- endif %}
+
+    <!-- highlights down the glass -->
+    <rect class="jar-shine" x="18.5" y="26" width="4.6" height="54" rx="2.3"/>
+    <rect class="jar-shine jar-shine-thin" x="26" y="28" width="1.8" height="48" rx="0.9"/>
+
+    {%- if state == "fridge" %}
+    <!-- frost, because this one lives in the cold -->
+    <g class="jar-frost">
+      <circle cx="47" cy="34" r="1.1"/>
+      <circle cx="52" cy="43" r="0.8"/>
+      <circle cx="43" cy="51" r="0.7"/>
+      <circle cx="50" cy="60" r="1"/>
+      <circle cx="19" cy="46" r="0.8"/>
+    </g>
+    {%- endif %}
   </g>
 
-  <path class="jar-outline"
-        d="M10 17 h28 v34 a7 7 0 0 1 -7 7 h-14 a7 7 0 0 1 -7 -7 z"/>
+  <path class="jar-outline" d="{{ body }}"/>
+
+  {%- if labelled %}
+  <!-- masking tape, stuck on a little crooked, as it always is -->
+  <g clip-path="url(#jarbody-{{ jar.id }})">
+    <g class="jar-labelgroup" transform="rotate(-2.4 36 84)">
+      <rect class="jar-label" x="14" y="77" width="44" height="15" rx="1.5"/>
+      <text class="jar-label-name" x="36" y="84.2" text-anchor="middle"
+            font-size="{{ name_size | round(2) }}">{{ label_name }}</text>
+      <text class="jar-label-sub {% if jar.is_control %}is-control{% endif %}"
+            x="36" y="89.8" text-anchor="middle"
+            font-size="{{ sub_size | round(2) }}">{{ label_sub }}</text>
+    </g>
+  </g>
+  {%- endif %}
 </svg>
