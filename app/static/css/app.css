@@ -917,3 +917,69 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .jar-withart > div { min-width: 0; }
 
 .hero-art { display: flex; align-items: center; gap: 16px; }
+
+/* --- About -------------------------------------------------------------- */
+
+/* The scene inherits the jar tokens above, so the jars match the real ones. */
+.scene-art {
+  width: 100%;
+  max-width: 230px;
+  height: auto;
+  --glass: color-mix(in srgb, var(--text) 7%, transparent);
+  --contents: #c08a4e;
+  --bubble: color-mix(in srgb, #ffffff 55%, transparent);
+}
+.scene-rye { fill: #b07a3e; }
+.scene-control { fill: #a98f6d; }
+.scene-crumb { fill: #4a2f1d; }
+.scene-crust { fill: #603c23; }
+.scene-score {
+  fill: none;
+  stroke: color-mix(in srgb, #f4e3c8 70%, transparent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  opacity: 0.5;
+}
+.scene-seed { fill: #e8d6b4; opacity: 0.75; }
+.scene-board {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.about-why { display: flex; align-items: center; gap: 20px; }
+.about-why > div { min-width: 0; }
+.about-art { flex: 0 0 auto; }
+
+.about-guide { margin: 0; }
+.about-guide dt {
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 14px;
+}
+.about-guide dt:first-child { margin-top: 0; }
+.about-guide dd { margin: 4px 0 0; color: var(--muted); }
+
+/* Prose, not rows: the dividers .plain draws would cut it up. */
+.about-notes li {
+  padding: 0;
+  margin-top: 12px;
+  border-bottom: 0;
+  color: var(--muted);
+}
+.about-notes li:first-child { margin-top: 0; }
+
+.about-facts { margin-top: 14px; border-top: 1px solid var(--border); }
+.about-facts li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+}
+
+/* Side by side is the point of the scene, so it goes above the words. */
+@media (max-width: 620px) {
+  .about-why { flex-direction: column; align-items: flex-start; }
+  .about-art { align-self: center; }
+}

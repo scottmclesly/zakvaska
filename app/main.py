@@ -13,6 +13,7 @@ from app import __version__
 from app.config import get_settings
 from app.logging_config import setup_logging
 from app.routes import (
+    about,
     alerts,
     backup,
     bakes,
@@ -61,6 +62,7 @@ def create_app() -> FastAPI:
     app.include_router(bakes.router)
     app.include_router(photos.router)
     app.include_router(backup.router)
+    app.include_router(about.router)
     app.include_router(settings.router)
 
     # Served from the root so the service worker's scope covers the whole app.

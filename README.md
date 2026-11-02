@@ -6,10 +6,12 @@ feeding alerts, recipes (versioned, baker's %), bakes and their results, with ph
 Built to compare a homemade whole-rye starter against a purchased Soviet rye
 culture (the control) on the way to a decent Borodinsky.
 
+The **About** page, linked in the footer, says what each section is for and what
+this particular install is holding.
+
 > Renamed from **jar-log**. An existing install needs nothing done to it: the old
 > `JARLOG_*` environment keys are still read, and a `jarlog.db` is renamed to
-> `zakvaska.db` the first time the app or a migration opens it. The git repository
-> and its folder still say `jar-log`; rename those yourself if you want to.
+> `zakvaska.db` the first time the app or a migration opens it.
 
 ## Requirements
 

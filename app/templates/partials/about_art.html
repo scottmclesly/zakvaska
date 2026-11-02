@@ -1,0 +1,51 @@
+{# The experiment, drawn: two rye jars either side of the loaf they are for.
+   Inline SVG so it themes with the page and costs no request. #}
+<svg class="scene-art" viewBox="0 0 168 92" role="img"
+     aria-label="Two starter jars either side of a dark rye loaf">
+  <defs>
+    <clipPath id="scene-jar-left">
+      <path d="M8 30 h24 v30 a6 6 0 0 1 -6 6 h-12 a6 6 0 0 1 -6 -6 z"/>
+    </clipPath>
+    <clipPath id="scene-jar-right">
+      <path d="M136 30 h24 v30 a6 6 0 0 1 -6 6 h-12 a6 6 0 0 1 -6 -6 z"/>
+    </clipPath>
+  </defs>
+
+  <!-- homemade whole rye, on the left -->
+  <rect class="jar-lid" x="9" y="19" width="22" height="7" rx="2.2"/>
+  <path class="jar-glass" d="M8 30 h24 v30 a6 6 0 0 1 -6 6 h-12 a6 6 0 0 1 -6 -6 z"/>
+  <g clip-path="url(#scene-jar-left)">
+    <rect class="jar-contents scene-rye" x="8" y="41" width="24" height="30"/>
+    <ellipse class="jar-contents scene-rye jar-dome" cx="20" cy="41" rx="12" ry="2.4"/>
+    <circle class="jar-bubble" cx="15" cy="49" r="1.8"/>
+    <circle class="jar-bubble" cx="25" cy="55" r="1.2"/>
+    <rect class="jar-shine" x="10.5" y="32" width="3" height="28" rx="1.5"/>
+  </g>
+  <path class="jar-outline" d="M8 30 h24 v30 a6 6 0 0 1 -6 6 h-12 a6 6 0 0 1 -6 -6 z"/>
+
+  <!-- the bought Soviet culture, the control, on the right -->
+  <rect class="jar-lid" x="137" y="19" width="22" height="7" rx="2.2"/>
+  <path class="jar-glass" d="M136 30 h24 v30 a6 6 0 0 1 -6 6 h-12 a6 6 0 0 1 -6 -6 z"/>
+  <g clip-path="url(#scene-jar-right)">
+    <rect class="jar-contents scene-control" x="136" y="44" width="24" height="30"/>
+    <ellipse class="jar-contents scene-control jar-dome" cx="148" cy="44" rx="12" ry="2.4"/>
+    <circle class="jar-bubble" cx="143" cy="52" r="1.4"/>
+    <circle class="jar-bubble" cx="153" cy="57" r="1"/>
+    <rect class="jar-shine" x="138.5" y="32" width="3" height="28" rx="1.5"/>
+  </g>
+  <path class="jar-outline" d="M136 30 h24 v30 a6 6 0 0 1 -6 6 h-12 a6 6 0 0 1 -6 -6 z"/>
+
+  <!-- borodinsky: a dark pan loaf, scored, with coriander on top -->
+  <path class="scene-crumb"
+        d="M48 66 v-18 a26 10 0 0 1 72 0 v18 a4 4 0 0 1 -4 4 h-64 a4 4 0 0 1 -4 -4 z"/>
+  <path class="scene-crust"
+        d="M48 48 a26 10 0 0 1 72 0 a26 7 0 0 1 -72 0 z"/>
+  <path class="scene-score" d="M62 45 q22 -7 44 0"/>
+  <circle class="scene-seed" cx="72" cy="43.5" r="1.5"/>
+  <circle class="scene-seed" cx="84" cy="41.4" r="1.5"/>
+  <circle class="scene-seed" cx="96" cy="41.6" r="1.5"/>
+  <circle class="scene-seed" cx="107" cy="43.8" r="1.5"/>
+
+  <!-- the board they are all standing on -->
+  <path class="scene-board" d="M4 74 h160"/>
+</svg>

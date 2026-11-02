@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block nav %}
+<a class="btn btn-small btn-secondary" href="/backup">Backup</a>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>About zakvaska</h1>
+  <p class="sub">
+    <em>Закваска</em> — sourdough starter. A lab notebook for it: jars,
+    feedings, recipes, bakes and how they turned out.
+  </p>
+</section>
+
+<section class="card about-why">
+  <div class="about-art" aria-hidden="true">
+    {% include "partials/about_art.html" %}
+  </div>
+  <div>
+    <h2 class="section-title">Why it exists</h2>
+    <p>
+      The target is Borodinsky — dark rye, coriander, molasses-black crumb.
+      Getting there means running two rye starters side by side, a homemade
+      whole-rye one against a bought Soviet culture as the control, and
+      keeping enough of a record to tell which jar and which change in the
+      recipe actually made the difference.
+    </p>
+    <p class="muted">
+      Which is why nothing here is free text if it can be a number: feedings
+      carry ratios and rise, recipes carry baker's percentages, and a bake
+      carries the version it came from.
+    </p>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="section-title">Finding your way round</h2>
+  <dl class="about-guide">
+    <dt>Jars</dt>
+    <dd>
+      One per starter. Log a feeding and the next one is due on the jar's own
+      schedule; the banner at the top of every page is what is overdue.
+      Moving a jar to the fridge or back changes that schedule with it.
+    </dd>
+
+    <dt>Recipes</dt>
+    <dd>
+      Stored as baker's percentages against total flour, so the grams fall out
+      of whatever batch size you ask for. Editing a recipe makes a new
+      <strong>version</strong> rather than overwriting the old one — a loaf you
+      baked in March still reads the way it was baked.
+    </dd>
+
+    <dt>Bakes</dt>
+    <dd>
+      Started from a recipe version, with <strong>Bake this</strong> at the top
+      of that version's page — that is what pins the loaf to the recipe as it
+      stood. The stages become a running sheet you tick off, and the result
+      goes on at the end.
+    </dd>
+
+    <dt>Equipment</dt>
+    <dd>
+      The bread maker's programs, typed in from its manual, so a bake can say
+      which one it ran. The 2 / 2.5 / 3 lb buttons on the start form scale the
+      flour to what the pan takes.
+    </dd>
+
+    <dt>Photos</dt>
+    <dd>
+      On jars, feedings and bakes. <strong>Compare crumb</strong> on the bakes
+      page puts two loaves side by side.
+    </dd>
+  </dl>
+</section>
+
+<section class="card">
+  <h2 class="section-title">How numbers are kept</h2>
+  <ul class="plain about-notes">
+    <li>
+      Weights are stored in <strong>grams</strong> and temperatures in
+      <strong>°C</strong> — one set of numbers, no rounding drift. The two
+      chips in the header only change what you read: grams, then US cups and
+      spoons, then ounces and pounds.
+    </li>
+    <li>
+      Cup readings come from a density per ingredient and are approximate by
+      nature, so they are marked as such and nothing is ever stored that way.
+      Type weights in grams; that is what the scale says.
+    </li>
+    <li>
+      Times are stored in UTC and shown in <strong>{{ tz_name }}</strong>.
+    </li>
+    <li>
+      Jars, recipes and bakes archive rather than delete. A notebook you can
+      tear pages out of is not much of a record.
+    </li>
+  </ul>
+</section>
+
+<section class="card">
+  <h2 class="section-title">This notebook</h2>
+  <dl class="stats stats-wide">
+    {% for label, n in headline %}
+    <div>
+      <dt>{{ label }}</dt>
+      <dd>{{ n }}</dd>
+    </div>
+    {% endfor %}
+    <div>
+      <dt>Photos</dt>
+      <dd>{{ photos }}<span class="stat-sub">{{ photo_bytes | filesize }}</span></dd>
+    </div>
+  </dl>
+
+  <ul class="plain about-facts">
+    <li><span class="muted">Version</span> <strong>{{ version }}</strong></li>
+    <li><span class="muted">Rows in all</span> <strong>{{ rows }}</strong></li>
+    <li><span class="muted">Database</span> <strong>{{ db_bytes | filesize }}</strong></li>
+    <li>
+      <span class="muted">Schema</span>
+      <strong>{{ revision or "not stamped" }}</strong>
+    </li>
+    <li><span class="muted">Time zone</span> <strong>{{ tz_name }}</strong></li>
+  </ul>
+  <p class="hint muted small">
+    Everything lives in <code>{{ data_dir }}</code> — the database, the
+    photos, the lot. Copy that folder and you have copied the notebook;
+    <a href="/backup">Backup</a> does it properly, while the app is running.
+  </p>
+</section>
+
+<section class="card">
+  <h2 class="section-title">Not yet</h2>
+  <p class="muted">
+    Rise curves drawn from the feeding log, working backwards from the hour
+    you want bread out of the oven, a temperature and rise sensor posting
+    readings on its own, and a push to the phone instead of a banner.
+  </p>
+</section>
+{% endblock %}
