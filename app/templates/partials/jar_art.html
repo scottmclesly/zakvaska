@@ -31,13 +31,14 @@
 {%- else -%}
   {%- set caption = jar.flour_type or jar.culture_name or jar.origin.value -%}
 {%- endif -%}
-{%- set label_name = jar.name | truncate(15, True, "…", 0) -%}
-{%- set label_sub = caption | truncate(18, True, "…", 0) -%}
-{#- The tape gives the writing 40 units. The widest glyphs this serif has
-    run about 0.66em, so sizing off that keeps even the worst name on the
-    tape instead of running off the glass. -#}
-{%- set name_size = [6.8, 60 / ([label_name | length, 1] | max)] | min -%}
-{%- set sub_size = [5.2, 55 / ([label_sub | length, 1] | max)] | min -%}
+{%- set label_name = jar.name | truncate(10, True, "…", 0) -%}
+{%- set label_sub = caption | truncate(11, True, "…", 0) -%}
+{#- The tape gives the writing about 40 units, and this serif's widest
+    glyphs run 0.66em. Pen on tape has to be read from across the kitchen,
+    so the size has a floor and the name is what gives way: past ten
+    characters it is cut rather than shrunk any further. -#}
+{%- set name_size = [6.2, [8.4, 62 / ([label_name | length, 1] | max)] | min] | max -%}
+{%- set sub_size = [5.2, [6.2, 52 / ([label_sub | length, 1] | max)] | min] | max -%}
 <svg class="jar-art {{ art_class or '' }} state-{{ state }}" viewBox="0 0 72 103"
      data-fill="{{ fill_top }}" role="img"
      aria-label="{{ jar.name }} — {{ jar.state.label.lower() }}">
@@ -148,11 +149,11 @@
   <!-- masking tape, stuck on a little crooked, as it always is -->
   <g clip-path="url(#jarbody-{{ jar.id }})">
     <g class="jar-labelgroup" transform="rotate(-2.4 36 84)">
-      <rect class="jar-label" x="14" y="77" width="44" height="15" rx="1.5"/>
-      <text class="jar-label-name" x="36" y="84.2" text-anchor="middle"
+      <rect class="jar-label" x="14" y="75" width="44" height="17" rx="1.5"/>
+      <text class="jar-label-name" x="36" y="83" text-anchor="middle"
             font-size="{{ name_size | round(2) }}">{{ label_name }}</text>
       <text class="jar-label-sub {% if jar.is_control %}is-control{% endif %}"
-            x="36" y="89.8" text-anchor="middle"
+            x="36" y="89.4" text-anchor="middle"
             font-size="{{ sub_size | round(2) }}">{{ label_sub }}</text>
     </g>
   </g>

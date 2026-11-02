@@ -910,8 +910,8 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
   --contents: #c08a4e;
   --bubble: color-mix(in srgb, #ffffff 55%, transparent);
 }
-.jar-art-lg { width: 108px; }
-.jar-art-shelf { width: 132px; }
+.jar-art-lg { width: 124px; }
+.jar-art-shelf { width: 140px; }
 
 .jar-shadow { fill: color-mix(in srgb, var(--text) 18%, transparent); }
 .jar-lid { fill: var(--muted); opacity: 0.55; }
@@ -973,7 +973,7 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 
 /* The empty shelf's outline of a jar, for when there are none yet. */
 .jar-ghost {
-  width: 132px;
+  width: 140px;
   height: auto;
   fill: none;
   stroke: var(--border);
@@ -1102,7 +1102,7 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .shelf-plank::after { right: 10%; transform: scaleX(-1); }
 
 /* The jar on its own page stands on a short offcut of the same plank. */
-.shelf-plank-sm { height: 9px; width: 104px; margin: -3px 0 0; }
+.shelf-plank-sm { height: 9px; width: 120px; margin: -3px 0 0; }
 .shelf-plank-sm::before,
 .shelf-plank-sm::after { display: none; }
 
@@ -1113,7 +1113,7 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .shelf-put-away { margin-top: 2px; padding-top: 8px; }
 .shelf-put-away .jar-art { filter: saturate(0.5); }
 .shelf-put-away .shelf-plank { filter: saturate(0.5) brightness(0.94); }
-.jar-art-put-away { width: 88px; }
+.jar-art-put-away { width: 112px; }
 
 .hero-jar {
   display: flex;

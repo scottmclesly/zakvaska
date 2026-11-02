@@ -88,16 +88,16 @@ class TestTheDrawnJar:
 
     def test_the_label_carries_the_jar_name(self, client, session):
         """The whole point of drawing a jar is telling it from the other one."""
-        jar = make_jar(session, name="Homemade rye")
+        jar = make_jar(session, name="Rye jar")
 
         body = client.get(f"/jars/{jar.id}").text
 
-        assert ">Homemade rye</text>" in body
+        assert ">Rye jar</text>" in body
 
-    def test_a_long_name_is_cut_and_shrunk_to_fit_the_tape(
+    def test_a_long_name_is_cut_rather_than_shrunk_past_reading(
         self, client, session
     ):
-        """A name that ran off the glass would be worse than no label."""
+        """Pen on tape has to stay readable, so the name gives way first."""
         short = make_jar(session, name="Rye")
         long = make_jar(session, name="Soviet rye culture, second split")
 
@@ -114,9 +114,11 @@ class TestTheDrawnJar:
         long_size, long_text = label(long)
 
         assert short_text == "Rye"
-        assert len(long_text) <= 17
+        assert len(long_text) <= 10
         assert long_text.startswith("Soviet")
         assert long_size < short_size
+        # However long the name, the writing stays big enough to read.
+        assert long_size >= 6.2
 
     def test_the_label_says_control_on_the_control_jar(self, client, session):
         jar = make_jar(session, name="Soviet", is_control=True)
@@ -252,9 +254,9 @@ class TestTheShelfOfPutAwayJars:
         assert "jar-dust" in both
 
     def test_it_is_still_labelled_with_its_name(self, client, session):
-        self.put_away(session, name="Old starter")
+        self.put_away(session, name="Old rye")
 
-        assert ">Old starter</text>" in client.get("/").text
+        assert ">Old rye</text>" in client.get("/").text
 
     def test_an_archived_jar_is_not_also_on_the_live_shelf(
         self, client, session
