@@ -171,6 +171,36 @@ Photos are the one thing here that really deletes — a blurry shot of a jar lid
 is not lab-notebook history, and a misfired upload needs an undo. Jars,
 recipes and bakes are still archived, never deleted.
 
+## The bread maker
+
+`docs/reference/` holds the West Bend L5951 manual and a CSV of its cycle
+chart, checked row by row against the chart on the manual's last page. The
+twelve menu programs are seeded from that CSV's numbers, each with a row per
+loaf size: knead 1, rest, knead 2, rise 2, stir down, rise 3, bake, total,
+keep warm and the delay-start limit. The equipment page shows the whole table
+under each program.
+
+Why per size rather than one total: the machine runs a different clock for a
+2 lb loaf than a 3 lb one — Basic is 3:00, 3:05 and 3:10 — so a single number
+cannot say when the bread comes out. Working backwards from the hour you want
+it out of the oven is a v2 job, and these are the numbers it needs.
+
+A recipe version can name the program, loaf size and crust it expects, and
+starting a bake from it opens the form with all three already set.
+
+## Seeding
+
+```bash
+./scripts/seed.sh --dry-run   # say what would happen, change nothing
+./scripts/seed.sh             # do it
+```
+
+Add-only and safe to run twice. Programs are keyed on device and name,
+recipes on name and source; anything already there is left exactly as it is,
+children included, and reported as skipped. Nothing is ever updated or
+deleted, so a recipe you have since edited never gains a version from a seed
+run.
+
 ## Backup
 
 Two ways out, for two different jobs.

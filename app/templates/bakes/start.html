@@ -81,7 +81,8 @@
           {% for program in programs %}
           <option value="{{ program.id }}"
                   {% if values.get('equipment_program_id') == program.id | string %}selected{% endif %}>
-            {{ program.name }}{% if program.device %} · {{ program.device }}{% endif %}
+            {% if program.menu_no %}{{ program.menu_no }}. {% endif %}{{ program.name
+            }}{% if program.device %} · {{ program.device }}{% endif %}
           </option>
           {% endfor %}
         </select>

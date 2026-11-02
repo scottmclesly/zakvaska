@@ -19,6 +19,11 @@
       <h2><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h2>
       <span class="badge">{{ recipe.category.label }}</span>
     </div>
+    {% if recipe.source %}
+    <p class="source muted small">
+      {{ recipe.source }}{% if recipe.source_ref %} · {{ recipe.source_ref }}{% endif %}
+    </p>
+    {% endif %}
     <dl class="stats">
       <div>
         <dt>Latest</dt>
@@ -35,6 +40,13 @@
       </div>
       {% endif %}
     </dl>
+    {% if latest and latest.default_program %}
+    <p class="muted small">
+      Bread maker: {{ latest.default_program.name }}{% if latest.default_loaf_size %},
+      {{ latest.default_loaf_size }}{% endif %}{% if latest.default_crust %},
+      {{ latest.default_crust }} crust{% endif %}
+    </p>
+    {% endif %}
     <div class="row-actions">
       <a class="btn" href="/recipes/{{ recipe.id }}">Open</a>
       {% if recipe.versions | length > 1 %}

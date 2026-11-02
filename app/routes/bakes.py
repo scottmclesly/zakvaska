@@ -93,6 +93,25 @@ def list_bakes(
 # --- Starting one ----------------------------------------------------------
 
 
+def _defaults_for(version) -> dict[str, str]:
+    """What the recipe says to set the machine to, as form values.
+
+    A seeded West Bend recipe knows its program, loaf size and crust, so
+    the form opens with them already filled rather than sending the baker
+    back to the manual. Anything the recipe does not say is left blank.
+    """
+    prefilled = {
+        "equipment_program_id": version.default_program_id,
+        "loaf_size": version.default_loaf_size,
+        "crust_setting": version.default_crust,
+    }
+    filled = {key: str(value) for key, value in prefilled.items() if value}
+    if filled:
+        # A recipe that names a program is a bread-maker recipe.
+        filled.setdefault("method", BakeMethod.BREAD_MAKER.value)
+    return filled
+
+
 def _start_context(ctx: ViewContext, version, *, values=None, errors=None) -> dict:
     return {
         "title": f"Bake {version.recipe.name} {version.label}",
@@ -102,7 +121,9 @@ def _start_context(ctx: ViewContext, version, *, values=None, errors=None) -> di
         "programs": recipe_service.list_programs(ctx.session),
         "jars": jar_service.list_jars(ctx.session),
         "loaf_presets": scaling.loaf_presets(version.ingredients),
-        "values": values or {},
+        # On a first visit the recipe's defaults fill the form; once the
+        # form has been submitted, what the baker typed wins outright.
+        "values": values if values is not None else _defaults_for(version),
         "errors": errors or [],
         "now_local": f.utc_to_local_input(ctx.now, ctx.tz),
     }

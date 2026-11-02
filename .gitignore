@@ -1,4 +1,6 @@
-data/
+# The runtime data directory, at the repo root only: an unanchored
+# "data/" also swallows app/data/, which is source.
+/data/
 .venv/
 .env
 __pycache__/

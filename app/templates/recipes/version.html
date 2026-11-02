@@ -16,6 +16,19 @@
     {% if recipe.archived %}<span class="badge">archived</span>{% endif %}
   </p>
   {% if version.notes %}<p class="sub">{{ version.notes }}</p>{% endif %}
+  {% if recipe.source %}
+  <p class="source muted small">
+    Source: {{ recipe.source }}{% if recipe.source_ref %} · {{ recipe.source_ref }}{% endif %}
+  </p>
+  {% endif %}
+  {% if version.default_program %}
+  <p class="muted small">
+    Bread maker: {{ version.default_program.name }}{% if version.default_program.menu_no
+    %} (menu {{ version.default_program.menu_no }}){% endif %}{% if version.default_loaf_size
+    %}, {{ version.default_loaf_size }}{% endif %}{% if version.default_crust
+    %}, {{ version.default_crust }} crust{% endif %} — pre-filled when you start a bake.
+  </p>
+  {% endif %}
   <p class="muted small">Saved {{ version.created_at | local_dt }}</p>
 </section>
 

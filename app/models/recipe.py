@@ -42,6 +42,10 @@ class Recipe(Base):
     category: Mapped[RecipeCategory] = mapped_column(
         _enum(RecipeCategory), nullable=False, default=RecipeCategory.OTHER
     )
+    # Where the formula came from: a book, a manual, a site. Null means it
+    # is Scott's own. `source_ref` narrows it down — a page or a URL.
+    source: Mapped[str | None] = mapped_column(String(200))
+    source_ref: Mapped[str | None] = mapped_column(String(300))
     archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at = created_at_column()
 
@@ -72,9 +76,20 @@ class RecipeVersion(Base):
     )
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
+
+    # What this recipe expects of the bread maker, so starting a bake does
+    # not mean looking the program up in the manual every time. SET NULL
+    # rather than CASCADE: archiving a program must not delete a version.
+    default_program_id: Mapped[int | None] = mapped_column(
+        ForeignKey("equipment_program.id", ondelete="SET NULL")
+    )
+    default_loaf_size: Mapped[str | None] = mapped_column(String(40))
+    default_crust: Mapped[str | None] = mapped_column(String(40))
+
     created_at = created_at_column()
 
     recipe: Mapped[Recipe] = relationship(back_populates="versions")
+    default_program: Mapped[EquipmentProgram | None] = relationship()
     ingredients: Mapped[list[RecipeIngredient]] = relationship(
         back_populates="version",
         cascade="all, delete-orphan",
@@ -155,11 +170,91 @@ class EquipmentProgram(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     device: Mapped[str | None] = mapped_column(String(120))
+    # The number on the machine's menu, 1-12 on the West Bend. Null for a
+    # program typed in by hand from some other device.
+    menu_no: Mapped[int | None] = mapped_column(Integer)
+    # The headline figure. Kept because it is what a list wants to show;
+    # the real per-size timings live in `cycles`.
     total_min: Mapped[int | None] = mapped_column(Integer)
     notes: Mapped[str | None] = mapped_column(Text)
     # Archived rather than deleted, like everything else here.
     archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at = created_at_column()
 
+    cycles: Mapped[list[EquipmentCycle]] = relationship(
+        back_populates="program",
+        cascade="all, delete-orphan",
+        order_by="EquipmentCycle.loaf_lb",
+    )
+
+    @property
+    def sized(self) -> bool:
+        """Whether the LOAF button applies — Mix, Dough, Custom and Bake say no."""
+        return any(cycle.loaf_lb is not None for cycle in self.cycles)
+
+    def cycle_for(self, loaf_lb: float | None) -> EquipmentCycle | None:
+        for cycle in self.cycles:
+            if cycle.loaf_lb == loaf_lb:
+                return cycle
+        return None
+
     def __repr__(self) -> str:
         return f"EquipmentProgram(name={self.name!r}, device={self.device!r})"
+
+
+class EquipmentCycle(Base):
+    """One program at one loaf size, segment by segment.
+
+    The machine runs a different clock for a 2 lb loaf than a 3 lb one, so a
+    single total on the program cannot say when the bread comes out. These
+    are the manual's own numbers, and they are what v2's back-scheduling
+    will work backwards from.
+
+    A null segment means the program does not have that phase at all — the
+    manual's "x" — rather than a phase of zero minutes. Programs with no
+    LOAF button (Mix, Dough, Custom, Bake) carry a single row with a null
+    `loaf_lb`.
+    """
+
+    __tablename__ = "equipment_cycle"
+    __table_args__ = (
+        UniqueConstraint("program_id", "loaf_lb", name="one_per_program_size"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    program_id: Mapped[int] = mapped_column(
+        ForeignKey("equipment_program.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # 2.0, 2.5, 3.0 — or null where the size button does nothing.
+    loaf_lb: Mapped[float | None] = mapped_column(Float)
+
+    knead1_min: Mapped[int | None] = mapped_column(Integer)
+    rest_min: Mapped[int | None] = mapped_column(Integer)
+    knead2_min: Mapped[int | None] = mapped_column(Integer)
+    rise2_min: Mapped[int | None] = mapped_column(Integer)
+    # Seconds, not minutes: the machine knocks the dough back for 30 of them.
+    stir_down_sec: Mapped[int | None] = mapped_column(Integer)
+    rise3_min: Mapped[int | None] = mapped_column(Integer)
+    bake_min: Mapped[int | None] = mapped_column(Integer)
+    keep_warm_min: Mapped[int | None] = mapped_column(Integer)
+    # The manual's own total, which is not always the segments added up.
+    total_min: Mapped[int | None] = mapped_column(Integer)
+    delay_max_h: Mapped[int | None] = mapped_column(Integer)
+
+    program: Mapped[EquipmentProgram] = relationship(back_populates="cycles")
+
+    @property
+    def label(self) -> str:
+        return f"{self.loaf_lb:g} lb" if self.loaf_lb is not None else "any size"
+
+    @property
+    def total_label(self) -> str:
+        if self.total_min is None:
+            return "—"
+        hours, minutes = divmod(self.total_min, 60)
+        return f"{hours}:{minutes:02d}"
+
+    def __repr__(self) -> str:
+        return f"EquipmentCycle(program_id={self.program_id!r}, {self.label})"

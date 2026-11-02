@@ -495,3 +495,91 @@ class TestLoafButtons:
 
         page = client.get(f"/bakes/{bake_id}").text
         assert "497 g" in page
+
+
+class TestTheRecipesDefaults:
+    """A seeded bread-maker recipe opens the start form ready to go."""
+
+    def _recipe_with_defaults(self, session):
+        from app.services import seeding
+
+        seeding.seed_all(session)
+        session.commit()
+        program = seeding.find_program(session, "West Bend L5951", "Basic")
+        recipe = recipe_service.create_recipe(
+            session,
+            name="Old-fashioned white",
+            category=RecipeCategory.WHEAT,
+            ingredients=[
+                IngredientSpec("Bread flour", IngredientRole.FLOUR, 100.0),
+                IngredientSpec("Water", IngredientRole.WATER, 62.0),
+            ],
+        )
+        version = recipe.latest_version
+        version.default_program_id = program.id
+        version.default_loaf_size = "2.5 lb"
+        version.default_crust = "medium"
+        session.commit()
+        return recipe, version, program
+
+    def test_the_form_opens_with_the_program_chosen(self, client, session):
+        recipe, version, program = self._recipe_with_defaults(session)
+
+        page = client.get(
+            f"/bakes/new?recipe_id={recipe.id}&version={version.version}"
+        ).text
+
+        assert re.search(rf'value="{program.id}"\s+selected', page)
+
+    def test_the_loaf_size_and_crust_are_filled_in(self, client, session):
+        recipe, version, _ = self._recipe_with_defaults(session)
+
+        page = client.get(
+            f"/bakes/new?recipe_id={recipe.id}&version={version.version}"
+        ).text
+
+        assert 'name="loaf_size" value="2.5 lb"' in page
+        assert 'name="crust_setting" value="medium"' in page
+
+    def test_the_method_starts_on_bread_maker(self, client, session):
+        recipe, version, _ = self._recipe_with_defaults(session)
+
+        page = client.get(
+            f"/bakes/new?recipe_id={recipe.id}&version={version.version}"
+        ).text
+
+        assert re.search(r'value="bread_maker"\s+selected', page)
+
+    def test_a_recipe_without_defaults_opens_blank(self, client, session):
+        recipe = recipe_service.create_recipe(
+            session, name="Plain rye", category=RecipeCategory.RYE,
+            ingredients=[IngredientSpec("Rye", IngredientRole.FLOUR, 100.0)],
+        )
+        session.commit()
+
+        page = client.get(
+            f"/bakes/new?recipe_id={recipe.id}&version=1"
+        ).text
+
+        assert 'name="loaf_size" value=""' in page
+        assert 'name="crust_setting" value=""' in page
+
+    def test_what_the_baker_typed_survives_a_validation_error(self, client, session):
+        """The recipe's defaults must not overwrite a rejected form."""
+        recipe, version, program = self._recipe_with_defaults(session)
+
+        response = client.post(
+            "/bakes/new",
+            data={
+                "recipe_id": recipe.id,
+                "version": version.version,
+                "method": "bread_maker",
+                "loaf_size": "3 lb",
+                "crust_setting": "dark",
+                "total_flour_g": "not a number",
+            },
+        )
+
+        assert response.status_code == 400
+        assert 'name="loaf_size" value="3 lb"' in response.text
+        assert 'name="crust_setting" value="dark"' in response.text

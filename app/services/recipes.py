@@ -129,8 +129,12 @@ def create_recipe(
     ingredients: list[IngredientSpec] | None = None,
     stages: list[StageSpec] | None = None,
     notes: str | None = None,
+    source: str | None = None,
+    source_ref: str | None = None,
 ) -> Recipe:
-    recipe = Recipe(name=name, category=category)
+    recipe = Recipe(
+        name=name, category=category, source=source, source_ref=source_ref
+    )
     session.add(recipe)
     session.flush()
 

@@ -1,0 +1,43 @@
+{# The manual's own clock for one program, size by size. Expects `program`.
+   A dash is the chart's "x": the program has no such phase at all. #}
+<details class="cycles">
+  <summary>Cycle times{% if program.sized %} by loaf size{% endif %}</summary>
+  <div class="tablewrap">
+    <table class="cycletable">
+      <thead>
+        <tr>
+          <th>Size</th>
+          <th>Knead 1</th>
+          <th>Rest</th>
+          <th>Knead 2</th>
+          <th>Rise 2</th>
+          <th>Stir</th>
+          <th>Rise 3</th>
+          <th>Bake</th>
+          <th>Total</th>
+          <th>Warm</th>
+          <th>Delay</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cycle in program.cycles %}
+        <tr>
+          <th scope="row">{{ cycle.label }}</th>
+          {% for value in [cycle.knead1_min, cycle.rest_min, cycle.knead2_min,
+                           cycle.rise2_min] %}
+          <td>{% if value is not none %}{{ value }}{% else %}—{% endif %}</td>
+          {% endfor %}
+          <td>{% if cycle.stir_down_sec %}{{ cycle.stir_down_sec }}s{% else %}—{% endif %}</td>
+          {% for value in [cycle.rise3_min, cycle.bake_min] %}
+          <td>{% if value is not none %}{{ value }}{% else %}—{% endif %}</td>
+          {% endfor %}
+          <td><strong>{{ cycle.total_label }}</strong></td>
+          <td>{% if cycle.keep_warm_min is not none %}{{ cycle.keep_warm_min }}{% else %}—{% endif %}</td>
+          <td>{% if cycle.delay_max_h is not none %}{{ cycle.delay_max_h }} h{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="hint muted small">Minutes unless marked. From the manual's cycle chart.</p>
+</details>

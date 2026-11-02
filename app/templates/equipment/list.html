@@ -29,6 +29,9 @@
           <span>Program</span>
           <input name="name" required value="{{ program.name }}">
         </label>
+        {% if program.menu_no %}
+        <p class="menuno muted small">Menu {{ program.menu_no }}</p>
+        {% endif %}
         <label>
           <span>Device</span>
           <input name="device" value="{{ program.device or '' }}">
@@ -47,6 +50,11 @@
         <button class="btn btn-small" type="submit">Save</button>
       </div>
     </form>
+
+    {% if program.cycles %}
+    {% include "partials/cycle_table.html" with context %}
+    {% endif %}
+
     <form method="post" action="/equipment/{{ program.id }}/archive">
       <input type="hidden" name="archived" value="1">
       <button class="btn btn-small btn-secondary" type="submit">Archive</button>
