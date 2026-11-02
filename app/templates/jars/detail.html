@@ -100,6 +100,10 @@
 </section>
 {% endif %}
 
+{% with owner_type = "jar", owner_id = jar.id, gallery_title = "Photos of this jar" %}
+{% include "partials/photo_gallery.html" %}
+{% endwith %}
+
 <section>
   <h2 class="section-title">Timeline</h2>
   {% if events %}

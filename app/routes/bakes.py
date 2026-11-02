@@ -14,11 +14,13 @@ from app.models.enums import (
     TASTE_SUGGESTIONS,
     BakeMethod,
     BakeStatus,
+    PhotoOwner,
 )
 from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
 from app.services import bakes as bake_service
 from app.services import jars as jar_service
+from app.services import photos as photo_service
 from app.services import recipes as recipe_service
 from app.services.units import temp_to_celsius
 from app.templates_env import render
@@ -228,6 +230,7 @@ def bake_detail(request: Request, ctx: Ctx, bake_id: int) -> HTMLResponse:
             "planned_total_min": bake_service.planned_total_min(bake),
             "elapsed_min": bake_service.elapsed_min(bake, ctx.now),
             "statuses": list(BakeStatus),
+            "photos": photo_service.list_for(ctx.session, PhotoOwner.BAKE, bake.id),
         },
     )
 

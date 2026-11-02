@@ -11,12 +11,14 @@ from app.models.enums import (
     IngredientRole,
     JarOrigin,
     JarState,
+    PhotoOwner,
     RecipeCategory,
 )
 from app.models.feeding import Feeding
 from app.models.jar import Jar
 from app.models.jar_state_change import JarStateChange
 from app.models.observation import Observation
+from app.models.photo import Photo
 from app.models.recipe import (
     EquipmentProgram,
     Recipe,
@@ -44,6 +46,8 @@ __all__ = [
     "JarState",
     "JarStateChange",
     "Observation",
+    "Photo",
+    "PhotoOwner",
     "Recipe",
     "RecipeCategory",
     "RecipeIngredient",

@@ -107,6 +107,23 @@ class BakeStatus(enum.StrEnum):
         return self in (BakeStatus.DONE, BakeStatus.FAILED)
 
 
+class PhotoOwner(enum.StrEnum):
+    """What a photo is attached to.
+
+    A plain type/id pair rather than four nullable foreign keys: photos hang
+    off four unrelated tables, and nothing else needs to join through them.
+    """
+
+    JAR = "jar"
+    FEEDING = "feeding"
+    OBSERVATION = "observation"
+    BAKE = "bake"
+
+    @property
+    def label(self) -> str:
+        return self.value.capitalize()
+
+
 class AlertKind(enum.StrEnum):
     FEED_DUE = "feed_due"
 

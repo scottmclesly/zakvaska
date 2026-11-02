@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block nav %}
+<a class="btn btn-small btn-secondary" href="/photos/compare">Compare crumb</a>
 <a class="btn btn-small btn-secondary" href="/bakes">All bakes</a>
 {% endblock %}
 
@@ -170,6 +171,10 @@
   </table>
 </div>
 {% endif %}
+
+{% with owner_type = "bake", owner_id = bake.id, gallery_title = "Photos of this loaf" %}
+{% include "partials/photo_gallery.html" %}
+{% endwith %}
 
 <h2 class="section-title">Result</h2>
 {% if bake.result %}

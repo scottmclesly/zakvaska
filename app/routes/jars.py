@@ -2,12 +2,22 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.models.enums import (
+    PhotoOwner,
     SMELL_SUGGESTIONS,
     TEXTURE_SUGGESTIONS,
     BubbleLevel,
@@ -17,8 +27,11 @@ from app.models.enums import (
 from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
 from app.services import bakes as bake_service, derived, jars as jar_service
+from app.services import photos as photo_service
 from app.services.units import temp_to_celsius
 from app.templates_env import render
+
+log = logging.getLogger("jarlog.photos")
 
 router = APIRouter(prefix="/jars")
 
@@ -35,6 +48,25 @@ def _load(ctx: ViewContext, jar_id: int):
     if jar is None:
         raise HTTPException(status_code=404, detail="No such jar")
     return jar
+
+
+def _attach_photo(
+    ctx: ViewContext, owner: PhotoOwner, owner_id: int, data: bytes | None
+) -> None:
+    """Attach a photo taken while logging, if one came with the form.
+
+    A photo that will not decode must not lose the feeding it came with, so
+    the failure is swallowed here rather than raised.
+    """
+    if not data:
+        return
+    try:
+        photo_service.attach(
+            ctx.session, owner_type=owner, owner_id=owner_id,
+            data=data, now=ctx.now,
+        )
+    except photo_service.PhotoError:
+        log.warning("ignored an unreadable photo on a %s", owner.value)
 
 
 def _jar_form_context(ctx: ViewContext, jar=None, errors=None, values=None) -> dict:
@@ -128,6 +160,18 @@ def jar_detail(request: Request, ctx: Ctx, jar_id: int) -> HTMLResponse:
     last = (
         derived.describe_feeding(card.last_feeding) if card.last_feeding else {}
     )
+    events = jar_service.timeline(ctx.session, jar)
+    # Two queries for the whole timeline rather than one per entry.
+    feeding_photos = photo_service.photos_by_owner(
+        ctx.session,
+        PhotoOwner.FEEDING,
+        [e.obj.id for e in events if e.kind == "feeding"],
+    )
+    observation_photos = photo_service.photos_by_owner(
+        ctx.session,
+        PhotoOwner.OBSERVATION,
+        [e.obj.id for e in events if e.kind == "observation"],
+    )
     return render(
         request=request,
         ctx=ctx,
@@ -138,9 +182,12 @@ def jar_detail(request: Request, ctx: Ctx, jar_id: int) -> HTMLResponse:
             "card": card,
             "last_ratio": last.get("ratio"),
             "last_hydration": last.get("hydration_pct"),
-            "events": jar_service.timeline(ctx.session, jar),
+            "events": events,
             "states": list(JarState),
             "bakes": bake_service.list_bakes(ctx.session, jar_id=jar.id),
+            "photos": photo_service.list_for(ctx.session, PhotoOwner.JAR, jar.id),
+            "feeding_photos": feeding_photos,
+            "observation_photos": observation_photos,
         },
     )
 
@@ -247,7 +294,7 @@ def feed_form(request: Request, ctx: Ctx, jar_id: int) -> HTMLResponse:
 
 
 @router.post("/{jar_id}/feed")
-def log_feeding(
+async def log_feeding(
     request: Request,
     ctx: Ctx,
     jar_id: int,
@@ -259,9 +306,12 @@ def log_feeding(
     ambient_temp: Annotated[str, Form()] = "",
     fed_at: Annotated[str, Form()] = "",
     notes: Annotated[str, Form()] = "",
+    photo: Annotated[UploadFile | None, File()] = None,
 ):
     jar = _load(ctx, jar_id)
     errors: list[str] = []
+    # Read before anything can fail, so the error page still has the form.
+    shot = await photo.read() if photo is not None and photo.filename else None
 
     try:
         starter = f.req_float(starter_g, field="Starter")
@@ -318,7 +368,7 @@ def log_feeding(
             status_code=400,
         )
 
-    jar_service.log_feeding(
+    feeding = jar_service.log_feeding(
         ctx.session,
         jar,
         fed_at=when,
@@ -331,6 +381,7 @@ def log_feeding(
         ambient_temp_c=ambient_temp_c,
         notes=f.opt_str(notes),
     )
+    _attach_photo(ctx, PhotoOwner.FEEDING, feeding.id, shot)
     ctx.session.commit()
     return _see_other(f"/jars/{jar.id}")
 
@@ -359,7 +410,7 @@ def observe_form(request: Request, ctx: Ctx, jar_id: int) -> HTMLResponse:
 
 
 @router.post("/{jar_id}/observe")
-def log_observation(
+async def log_observation(
     request: Request,
     ctx: Ctx,
     jar_id: int,
@@ -370,9 +421,11 @@ def log_observation(
     texture: Annotated[str, Form()] = "",
     observed_at: Annotated[str, Form()] = "",
     notes: Annotated[str, Form()] = "",
+    photo: Annotated[UploadFile | None, File()] = None,
 ):
     jar = _load(ctx, jar_id)
     errors: list[str] = []
+    shot = await photo.read() if photo is not None and photo.filename else None
 
     try:
         start_mm = f.opt_float(start_height_mm, field="Starting height")
@@ -409,7 +462,7 @@ def log_observation(
             status_code=400,
         )
 
-    jar_service.log_observation(
+    observation = jar_service.log_observation(
         ctx.session,
         jar,
         observed_at=when,
@@ -420,5 +473,6 @@ def log_observation(
         texture=f.opt_str(texture),
         notes=f.opt_str(notes),
     )
+    _attach_photo(ctx, PhotoOwner.OBSERVATION, observation.id, shot)
     ctx.session.commit()
     return _see_other(f"/jars/{jar.id}")

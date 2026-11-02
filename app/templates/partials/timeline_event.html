@@ -24,6 +24,9 @@
         {%- if feeding.ambient_temp_c is not none %} · room {{ feeding.ambient_temp_c | temp(temp_unit) }}{% endif %}
       </p>
       {% if feeding.notes %}<p class="timeline-note">{{ feeding.notes }}</p>{% endif %}
+      {% with shots = (feeding_photos or {}).get(feeding.id) %}
+        {% include "partials/timeline_photos.html" %}
+      {% endwith %}
 
     {% elif event.kind == "observation" %}
       {% set observation = event.obj %}
@@ -41,6 +44,9 @@
         {%- if observation.texture %} · {{ observation.texture }}{% endif -%}
       </p>
       {% if observation.notes %}<p class="timeline-note">{{ observation.notes }}</p>{% endif %}
+      {% with shots = (observation_photos or {}).get(observation.id) %}
+        {% include "partials/timeline_photos.html" %}
+      {% endwith %}
 
     {% else %}
       {% set change = event.obj %}

@@ -61,9 +61,9 @@ Work phase by phase. Each phase ends with its acceptance checks passing, tests g
 - **Accept:** run a full bake end-to-end on a phone-width screen; it appears on the recipe, the jar and the bake list.
 
 ## Phase 5: photos
-- [ ] Upload from phone camera (`accept="image/*" capture`), attach to jar, feeding, observation or bake
-- [ ] Thumbnails via Pillow; respect EXIF orientation; store under `data/photos/YYYY/MM/`
-- [ ] Gallery on each detail page; side-by-side compare of two bake crumb photos
+- [x] Upload from phone camera (`accept="image/*" capture`), attach to jar, feeding, observation or bake
+- [x] Thumbnails via Pillow; respect EXIF orientation; store under `data/photos/YYYY/MM/`
+- [x] Gallery on each detail page; side-by-side compare of two bake crumb photos
 - **Accept:** photo shot on phone uploads, displays correctly rotated, and survives restart.
 
 ## Phase 6: backup and polish

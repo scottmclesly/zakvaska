@@ -13,7 +13,7 @@
 </div>
 {% endif %}
 
-<form class="card form" method="post" action="/jars/{{ jar.id }}/observe">
+<form class="card form" method="post" action="/jars/{{ jar.id }}/observe" enctype="multipart/form-data">
   <fieldset>
     <legend>Height</legend>
     <div class="field-row">
@@ -70,6 +70,11 @@
     <textarea name="notes" rows="2">{{ v.get('notes', '') }}</textarea>
   </label>
 
+
+  <label>
+    <span>Photo <em>optional</em></span>
+    <input type="file" name="photo" accept="image/*" capture="environment">
+  </label>
   <div class="row-actions">
     <button class="btn btn-big" type="submit">Log the observation</button>
     <a class="btn btn-secondary" href="/jars/{{ jar.id }}">Cancel</a>

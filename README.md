@@ -99,6 +99,28 @@ part that matters — what to change next time. Saving one marks the bake done.
 The bake list filters by recipe, jar, rating and status, and each bake also
 shows up on the recipe version it came from and on the jar that raised it.
 
+## Photos
+
+A photo can hang off a jar, a feeding, an observation or a bake. The feeding
+and observation forms take one as you log, so a jar gets photographed at the
+moment it is worth photographing; everything else uploads from the gallery on
+the detail page. On a phone the file field opens the camera directly.
+
+Every upload is re-encoded to JPEG on the way in, which does three things at
+once: the EXIF rotation is applied to the pixels, so the photo is the right
+way up in any browser; the rest of the EXIF block, GPS included, is dropped;
+and a 12-megapixel phone photo stops being a 12-megapixel file. Files land in
+`data/photos/YYYY/MM/` by the date the photo was *taken*, not uploaded, with a
+480 px thumbnail beside each one.
+
+`/photos/compare` puts two bake photos side by side with their ratings and
+their "next time" notes, which is the only honest way to see a change in
+crumb.
+
+Photos are the one thing here that really deletes — a blurry shot of a jar lid
+is not lab-notebook history, and a misfired upload needs an undo. Jars,
+recipes and bakes are still archived, never deleted.
+
 ## Development
 
 ```bash

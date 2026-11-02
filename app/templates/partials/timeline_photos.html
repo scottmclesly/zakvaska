@@ -1,0 +1,14 @@
+{# Thumbnails on a timeline entry. Expects `shots` (may be none). #}
+{% if shots %}
+<ul class="gallery gallery-inline">
+  {% for photo in shots %}
+  <li class="shot shot-small">
+    <a href="{{ photo.url }}" target="_blank" rel="noopener">
+      <img src="{{ photo.thumb_url }}" alt="{{ photo.caption or 'Photo' }}"
+           loading="lazy" width="120" height="120">
+    </a>
+    {% if photo.caption %}<span class="muted small">{{ photo.caption }}</span>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}

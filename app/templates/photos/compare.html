@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block nav %}
+<a class="btn btn-small btn-secondary" href="/bakes">All bakes</a>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Compare crumb</h1>
+  <p class="sub">
+    Two loaves side by side. A change in crumb is only visible against
+    another crumb.
+  </p>
+</section>
+
+{% if available | length < 2 %}
+<section class="empty card">
+  <h2>Not enough bake photos yet</h2>
+  <p>
+    Add photos to two bakes and they can be put next to each other here.
+    {% if available | length == 1 %}There is one so far.{% endif %}
+  </p>
+  <p><a class="btn" href="/bakes">Go to bakes</a></p>
+</section>
+{% else %}
+
+{% macro picker(name, chosen) %}
+<select name="{{ name }}">
+  <option value="">Pick a photo</option>
+  {% for photo in available %}
+  {% set bake = owners.get(photo.owner_id) %}
+  <option value="{{ photo.id }}" {% if chosen and chosen.id == photo.id %}selected{% endif %}>
+    {{ photo.taken_at | local_day }}
+    {%- if bake %} · {{ bake.label }} · {{ bake.method.label }}{% endif -%}
+    {%- if photo.caption %} · {{ photo.caption }}{% endif -%}
+  </option>
+  {% endfor %}
+</select>
+{% endmacro %}
+
+<form class="form card" method="get" action="/photos/compare">
+  <div class="field-row">
+    <label><span>Left</span>{{ picker("a", left) }}</label>
+    <label><span>Right</span>{{ picker("b", right) }}</label>
+  </div>
+  <div class="row-actions">
+    <button class="btn" type="submit">Show them</button>
+  </div>
+</form>
+
+{% if left or right %}
+<div class="compare">
+  {% for photo in [left, right] %}
+  <figure class="compare-side">
+    {% if photo %}
+    {% set bake = owners.get(photo.owner_id) %}
+    <a href="{{ photo.url }}" target="_blank" rel="noopener">
+      <img src="{{ photo.url }}" alt="{{ photo.caption or 'Bake photo' }}" loading="lazy">
+    </a>
+    <figcaption>
+      {% if bake %}
+      <a href="/bakes/{{ bake.id }}">{{ bake.label }}</a>
+      <span class="muted">{{ bake.method.label }}</span>
+      {% if bake.result and bake.result.rating %}
+      <span class="stars" aria-hidden="true">{{ "★" * bake.result.rating }}{{ "☆" * (5 - bake.result.rating) }}</span>
+      {% endif %}
+      <br>
+      {% endif %}
+      <span class="muted">{{ photo.taken_at | local_day }}{% if photo.caption %} · {{ photo.caption }}{% endif %}</span>
+      {% if bake and bake.result and bake.result.next_time %}
+      <span class="muted small">Next time: {{ bake.result.next_time }}</span>
+      {% endif %}
+    </figcaption>
+    {% else %}
+    <div class="compare-empty muted">Pick a photo for this side.</div>
+    {% endif %}
+  </figure>
+  {% endfor %}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
