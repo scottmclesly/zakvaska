@@ -1,0 +1,35 @@
+{# A run of phases laid out along a bar in proportion to their minutes.
+   Expects `bar` (services.charts.TimeBar). Optionally:
+     bar_title        a label to the left of the track
+     bar_total        false to leave the running total off
+     bar_total_label  a total to show instead of the segments added up —
+                      the bread maker's manual does not always agree with
+                      its own arithmetic, and the manual wins
+
+   Flex-grow rather than percentage widths, so a thirty-second stir-down
+   still gets a sliver you can see without it overflowing the row. Phase
+   names only go inside segments wide enough to hold them; the rest are in
+   the title and in the text the whole bar reads out as.
+#}
+<div class="timebar">
+  {%- if bar_title %}
+  <span class="timebar-title">{{ bar_title }}</span>
+  {%- endif %}
+  <div class="timebar-track" role="img"
+       aria-label="{% for seg in bar.segments %}{{ seg.name }} {{ seg.duration_label }}{% if not loop.last %}, {% endif %}{% endfor %}.">
+    {%- for seg in bar.segments %}
+    <span class="timebar-seg seg-{{ seg.key }} {% if seg.unknown %}is-unknown{% endif %}"
+          style="flex-grow: {{ seg.pct | round(3) }}" title="{{ seg.title }}">
+      {%- if seg.pct >= 9 and not seg.unknown %}
+      <span class="timebar-name">{{ seg.name }}</span>
+      {%- if seg.pct >= 20 %}
+      <span class="timebar-mins">{{ seg.duration_label }}</span>
+      {%- endif %}
+      {%- endif %}
+    </span>
+    {%- endfor %}
+  </div>
+  {%- if bar_total is not defined or bar_total %}
+  <span class="timebar-total">{{ bar_total_label or bar.total_label }}</span>
+  {%- endif %}
+</div>

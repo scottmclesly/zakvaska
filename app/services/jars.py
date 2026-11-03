@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from collections.abc import Sequence
 from typing import Any, Literal
 
 from sqlalchemy import select
@@ -19,7 +20,7 @@ from app.models.feeding import Feeding
 from app.models.jar import Jar
 from app.models.jar_state_change import JarStateChange
 from app.models.observation import Observation
-from app.services import alerts as alert_service, derived
+from app.services import alerts as alert_service, charts, derived
 from app.services.schedule import FeedStatus, feed_status, last_feeding
 
 EventKind = Literal["feeding", "observation", "state_change"]
@@ -189,6 +190,44 @@ def timeline(session: Session, jar: Jar) -> list[TimelineEvent]:
     # Newest first; id as tiebreaker so same-second entries stay stable.
     events.sort(key=lambda e: (e.at, getattr(e.obj, "id", 0)), reverse=True)
     return events
+
+
+def rise_series(
+    session: Session, jars: Sequence[Jar]
+) -> list[charts.SeriesInput]:
+    """Each jar's measured rises, oldest first, ready to plot.
+
+    One query for every jar on the page rather than one per jar, and jars
+    with nothing measured are left out: an empty line in the legend reads
+    as a jar that failed rather than one that was never put under a ruler.
+    """
+    if not jars:
+        return []
+
+    by_jar: dict[int, list[charts.Sample]] = {jar.id: [] for jar in jars}
+    for observation in session.scalars(
+        select(Observation)
+        .where(Observation.jar_id.in_(list(by_jar)))
+        .order_by(Observation.observed_at, Observation.id)
+    ):
+        value = derived.rise_pct(
+            observation.start_height_mm, observation.height_mm
+        )
+        if value is None:
+            continue
+        by_jar[observation.jar_id].append(
+            charts.Sample(at=observation.observed_at, value=value)
+        )
+
+    return [
+        charts.SeriesInput(
+            name=jar.name,
+            samples=by_jar[jar.id],
+            is_control=jar.is_control,
+        )
+        for jar in jars
+        if by_jar[jar.id]
+    ]
 
 
 @dataclass(frozen=True)

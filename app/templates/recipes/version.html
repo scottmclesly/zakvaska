@@ -7,7 +7,14 @@
 {% endblock %}
 
 {% block content %}
-<section class="hero">
+<section class="hero hero-art">
+  <div class="hero-loaf">
+    {% with art_class = "loaf-art-lg" %}
+      {% include "partials/loaf_art.html" %}
+    {% endwith %}
+    <div class="shelf-plank shelf-plank-sm" aria-hidden="true"></div>
+  </div>
+  <div>
   <h1>{{ recipe.name }}</h1>
   <p class="jar-meta">
     <span class="badge">{{ recipe.category.label }}</span>
@@ -30,6 +37,7 @@
   </p>
   {% endif %}
   <p class="muted small">Saved {{ version.created_at | local_dt }}</p>
+  </div>
 </section>
 
 {% if recipe.versions | length > 1 %}
@@ -105,7 +113,15 @@
           {{ line.name }}
           {% if line.notes %}<span class="muted small">· {{ line.notes }}</span>{% endif %}
         </td>
-        <td class="numeric">{{ line.baker_pct | percent(1) }}</td>
+        <td class="numeric pct-cell">
+          {{ line.baker_pct | percent(1) }}
+          {#- Measured against the flour's 100%, and clamped there: a line
+              over 100% is already the biggest bar on the table. -#}
+          <span class="pctbar" aria-hidden="true">
+            <span class="pctbar-fill role-{{ line.role.value }}"
+                  style="width: {{ [line.baker_pct, 100] | min | round(1) }}%"></span>
+          </span>
+        </td>
         {% if scaled %}
         <td class="numeric strong">
           {{ scaled.ingredients[loop.index0].grams | weigh(weight_unit, line.name, line.role) }}
@@ -150,6 +166,19 @@
 
 <h2 class="section-title">Stages</h2>
 {% if version.stages %}
+{% with bar = stage_bar(version.stages) %}
+{% if bar %}
+<div class="card stage-ribbon">
+  {% include "partials/time_bar.html" %}
+  <p class="muted small">
+    {{ bar.total_label }} of timed stages, start to finish.
+    {%- if bar.has_unknown %}
+    Hatched stages have no time against them yet, so they are drawn to no scale.
+    {%- endif %}
+  </p>
+</div>
+{% endif %}
+{% endwith %}
 <ol class="stage-list">
   {% for stage in version.stages %}
   <li class="card stage">

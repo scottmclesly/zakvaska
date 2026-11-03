@@ -14,16 +14,23 @@
 <ul class="jar-grid">
   {% for recipe in recipes %}
   {% set latest = recipe.latest_version %}
-  <li class="card">
-    <div class="jar-card-head">
-      <h2><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h2>
-      <span class="badge">{{ recipe.category.label }}</span>
+  <li class="card recipe-card">
+    <div class="recipe-head">
+      <div class="recipe-loaf">
+        {% include "partials/loaf_art.html" %}
+      </div>
+      <div class="recipe-head-text">
+        <div class="jar-card-head">
+          <h2><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h2>
+          <span class="badge">{{ recipe.category.label }}</span>
+        </div>
+        {% if recipe.source %}
+        <p class="source muted small">
+          {{ recipe.source }}{% if recipe.source_ref %} · {{ recipe.source_ref }}{% endif %}
+        </p>
+        {% endif %}
+      </div>
     </div>
-    {% if recipe.source %}
-    <p class="source muted small">
-      {{ recipe.source }}{% if recipe.source_ref %} · {{ recipe.source_ref }}{% endif %}
-    </p>
-    {% endif %}
     <dl class="stats">
       <div>
         <dt>Latest</dt>

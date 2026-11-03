@@ -180,3 +180,66 @@ class TestDashboardOrdering:
         cards = jar_service.dashboard(session, frozen_now)
 
         assert [c.jar.name for c in cards] == ["Scheduled", "Never fed"]
+
+
+class TestRiseSeries:
+    def test_measurements_come_back_oldest_first(self, session, frozen_now):
+        jar = _make(session)
+        for hours, height in ((2, 60.0), (10, 40.0), (6, 50.0)):
+            jar_service.log_observation(
+                session, jar, observed_at=frozen_now - timedelta(hours=hours),
+                start_height_mm=40.0, height_mm=height,
+            )
+        session.commit()
+
+        (series,) = jar_service.rise_series(session, [jar])
+
+        assert [round(s.value) for s in series.samples] == [0, 25, 50]
+
+    def test_an_observation_with_no_ruler_against_it_is_skipped(
+        self, session, frozen_now
+    ):
+        jar = _make(session)
+        jar_service.log_observation(
+            session, jar, observed_at=frozen_now, bubbles=BubbleLevel.MANY
+        )
+        jar_service.log_observation(
+            session, jar, observed_at=frozen_now,
+            start_height_mm=40.0, height_mm=80.0,
+        )
+        session.commit()
+
+        (series,) = jar_service.rise_series(session, [jar])
+
+        assert [s.value for s in series.samples] == [100.0]
+
+    def test_a_jar_nobody_has_measured_gets_no_line_at_all(
+        self, session, frozen_now
+    ):
+        """An empty line in the key reads as a jar that failed."""
+        measured = _make(session, "Measured")
+        never = _make(session, "Never measured")
+        jar_service.log_observation(
+            session, measured, observed_at=frozen_now,
+            start_height_mm=40.0, height_mm=80.0,
+        )
+        session.commit()
+
+        series = jar_service.rise_series(session, [measured, never])
+
+        assert [s.name for s in series] == ["Measured"]
+
+    def test_the_control_is_carried_through_to_the_plot(self, session, frozen_now):
+        jar = _make(session, "Soviet", is_control=True)
+        jar_service.log_observation(
+            session, jar, observed_at=frozen_now,
+            start_height_mm=40.0, height_mm=80.0,
+        )
+        session.commit()
+
+        (series,) = jar_service.rise_series(session, [jar])
+
+        assert series.is_control
+
+    def test_asking_about_no_jars_asks_the_database_nothing(self, session):
+        assert jar_service.rise_series(session, []) == []

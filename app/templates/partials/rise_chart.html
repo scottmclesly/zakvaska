@@ -1,0 +1,95 @@
+{# Rise against time, plotted. Expects `chart` (services.charts.RiseChart).
+
+   Optionally:
+     chart_title    the heading; omit for no heading
+     chart_caption  a line under the plot
+     chart_legend   false to leave the key off (one jar needs no key)
+
+   Server-rendered SVG: no chart library, no JS, and it themes with the page.
+   The geometry all comes from the service, so this file only draws.
+#}
+{%- set plot = chart.plot -%}
+<figure class="chart-card card">
+  {%- if chart_title %}
+  <figcaption class="chart-head">
+    <h2 class="section-title">{{ chart_title }}</h2>
+    <span class="muted small">{{ chart.first_at | local_day }} → {{ chart.last_at | local_day }}</span>
+  </figcaption>
+  {%- endif %}
+
+  {%- if chart_legend is not defined or chart_legend %}
+  <ul class="chart-key plain">
+    {%- for line in chart.lines %}
+    <li class="chart-key-item slot-{{ line.slot }} {% if line.is_control %}is-control{% endif %}">
+      <span class="chart-swatch" aria-hidden="true"></span>
+      <span class="chart-key-name">{{ line.name }}</span>
+      {%- if line.is_control %}<span class="badge badge-control">control</span>{% endif %}
+      <span class="muted small">
+        last {{ line.last.value | percent }} · best {{ line.best.value | percent }}
+      </span>
+    </li>
+    {%- endfor %}
+  </ul>
+  {%- endif %}
+
+  <svg class="chart" viewBox="{{ chart.viewbox }}" role="img"
+       aria-label="Rise over time: {% for line in chart.lines %}{{ line.name }} peaked at
+                   {{ line.best.value | percent }}{% if not loop.last %}; {% endif %}{% endfor %}.">
+    <!-- the paper the plot is drawn on -->
+    <rect class="chart-paper" x="{{ plot.x }}" y="{{ plot.y }}"
+          width="{{ plot.w }}" height="{{ plot.h }}" rx="3"/>
+
+    <g class="chart-grid">
+      {%- for band in chart.gridlines %}
+      <line class="chart-rule {% if band.is_doubled %}is-doubled{% elif band.is_baseline %}is-baseline{% endif %}"
+            x1="{{ plot.x }}" y1="{{ band.y | round(2) }}"
+            x2="{{ plot.right }}" y2="{{ band.y | round(2) }}"/>
+      <text class="chart-ylabel" x="{{ plot.x - 7 }}" y="{{ (band.y + 4) | round(2) }}"
+            text-anchor="end">{{ band.label }}</text>
+      {#- Tagged at the left, where a rise curve has not got to yet; at the
+          right it sits on top of the latest reading. -#}
+      {%- if band.is_doubled %}
+      <text class="chart-note" x="{{ plot.x + 5 }}" y="{{ (band.y - 5) | round(2) }}"
+            text-anchor="start">doubled</text>
+      {%- endif %}
+      {%- endfor %}
+    </g>
+
+    <g class="chart-ticks">
+      {%- for tick in chart.ticks %}
+      <line class="chart-tick" x1="{{ tick.x | round(2) }}" y1="{{ plot.bottom }}"
+            x2="{{ tick.x | round(2) }}" y2="{{ plot.bottom + 5 }}"/>
+      {#- Labels at the ends would hang off the picture, so they tuck in. -#}
+      {%- if tick.x < plot.x + 34 %}
+      <text class="chart-xlabel" x="{{ plot.x }}" y="{{ plot.bottom + 19 }}"
+            text-anchor="start">{{ tick.label }}</text>
+      {%- elif tick.x > plot.right - 34 %}
+      <text class="chart-xlabel" x="{{ plot.right }}" y="{{ plot.bottom + 19 }}"
+            text-anchor="end">{{ tick.label }}</text>
+      {%- else %}
+      <text class="chart-xlabel" x="{{ tick.x | round(2) }}" y="{{ plot.bottom + 19 }}"
+            text-anchor="middle">{{ tick.label }}</text>
+      {%- endif %}
+      {%- endfor %}
+    </g>
+
+    {%- for line in chart.lines %}
+    <g class="chart-line slot-{{ line.slot }} {% if line.is_control %}is-control{% endif %}">
+      {%- if line.points | length > 1 %}
+      <polyline class="chart-path" points="{{ line.polyline }}"/>
+      {%- endif %}
+      {%- for point in line.points %}
+      <circle class="chart-dot" cx="{{ point.x | round(2) }}" cy="{{ point.y | round(2) }}" r="4">
+        <title>{{ line.name }} — {{ point.value | percent }} at {{ point.at | local_dt }}</title>
+      </circle>
+      {%- endfor %}
+    </g>
+    {%- endfor %}
+  </svg>
+
+  <p class="chart-caption muted small">
+    {%- if chart_caption %}{{ chart_caption }}
+    {%- else %}Each dot is one observation: how far it climbed above where that feed left it.
+    {%- endif %}
+  </p>
+</figure>

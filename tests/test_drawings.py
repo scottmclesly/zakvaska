@@ -7,8 +7,10 @@ meaning: the label, the state, and the level the jar is filled to.
 from __future__ import annotations
 
 import re
+from datetime import timedelta
 
 from app.models.enums import IngredientRole, JarOrigin, JarState, RecipeCategory
+from app.models.recipe import EquipmentCycle
 from app.services import jars as jar_service
 from app.services import recipes as recipe_service
 from app.services.recipes import IngredientSpec, StageSpec
@@ -340,3 +342,308 @@ class TestRoleGlyphs:
         glyph = body[body.index('class="role-icon') - 60:]
 
         assert 'aria-hidden="true"' in glyph[:300]
+
+
+def make_recipe(session, *, name="Rye loaf", category=RecipeCategory.RYE,
+                ingredients=None, stages=None):
+    recipe = recipe_service.create_recipe(
+        session,
+        name=name,
+        category=category,
+        ingredients=ingredients
+        or [
+            IngredientSpec("Whole rye", IngredientRole.FLOUR, 100.0),
+            IngredientSpec("Water", IngredientRole.WATER, 78.0),
+        ],
+        stages=stages or [StageSpec("bake", duration_min=50)],
+    )
+    session.commit()
+    return recipe
+
+
+class TestTheDrawnLoaf:
+    def test_every_category_gets_its_own_loaf(self, client, session):
+        for category in RecipeCategory:
+            make_recipe(session, name=f"A {category.value}", category=category)
+
+        body = client.get("/recipes").text
+
+        for category in RecipeCategory:
+            assert f"loaf-art loaf-{category.value}" in body, category
+
+    def test_a_rye_is_drawn_as_a_rye_and_not_as_a_boule(self, client, session):
+        make_recipe(session, category=RecipeCategory.RYE)
+
+        body = client.get("/recipes").text
+
+        assert "loaf-rye" in body
+        assert "loaf-wheat" not in body
+
+    def test_the_recipe_page_puts_a_big_one_on_a_plank(self, client, session):
+        recipe = make_recipe(session)
+
+        body = client.get(f"/recipes/{recipe.id}/v/1").text
+
+        assert "loaf-art-lg" in body
+        assert "shelf-plank-sm" in body
+
+    def test_it_says_in_words_what_it_is(self, client, session):
+        make_recipe(session, category=RecipeCategory.WHEAT)
+
+        assert 'aria-label="a scored round loaf"' in client.get("/recipes").text
+
+
+class TestBakersPercentBars:
+    def test_each_ingredient_gets_a_bar_the_width_of_its_share(
+        self, client, session
+    ):
+        recipe = make_recipe(
+            session,
+            ingredients=[
+                IngredientSpec("Bread flour", IngredientRole.FLOUR, 100.0),
+                IngredientSpec("Water", IngredientRole.WATER, 64.0),
+            ],
+        )
+
+        body = client.get(f"/recipes/{recipe.id}/v/1").text
+
+        assert 'class="pctbar-fill role-flour"\n                  style="width: 100.0%"' in body
+        assert 'class="pctbar-fill role-water"\n                  style="width: 64.0%"' in body
+
+    def test_a_line_over_a_hundred_percent_stops_at_the_full_bar(
+        self, client, session
+    ):
+        recipe = make_recipe(
+            session,
+            ingredients=[
+                IngredientSpec("Rye", IngredientRole.FLOUR, 100.0),
+                IngredientSpec("Scald water", IngredientRole.WATER, 140.0),
+            ],
+        )
+
+        body = client.get(f"/recipes/{recipe.id}/v/1").text
+
+        assert "140.0%" not in body.split("pctbar")[1][:200]
+        assert "140.0%" in body  # still written out in the figures
+
+    def test_the_bars_are_hidden_from_screen_readers(self, client, session):
+        """The percentage is right next to them in figures."""
+        recipe = make_recipe(session)
+
+        body = client.get(f"/recipes/{recipe.id}/v/1").text
+        bar = body[body.index('class="pctbar"') - 40:]
+
+        assert 'aria-hidden="true"' in bar[:120]
+
+
+class TestTheStageRibbon:
+    def test_stages_are_laid_out_in_proportion_to_their_minutes(
+        self, client, session
+    ):
+        recipe = make_recipe(
+            session,
+            stages=[
+                StageSpec("bulk ferment", duration_min=180),
+                StageSpec("bake", duration_min=60),
+            ],
+        )
+
+        body = client.get(f"/recipes/{recipe.id}/v/1").text
+
+        assert "stage-ribbon" in body
+        assert "flex-grow: 75.0" in body
+        assert "flex-grow: 25.0" in body
+
+    def test_a_stage_is_coloured_by_what_it_is(self, client, session):
+        recipe = make_recipe(
+            session,
+            stages=[
+                StageSpec("scald (zavarka)", duration_min=840),
+                StageSpec("bulk ferment", duration_min=120),
+                StageSpec("bake", duration_min=60),
+            ],
+        )
+
+        body = client.get(f"/recipes/{recipe.id}/v/1").text
+
+        for key in ("seg-scald", "seg-rise", "seg-bake"):
+            assert key in body, key
+
+    def test_an_untimed_stage_is_drawn_to_no_scale_and_says_so(
+        self, client, session
+    ):
+        recipe = make_recipe(
+            session,
+            stages=[
+                StageSpec("bulk ferment", duration_min=120),
+                StageSpec("shape"),
+            ],
+        )
+
+        body = client.get(f"/recipes/{recipe.id}/v/1").text
+
+        assert "is-unknown" in body
+        assert "drawn to no scale" in body
+
+    def test_stages_with_no_times_at_all_draw_no_ribbon(self, client, session):
+        recipe = make_recipe(session, stages=[StageSpec("mix"), StageSpec("bake")])
+
+        body = client.get(f"/recipes/{recipe.id}/v/1").text
+
+        assert "stage-ribbon" not in body
+        assert "mix" in body  # the list of stages is still there
+
+
+class TestTheBreadMaker:
+    def test_it_is_drawn_on_the_equipment_page(self, client, session):
+        body = client.get("/equipment").text
+
+        assert "machine-art" in body
+        assert 'aria-label="A bread maker with its lid down"' in body
+
+    def test_a_programs_cycle_is_drawn_to_scale(self, client, session):
+        program = recipe_service.create_program(
+            session, name="Basic", device="West Bend", total_min=180
+        )
+        session.add(
+            EquipmentCycle(
+                program_id=program.id, loaf_lb=2.0, knead1_min=10, rest_min=25,
+                knead2_min=15, rise2_min=20, stir_down_sec=30, rise3_min=41,
+                bake_min=69, total_min=180,
+            )
+        )
+        session.commit()
+
+        body = client.get("/equipment").text
+
+        assert "timebar-track" in body
+        for key in ("seg-knead", "seg-rest", "seg-rise", "seg-stir", "seg-bake"):
+            assert key in body, key
+
+    def test_the_bar_shows_the_manuals_own_total(self, client, session):
+        """The manual's figure is not always its own segments added up."""
+        program = recipe_service.create_program(
+            session, name="Cake", total_min=100
+        )
+        session.add(
+            EquipmentCycle(
+                program_id=program.id, loaf_lb=2.0, knead1_min=15,
+                bake_min=75, total_min=100,
+            )
+        )
+        session.commit()
+
+        body = client.get("/equipment").text
+
+        assert "1:40" in body
+        assert "Not broken down" in body
+
+    def test_a_program_the_manual_does_not_break_down_draws_no_bar(
+        self, client, session
+    ):
+        program = recipe_service.create_program(
+            session, name="Custom", total_min=185
+        )
+        session.add(
+            EquipmentCycle(
+                program_id=program.id, stir_down_sec=30, total_min=185
+            )
+        )
+        session.commit()
+
+        body = client.get("/equipment").text
+
+        assert "timebar-track" not in body
+
+    def test_the_bar_reads_out_as_words(self, client, session):
+        program = recipe_service.create_program(session, name="Dough", total_min=110)
+        session.add(
+            EquipmentCycle(
+                program_id=program.id, knead1_min=12, rest_min=20, knead2_min=8,
+                rise2_min=25, rise3_min=45, total_min=110,
+            )
+        )
+        session.commit()
+
+        body = client.get("/equipment").text
+
+        assert "Knead 1 12 min, Rest 20 min" in body
+
+
+class TestTheRiseChart:
+    def test_two_observations_put_a_chart_on_the_jars_page(
+        self, client, session, frozen_now
+    ):
+        jar = make_jar(session)
+        for hours, height in ((0, 40.0), (6, 70.0)):
+            jar_service.log_observation(
+                session, jar,
+                observed_at=frozen_now - timedelta(hours=12 - hours),
+                start_height_mm=35.0, height_mm=height,
+            )
+        session.commit()
+
+        body = client.get(f"/jars/{jar.id}").text
+
+        assert "HOW IT RISES".lower() in body.lower()
+        assert "chart-path" in body
+
+    def test_one_observation_is_not_a_chart(self, client, session, frozen_now):
+        jar = make_jar(session)
+        jar_service.log_observation(
+            session, jar, observed_at=frozen_now,
+            start_height_mm=35.0, height_mm=70.0,
+        )
+        session.commit()
+
+        assert "chart-path" not in client.get(f"/jars/{jar.id}").text
+
+    def test_an_observation_with_no_measurements_does_not_plot(
+        self, client, session, frozen_now
+    ):
+        jar = make_jar(session)
+        for _ in range(3):
+            jar_service.log_observation(
+                session, jar, observed_at=frozen_now, bubbles=None
+            )
+        session.commit()
+
+        assert "chart-path" not in client.get(f"/jars/{jar.id}").text
+
+    def test_the_dashboard_overlays_the_jars_against_each_other(
+        self, client, session, frozen_now
+    ):
+        homemade = make_jar(session, name="Homemade rye")
+        control = make_jar(session, name="Soviet", is_control=True)
+        for jar, height in ((homemade, 55.0), (control, 80.0)):
+            jar_service.log_observation(
+                session, jar, observed_at=frozen_now - timedelta(hours=6),
+                start_height_mm=35.0, height_mm=height,
+            )
+        session.commit()
+
+        body = client.get("/").text
+
+        assert "chart-key" in body
+        assert "slot-1" in body and "slot-2" in body
+        assert "Homemade rye" in body and "Soviet" in body
+
+    def test_the_control_is_dashed_as_well_as_coloured(
+        self, client, session, frozen_now
+    ):
+        """So which line is which survives colour blindness."""
+        homemade = make_jar(session, name="Homemade rye")
+        control = make_jar(session, name="Soviet", is_control=True)
+        for jar, height in ((homemade, 55.0), (control, 80.0)):
+            jar_service.log_observation(
+                session, jar, observed_at=frozen_now - timedelta(hours=6),
+                start_height_mm=35.0, height_mm=height,
+            )
+        session.commit()
+
+        body = client.get("/").text
+
+        assert "chart-line slot-2 is-control" in body
+
+    def test_an_empty_dashboard_draws_no_chart(self, client):
+        assert "chart-path" not in client.get("/").text

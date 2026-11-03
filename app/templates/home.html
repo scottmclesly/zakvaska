@@ -62,6 +62,12 @@
   </li>
   {% endfor %}
 </ul>
+{% if rise_chart %}
+{% with chart = rise_chart, chart_title = "How they rise",
+        chart_caption = "Each dot is one observation. The line that keeps reaching higher is the jar that is working." %}
+  {% include "partials/rise_chart.html" %}
+{% endwith %}
+{% endif %}
 {% else %}
 <section class="shelf shelf-bare" aria-hidden="true">
   <div class="shelf-inner">

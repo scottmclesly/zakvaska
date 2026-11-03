@@ -1115,7 +1115,9 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .shelf-put-away .shelf-plank { filter: saturate(0.5) brightness(0.94); }
 .jar-art-put-away { width: 112px; }
 
-.hero-jar {
+.hero-jar,
+.hero-loaf,
+.hero-machine {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1247,3 +1249,306 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .cycletable tbody th { text-align: left; }
 .cycletable tbody tr:last-child th,
 .cycletable tbody tr:last-child td { border-bottom: 0; }
+
+/* --- Loaves and the machine --------------------------------------------- */
+
+/* Bread is bread in either theme: these are object colours, not chrome, so
+   they stay put when the page goes dark. */
+.loaf-art {
+  width: 72px;
+  height: auto;
+  flex: 0 0 auto;
+  --crust: #b9793c;
+  --crust-dark: #87501f;
+}
+.loaf-art-lg { width: 134px; }
+
+.loaf-rye { --crust: #6d4524; --crust-dark: #3d2412; }
+.loaf-wheat { --crust: #c68d4c; --crust-dark: #8f5c27; }
+.loaf-enriched { --crust: #dba961; --crust-dark: #a5712b; }
+
+.loaf-shadow { fill: color-mix(in srgb, var(--text) 16%, transparent); }
+.loaf-body { fill: var(--crust); }
+/* Where the oven caught it. */
+.loaf-light { fill: #ffffff; opacity: 0.16; }
+.loaf-score {
+  fill: none;
+  stroke: var(--crust-dark);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+.loaf-seeds ellipse { fill: var(--crust-dark); opacity: 0.85; }
+.loaf-flour ellipse { fill: #ffffff; opacity: 0.3; }
+.loaf-plait rect {
+  fill: var(--crust);
+  stroke: var(--crust-dark);
+  stroke-width: 1.2;
+  opacity: 0.98;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* A dark rye on a dark page needs lifting or it is a silhouette. */
+  .loaf-rye { --crust: #825329; --crust-dark: #4d2d15; }
+  .loaf-light { opacity: 0.1; }
+}
+
+.machine-art {
+  width: 86px;
+  height: auto;
+  flex: 0 0 auto;
+  --case: #d9d3c8;
+  --case-edge: #b0a79b;
+}
+.machine-art-lg { width: 132px; }
+
+.machine-shadow { fill: color-mix(in srgb, var(--text) 16%, transparent); }
+.machine-body { fill: var(--case); }
+.machine-outline { fill: none; stroke: var(--case-edge); stroke-width: 1.4; }
+.machine-lid { fill: color-mix(in srgb, var(--case) 88%, #2b2219); }
+.machine-window { fill: #3b2d21; }
+.machine-glint { fill: #ffffff; opacity: 0.28; }
+.machine-vents rect { fill: var(--case-edge); opacity: 0.75; }
+.machine-panel { fill: #4b4139; }
+/* The dim green LCD every bread maker has. */
+.machine-screen { fill: #93b89b; }
+.machine-digits rect { fill: #2d3a30; }
+.machine-light { fill: #d4663a; }
+.machine-buttons circle { fill: #8f8378; }
+.machine-steam {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  opacity: 0.4;
+}
+
+@media (prefers-color-scheme: dark) {
+  .machine-art { --case: #615950; --case-edge: #413a33; }
+}
+
+/* A loaf beside the recipe's name on the list. */
+.recipe-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.recipe-loaf { flex: 0 0 auto; display: flex; }
+.recipe-head-text { flex: 1 1 auto; min-width: 0; }
+
+/* --- Bars of elapsed time ----------------------------------------------- */
+
+/* One program's cycle, or one recipe's stages, drawn to scale. Flex-grow
+   does the proportions so a thirty-second stir-down keeps a visible sliver
+   instead of rounding away to nothing. */
+.timebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+.timebar-title,
+.timebar-total {
+  flex: 0 0 auto;
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.timebar-title { min-width: 48px; }
+.timebar-total { font-weight: 600; color: var(--text); }
+
+.timebar-track {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.timebar-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 3px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1;
+  background: var(--phase, var(--muted));
+  color: var(--phase-ink, #2b2016);
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.08);
+}
+.timebar-mins { opacity: 0.75; font-variant-numeric: tabular-nums; }
+
+/* The phases, in the order a loaf goes through them. */
+.seg-scald { --phase: #7e5a86; --phase-ink: #fdf6ff; }
+.seg-sponge { --phase: #c2995c; }
+.seg-knead { --phase: #b5854a; }
+.seg-rest { --phase: #e6dcc4; }
+.seg-rise { --phase: #d9b36a; }
+.seg-stir { --phase: #8a6a4a; --phase-ink: #fff6ea; }
+.seg-bake { --phase: #a84f22; --phase-ink: #fff3e9; }
+.seg-warm { --phase: #c9bba6; }
+.seg-cool { --phase: #9fb4c0; }
+.seg-other { --phase: #bdb3a6; }
+/* Time the manual charges for but does not break down. */
+.seg-unlisted {
+  --phase: transparent;
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--muted) 26%, transparent) 0 5px,
+    transparent 5px 10px
+  );
+  color: var(--muted);
+}
+
+/* A stage nobody has timed yet: present, but drawn to no scale and marked
+   as such rather than pretending to a width. */
+.timebar-seg.is-unknown {
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--muted) 34%, transparent) 0 4px,
+    transparent 4px 8px
+  );
+}
+
+.program-bars { margin: 10px 0 12px; }
+.stage-ribbon { margin-bottom: 12px; }
+
+/* A bar behind each baker's percentage, so the shape of a formula reads
+   without doing the arithmetic. */
+.pct-cell { white-space: nowrap; }
+.pctbar {
+  display: block;
+  height: 4px;
+  margin-top: 5px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+  overflow: hidden;
+}
+.pctbar-fill {
+  display: block;
+  height: 100%;
+  background: var(--role-colour, var(--accent));
+}
+.pctbar-fill.role-flour { --role-colour: #c08a4e; }
+.pctbar-fill.role-water { --role-colour: #7d9bb5; }
+.pctbar-fill.role-levain { --role-colour: #c98b4b; }
+.pctbar-fill.role-salt { --role-colour: #99a4ac; }
+.pctbar-fill.role-sweetener { --role-colour: #b2793f; }
+.pctbar-fill.role-fat { --role-colour: #d8c07c; }
+.pctbar-fill.role-other { --role-colour: #a99a8b; }
+
+/* --- Rise charts -------------------------------------------------------- */
+
+.chart-card { margin: 16px 0; padding: 14px 14px 8px; }
+.chart-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.chart-head .section-title { margin: 0; }
+
+/* Capped rather than full-bleed: the figures on the axes are drawn in the
+   SVG's own units, so a chart stretched across a wide card scales them up
+   to shouting. This keeps them near the size of the text around them in
+   either direction. */
+.chart {
+  display: block;
+  width: 100%;
+  max-width: 470px;
+  height: auto;
+  margin: 4px auto 0;
+  overflow: visible;
+}
+
+/* Graph paper, faintly. */
+.chart-paper { fill: color-mix(in srgb, var(--accent) 4%, transparent); }
+.chart-rule { stroke: var(--border); stroke-width: 1; }
+/* The two lines that mean something: where it started, and doubled. */
+.chart-rule.is-baseline {
+  stroke: color-mix(in srgb, var(--text) 32%, transparent);
+  stroke-width: 1.3;
+}
+.chart-rule.is-doubled {
+  stroke: color-mix(in srgb, var(--accent) 65%, transparent);
+  stroke-width: 1.4;
+  stroke-dasharray: 5 4;
+}
+.chart-tick { stroke: var(--border); stroke-width: 1.2; }
+.chart-ylabel,
+.chart-xlabel {
+  fill: var(--muted);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.chart-note {
+  fill: color-mix(in srgb, var(--accent) 85%, transparent);
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 13px;
+}
+
+.chart-path {
+  fill: none;
+  stroke: var(--series);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.chart-dot {
+  fill: var(--series);
+  stroke: var(--surface);
+  stroke-width: 1.4;
+}
+/* The control is dashed as well as a different colour, so which line is
+   which survives a photocopy — and colour blindness. */
+.chart-line.is-control .chart-path { stroke-dasharray: 7 4; }
+
+.chart-line,
+.chart-key-item { --series: #9a6f41; }
+.slot-1 { --series: #b4531c; }
+.slot-2 { --series: #3f718f; }
+.slot-3 { --series: #76863a; }
+.slot-4 { --series: #87559b; }
+.slot-5 { --series: #a9842a; }
+.slot-6 { --series: #5d7f75; }
+
+.chart-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 8px 0 2px;
+  padding: 0;
+}
+.chart-key-item { display: flex; align-items: center; gap: 7px; }
+.chart-key-name { font-weight: 600; }
+.chart-swatch {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--series);
+}
+.chart-key-item.is-control .chart-swatch {
+  background: repeating-linear-gradient(
+    90deg, var(--series) 0 5px, transparent 5px 8px
+  );
+}
+.chart-caption { margin: 2px 0 0; }
+
+@media (max-width: 560px) {
+  /* The size label stays: on a sized program it says which loaf this row
+     is the clock for, which is the whole point of there being three. */
+  .timebar-title { min-width: 36px; font-size: 12px; }
+  .timebar { gap: 7px; }
+  .recipe-head { gap: 10px; }
+  .loaf-art { width: 60px; }
+}

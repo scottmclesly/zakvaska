@@ -43,9 +43,13 @@ Comparing jars and iterating recipes is the point, so the data must be structure
 ```
 
 ## Out of scope for v1 (planned v2 — don't build yet, but don't block them)
-Rise-curve charts, back-scheduling a bake from a target time, sensor ingest API
+Back-scheduling a bake from a target time, sensor ingest API
 (`POST /api/readings` for an ESP32 temp/humidity + ToF rise sensor), ntfy phone push,
 Raspberry Pi systemd deployment.
+
+Rise-curve charts were pulled forward out of that list. Plots are drawn
+server-side: `app/services/charts.py` works out the coordinates and the Jinja
+partials emit inline SVG. No chart library — that would mean a JS build step.
 
 The plan and acceptance checks are in `docs/TODO-v1.md`. Work through it phase by phase,
 commit at the end of each phase, and stop to ask if anything is ambiguous.

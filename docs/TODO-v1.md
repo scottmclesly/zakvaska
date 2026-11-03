@@ -77,9 +77,13 @@ Work phase by phase. Each phase ends with its acceptance checks passing, tests g
 - [x] Weight display cycles grams → US cups/spoons → oz/lb, with per-ingredient densities
 - [x] Bread maker 2 / 2.5 / 3 lb loaf buttons on the start-a-bake form
 - [x] Drawn jars that fill to the measured rise, and ingredient role glyphs
+- [x] A shelf for the jars, archived ones on a dustier shelf below
+- [x] Drawn loaves per recipe category and the bread maker on the equipment page
+- [x] Rise-curve charts, homemade and control overlaid on the dashboard
+      (pulled forward out of the v2 backlog, 2026-11-02)
+- [x] Programs and recipe stages drawn to scale as bars of elapsed time
 
 ## v2 backlog (do not build in v1)
-- Rise-curve charts, overlay homemade vs control
 - Back-scheduling from a target "bread out" time through recipe stages
 - `POST /api/readings` sensor ingest (ESP32: temp/humidity + ToF height)
 - ntfy push to phone

@@ -7,6 +7,7 @@ exists (CLAUDE.md).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -15,12 +16,14 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models.enums import IngredientRole, RecipeCategory
 from app.models.recipe import (
+    EquipmentCycle,
     EquipmentProgram,
     Recipe,
     RecipeIngredient,
     RecipeStage,
     RecipeVersion,
 )
+from app.services import charts
 
 
 @dataclass
@@ -235,3 +238,81 @@ def update_program(
         setattr(program, key, value)
     session.flush()
     return program
+
+
+# --- Phases laid out along a bar -------------------------------------------
+#
+# A program's cycle and a recipe's stages are both "these phases, in this
+# order, for these many minutes", so both go through charts.time_bar. These
+# are registered as template globals: the templates already walk the cycles
+# and stages themselves, and threading a dict of bars through every route
+# that renders one would be worse than letting the page ask.
+
+
+def cycle_bar(cycle: EquipmentCycle) -> charts.TimeBar | None:
+    """The machine's own clock for one loaf size, to scale.
+
+    Keep-warm is left out on purpose: it is what happens if the bread is not
+    taken out, not part of the run, and counting it would make every program
+    look an hour longer than it is.
+    """
+    stir_min = (
+        cycle.stir_down_sec / 60 if cycle.stir_down_sec else None
+    )
+    return charts.time_bar(
+        [
+            ("Knead 1", "knead", cycle.knead1_min),
+            ("Rest", "rest", cycle.rest_min),
+            ("Knead 2", "knead", cycle.knead2_min),
+            ("Rise 2", "rise", cycle.rise2_min),
+            ("Stir", "stir", stir_min),
+            ("Rise 3", "rise", cycle.rise3_min),
+            ("Bake", "bake", cycle.bake_min),
+        ],
+        total_min=cycle.total_min,
+    )
+
+
+_STAGE_KEYS = (
+    ("scald", "scald"),
+    ("zavarka", "scald"),
+    ("sponge", "sponge"),
+    ("levain", "sponge"),
+    ("mix", "knead"),
+    ("knead", "knead"),
+    ("autolyse", "rest"),
+    ("rest", "rest"),
+    ("bulk", "rise"),
+    ("ferment", "rise"),
+    ("proof", "rise"),
+    ("rise", "rise"),
+    ("bake", "bake"),
+    ("cool", "cool"),
+)
+
+
+def stage_key(name: str) -> str:
+    """Which kind of phase a stage is, read off its name.
+
+    Stage names are the baker's own words (CLAUDE.md keeps that vocabulary
+    open), so the colour is guessed from the name rather than stored. A
+    guess that misses lands on "other", which is only a colour.
+    """
+    lowered = name.lower()
+    for needle, key in _STAGE_KEYS:
+        if needle in lowered:
+            return key
+    return "other"
+
+
+def stage_bar(stages: Sequence[RecipeStage]) -> charts.TimeBar | None:
+    """A version's stages to scale, so the shape of the day is visible.
+
+    Untimed stages are kept: a stage with no minutes against it is still a
+    step that happens, and the bar marks it as having no time rather than
+    dropping it and quietly rewriting the method.
+    """
+    return charts.time_bar(
+        [(stage.name, stage_key(stage.name), stage.duration_min) for stage in stages],
+        keep_unknown=True,
+    )

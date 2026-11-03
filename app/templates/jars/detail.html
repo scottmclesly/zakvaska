@@ -72,6 +72,12 @@
   </div>
 </section>
 
+{% if rise_chart %}
+{% with chart = rise_chart, chart_title = "How it rises", chart_legend = false %}
+  {% include "partials/rise_chart.html" %}
+{% endwith %}
+{% endif %}
+
 {% if jar.notes %}
 <section class="card">
   <h2 class="section-title">Notes</h2>

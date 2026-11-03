@@ -26,7 +26,12 @@ from app.models.enums import (
 )
 from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
-from app.services import bakes as bake_service, derived, jars as jar_service
+from app.services import (
+    bakes as bake_service,
+    charts,
+    derived,
+    jars as jar_service,
+)
 from app.services import photos as photo_service
 from app.services.units import temp_to_celsius
 from app.templates_env import render
@@ -190,6 +195,9 @@ def jar_detail(request: Request, ctx: Ctx, jar_id: int) -> HTMLResponse:
             "title": jar.name,
             "jar": jar,
             "rise_pct": latest_rise,
+            "rise_chart": charts.rise_chart(
+                jar_service.rise_series(ctx.session, [jar]), tz=ctx.tz
+            ),
             "card": card,
             "last_ratio": last.get("ratio"),
             "last_hydration": last.get("hydration_pct"),

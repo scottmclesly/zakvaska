@@ -5,12 +5,20 @@
 {% endblock %}
 
 {% block content %}
-<section class="hero">
-  <h1>Equipment programs</h1>
-  <p class="sub">
-    The bread maker's programs, typed in from the manual, so a bake can
-    record which one was used.
-  </p>
+<section class="hero hero-art">
+  <div class="hero-machine">
+    {% with art_class = "machine-art-lg" %}
+      {% include "partials/breadmaker_art.html" %}
+    {% endwith %}
+    <div class="shelf-plank shelf-plank-sm" aria-hidden="true"></div>
+  </div>
+  <div>
+    <h1>Equipment programs</h1>
+    <p class="sub">
+      The bread maker's programs, typed in from the manual, so a bake can
+      record which one was used.
+    </p>
+  </div>
 </section>
 
 {% if errors %}
@@ -52,6 +60,17 @@
     </form>
 
     {% if program.cycles %}
+    {# The clock first, drawn to scale; the manual's figures underneath for
+       anyone who wants them. #}
+    <div class="program-bars">
+      {% for cycle in program.cycles %}
+      {% with bar = cycle_bar(cycle),
+              bar_title = cycle.label if program.sized else none,
+              bar_total_label = cycle.total_label %}
+        {% if bar %}{% include "partials/time_bar.html" %}{% endif %}
+      {% endwith %}
+      {% endfor %}
+    </div>
     {% include "partials/cycle_table.html" with context %}
     {% endif %}
 
