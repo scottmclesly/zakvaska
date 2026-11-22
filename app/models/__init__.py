@@ -3,11 +3,13 @@
 from app.models.alert import Alert
 from app.models.bake import Bake, BakeResult, BakeStageLog
 from app.models.base import Base
+from app.models.busy_block import BusyBlock
 from app.models.enums import (
     AlertKind,
     BakeMethod,
     BakeStatus,
     BubbleLevel,
+    BusyKind,
     IngredientRole,
     JarOrigin,
     JarState,
@@ -38,6 +40,8 @@ __all__ = [
     "BakeStatus",
     "Base",
     "BubbleLevel",
+    "BusyBlock",
+    "BusyKind",
     "EquipmentProgram",
     "Feeding",
     "IngredientRole",

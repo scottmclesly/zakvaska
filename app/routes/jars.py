@@ -16,6 +16,7 @@ from fastapi import (
 )
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from app.models.setting import FEEDS_PER_DAY_CHOICES
 from app.models.enums import (
     PhotoOwner,
     SMELL_SUGGESTIONS,
@@ -34,6 +35,7 @@ from app.services import (
     jars as jar_service,
 )
 from app.services import photos as photo_service
+from app.services import settings_store
 from app.services.units import temp_to_celsius
 from app.templates_env import render
 
@@ -75,9 +77,21 @@ def _attach_photo(
         log.warning("ignored an unreadable photo on a %s", owner.value)
 
 
+def _feeds_per_day(raw: str) -> int | None:
+    """Blank means "follow the app setting", which is a null in the row."""
+    value = f.opt_int(raw, field="Feeds a day")
+    if value is None:
+        return None
+    if value not in FEEDS_PER_DAY_CHOICES:
+        raise ValueError("Feeds a day must be one or two.")
+    return value
+
+
 def _jar_form_context(ctx: ViewContext, jar=None, errors=None, values=None) -> dict:
     return {
         "jar": jar,
+        "feeds_per_day_choices": FEEDS_PER_DAY_CHOICES,
+        "app_feeds_per_day": settings_store.feeds_per_day(ctx.session),
         "errors": errors or [],
         "values": values or {},
         "origins": list(JarOrigin),
@@ -108,6 +122,7 @@ def create_jar(
     culture_name: Annotated[str, Form()] = "",
     flour_type: Annotated[str, Form()] = "",
     state: Annotated[str, Form()] = JarState.ACTIVE.value,
+    feeds_per_day: Annotated[str, Form()] = "",
     feed_interval_room_h: Annotated[str, Form()] = "12",
     feed_interval_fridge_h: Annotated[str, Form()] = "168",
     parent_jar_id: Annotated[str, Form()] = "",
@@ -117,6 +132,7 @@ def create_jar(
     values = {
         "name": name, "origin": origin, "culture_name": culture_name,
         "flour_type": flour_type, "state": state,
+        "feeds_per_day": feeds_per_day,
         "feed_interval_room_h": feed_interval_room_h,
         "feed_interval_fridge_h": feed_interval_fridge_h,
         "parent_jar_id": parent_jar_id,
@@ -132,6 +148,11 @@ def create_jar(
     except ValueError as exc:
         errors.append(str(exc))
         room_h, fridge_h = 12, 168
+    try:
+        per_day = _feeds_per_day(feeds_per_day)
+    except ValueError as exc:
+        errors.append(str(exc))
+        per_day = None
 
     if errors:
         return render(
@@ -149,6 +170,7 @@ def create_jar(
         culture_name=f.opt_str(culture_name),
         flour_type=f.opt_str(flour_type),
         state=JarState(state),
+        feeds_per_day=per_day,
         feed_interval_room_h=room_h,
         feed_interval_fridge_h=fridge_h,
         parent_jar_id=f.opt_int(parent_jar_id, field="Parent jar"),
@@ -233,6 +255,7 @@ def edit_jar(
     culture_name: Annotated[str, Form()] = "",
     flour_type: Annotated[str, Form()] = "",
     state: Annotated[str, Form()] = JarState.ACTIVE.value,
+    feeds_per_day: Annotated[str, Form()] = "",
     feed_interval_room_h: Annotated[str, Form()] = "12",
     feed_interval_fridge_h: Annotated[str, Form()] = "168",
     parent_jar_id: Annotated[str, Form()] = "",
@@ -240,15 +263,22 @@ def edit_jar(
     notes: Annotated[str, Form()] = "",
 ):
     jar = _load(ctx, jar_id)
+    errors: list[str] = []
 
     if not f.opt_str(name):
+        errors.append("A jar needs a name.")
+    try:
+        per_day = _feeds_per_day(feeds_per_day)
+    except ValueError as exc:
+        errors.append(str(exc))
+        per_day = jar.feeds_per_day
+
+    if errors:
         return render(
             request=request,
             ctx=ctx,
             name="jars/form.html",
-            context=_jar_form_context(
-                ctx, jar=jar, errors=["A jar needs a name."]
-            ),
+            context=_jar_form_context(ctx, jar=jar, errors=errors),
             status_code=400,
         )
 
@@ -260,6 +290,7 @@ def edit_jar(
         culture_name=f.opt_str(culture_name),
         flour_type=f.opt_str(flour_type),
         state=JarState(state),
+        feeds_per_day=per_day,
         feed_interval_room_h=f.opt_int(feed_interval_room_h, field="Room interval") or 12,
         feed_interval_fridge_h=f.opt_int(feed_interval_fridge_h, field="Fridge interval") or 168,
         parent_jar_id=f.opt_int(parent_jar_id, field="Parent jar"),

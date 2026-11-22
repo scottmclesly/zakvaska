@@ -68,10 +68,22 @@
   </div>
 
   <div class="field-row">
+    {# Feeds a day is what the ribbon plans from; the room interval below is
+       the fallback for a jar with no plan yet. #}
     <label>
-      <span>Feed every (room, hours)</span>
-      <input name="feed_interval_room_h" type="number" min="1" step="1"
-             value="{{ field('feed_interval_room_h', jar.feed_interval_room_h if jar else 12) }}">
+      <span>Feeds a day</span>
+      <select name="feeds_per_day">
+        <option value=""
+          {% if not (v.get('feeds_per_day') or (jar.feeds_per_day if jar else None)) %}selected{% endif %}>
+          — the app's setting ({{ app_feeds_per_day }}) —
+        </option>
+        {% for choice in feeds_per_day_choices %}
+        <option value="{{ choice }}"
+          {% if (v.get('feeds_per_day')|string or (jar.feeds_per_day|string if jar and jar.feeds_per_day else '')) == choice|string %}selected{% endif %}>
+          {{ choice }} — every {{ 24 // choice }} hours
+        </option>
+        {% endfor %}
+      </select>
     </label>
     <label>
       <span>Feed every (fridge, hours)</span>
@@ -79,6 +91,15 @@
              value="{{ field('feed_interval_fridge_h', jar.feed_interval_fridge_h if jar else 168) }}">
     </label>
   </div>
+
+  <label>
+    <span>Feed every (room, hours) <em>fallback</em></span>
+    <input name="feed_interval_room_h" type="number" min="1" step="1"
+           value="{{ field('feed_interval_room_h', jar.feed_interval_room_h if jar else 12) }}">
+    <em class="muted small">
+      Used only until the jar has been fed and has a plan of its own.
+    </em>
+  </label>
 
   <label>
     <span>Split from <em>optional</em></span>

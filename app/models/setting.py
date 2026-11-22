@@ -10,7 +10,26 @@ from app.models.base import Base
 # Display units. Temperatures are stored in Celsius and weights in grams;
 # these say how to show them. Fahrenheit by default because that is the
 # kitchen this runs in; grams because that is how the rye recipes are written.
-DEFAULT_SETTINGS = {"temp_unit": "F", "weight_unit": "g"}
+#
+# The timing keys below drive the feeding ribbon and the bake-day planner:
+#   feeds_per_day           how many feeds a day an active jar gets, so the
+#                           cycle is 24 h divided by it. A jar may override.
+#   default_ferment_temp_c  what to assume when a feeding was logged without
+#                           an ambient temperature. 26.7 °C is 80 °F, the
+#                           proofing box setting.
+#   ribbon_span_h           how much time the ribbon shows at once.
+DEFAULT_SETTINGS = {
+    "temp_unit": "F",
+    "weight_unit": "g",
+    "feeds_per_day": "2",
+    "default_ferment_temp_c": "26.7",
+    "ribbon_span_h": "48",
+}
+
+#: Offered in the settings form. One or two feeds a day; more is a levain.
+FEEDS_PER_DAY_CHOICES = (1, 2)
+#: How far the ribbon looks, in hours.
+RIBBON_SPAN_CHOICES = (24, 48, 72)
 
 
 class Setting(Base):

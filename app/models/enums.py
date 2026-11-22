@@ -128,6 +128,20 @@ class AlertKind(enum.StrEnum):
     FEED_DUE = "feed_due"
 
 
+class BusyKind(enum.StrEnum):
+    """Whether a busy block repeats every week or happens once."""
+
+    RECURRING = "recurring"
+    ONCE = "once"
+
+    @property
+    def label(self) -> str:
+        return {
+            BusyKind.RECURRING: "Every week",
+            BusyKind.ONCE: "Just once",
+        }[self]
+
+
 class BubbleLevel(enum.StrEnum):
     """Ordinal on purpose, so two jars can be compared at a glance."""
 

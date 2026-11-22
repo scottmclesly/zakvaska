@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Enum, ForeignKey, Integer, String, Text
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, created_at_column
 from app.models.enums import JarOrigin, JarState
+from app.models.types import UtcDateTime
 
 if TYPE_CHECKING:
     from app.models.alert import Alert
@@ -43,12 +45,28 @@ class Jar(Base):
         _enum(JarState), nullable=False, default=JarState.ACTIVE
     )
 
+    # How often this jar is fed when it is out on the counter. Null means
+    # "use the app's setting", which is the usual case — a per-jar number is
+    # for the jar that is deliberately on a different rhythm.
+    #
+    # This is what drives the planned feeds on the ribbon, and it supersedes
+    # `feed_interval_room_h` for an active jar that has been fed: the
+    # interval stays as the fallback for a jar with no plan yet, and as the
+    # only answer for a jar in the fridge.
+    feeds_per_day: Mapped[int | None] = mapped_column(Integer)
+
     feed_interval_room_h: Mapped[int] = mapped_column(
         Integer, nullable=False, default=DEFAULT_ROOM_INTERVAL_H
     )
     feed_interval_fridge_h: Mapped[int] = mapped_column(
         Integer, nullable=False, default=DEFAULT_FRIDGE_INTERVAL_H
     )
+
+    # The time one planned feed should land at; every later planned feed
+    # repeats from it at the jar's cycle length. Null means the plan simply
+    # follows the last feed. Moving a planned feed writes this, which is
+    # what keeps the whole later chain aligned rather than drifting.
+    schedule_anchor_utc: Mapped[datetime | None] = mapped_column(UtcDateTime)
 
     # Lineage: a jar split off from another keeps the thread back to it.
     parent_jar_id: Mapped[int | None] = mapped_column(

@@ -1552,3 +1552,69 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
   .recipe-head { gap: 10px; }
   .loaf-art { width: 60px; }
 }
+
+/* --- Settings: the day picker and the busy list ---------------------- */
+
+.daypicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 2px;
+}
+.daybox {
+  /* A tap target, not a tick box with a word beside it: seven of those in
+     a row is unusable on a phone. */
+  display: inline-flex;
+  margin: 0;
+}
+.daybox input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.daybox span {
+  display: inline-block;
+  min-width: 42px;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+.daybox input:checked + span {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.daybox input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.busy-list { display: grid; gap: 10px; margin: 10px 0; }
+.busy-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.busy-row > .form { flex: 1 1 260px; }
+.busy-add { margin-top: 12px; }
+.busy-add summary,
+.busy-archived summary { cursor: pointer; padding: 4px 0; }
+/* Two forms in the one disclosure — weekly and one-off — need a line
+   between them or they read as a single long form. */
+.busy-add .form + .form {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
