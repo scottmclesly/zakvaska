@@ -27,7 +27,7 @@ from app.models.enums import JarState
 from app.models.feeding import Feeding
 from app.models.jar import Jar
 from app.services import busy as busy_service
-from app.services import ribbon
+from app.services import learning, ribbon
 from app.services import settings_store, timing
 from app.services.busy import BusyInterval
 from app.services.schedule import last_feeding
@@ -100,6 +100,21 @@ class JarPlan:
     planned: tuple[PlannedFeed, ...]
     #: True when the plan follows a moved anchor rather than the last feed.
     anchored: bool
+    #: This jar's measured correction to the model, worked out once and
+    #: carried, because every prediction on the page needs it and looking it
+    #: up per feed would be a query per curve on the ribbon.
+    factor: float = 1.0
+    #: How many recorded peaks that correction rests on.
+    peaks_recorded: int = 0
+
+    @property
+    def is_estimate(self) -> bool:
+        """Whether the peak times here are worth calling predictions.
+
+        Below a few recorded peaks they are the model's guess about rye in
+        general, not about this jar, and saying so costs one word.
+        """
+        return self.peaks_recorded < learning.CONFIDENT_AT
 
     @property
     def next_feed_at(self) -> datetime | None:
@@ -130,20 +145,21 @@ class JarPlan:
         at_temp = temp_c if temp_c is not None else (
             self.last_cycle.temp_c if self.last_cycle else timing.REF_TEMP_C
         )
-        return timing.solve_ratio(hours, at_temp, jar_factor(self.jar))
+        return timing.solve_ratio(hours, at_temp, self.factor)
 
 
 # --- Pieces ------------------------------------------------------------
 
 
-def jar_factor(jar: Jar) -> float:
+def jar_factor(session: Session, jar: Jar) -> float:
     """This jar's measured correction to the model.
 
-    A flat 1.0 until Phase E learns each jar from its recorded peaks. It is a
-    function rather than a constant so that every caller already asks the
-    right question, and only this body has to change.
+    One function every prediction goes through, so a jar that has been
+    watched a few times corrects the ribbon, the planner and the ratio
+    advice all at once. `services.learning` is where the arithmetic lives;
+    this is only the door into it.
     """
-    return 1.0
+    return learning.factor(session, jar)
 
 
 def cycle_hours(session: Session, jar: Jar) -> float:
@@ -159,9 +175,19 @@ def cycle_hours(session: Session, jar: Jar) -> float:
 
 
 def cycle_for_feeding(
-    session: Session, feeding: Feeding, jar: Jar, *, default_temp_c: float | None = None
+    session: Session,
+    feeding: Feeding,
+    jar: Jar,
+    *,
+    default_temp_c: float | None = None,
+    factor: float | None = None,
 ) -> FedCycle:
-    """Work out the rise one logged feeding set off."""
+    """Work out the rise one logged feeding set off.
+
+    `factor` is this jar's measured correction. Callers drawing a whole
+    ribbon pass the one they already have: it is the same for every feed of
+    the same jar, and looking it up per curve would be a query a curve.
+    """
     fallback = (
         default_temp_c
         if default_temp_c is not None
@@ -176,7 +202,9 @@ def cycle_for_feeding(
     # A build with no starter has no ratio; treat it as a 1:1:1 for timing,
     # which is the fastest the model goes, rather than refusing to draw it.
     peak_h = timing.predict_peak_h(
-        ratio if ratio is not None else 1.0, temp_c, jar_factor(jar)
+        ratio if ratio is not None else 1.0,
+        temp_c,
+        factor if factor is not None else jar_factor(session, jar),
     )
     return FedCycle(
         fed_at=feeding.fed_at,
@@ -271,6 +299,10 @@ def jar_plan(
 ) -> JarPlan:
     previous = last_feeding(session, jar.id)
     cycle_h = cycle_hours(session, jar)
+    # One read of the jar's recorded peaks, for both the correction and how
+    # much of a correction it really is.
+    learned = learning.learned(session, jar)
+    factor = learned.factor
     feeds, anchored = planned_feeds(
         session, jar, now=now, until=until,
         last_fed_at=previous.fed_at if previous else None,
@@ -279,15 +311,24 @@ def jar_plan(
         jar=jar,
         cycle_h=cycle_h,
         last_cycle=(
-            cycle_for_feeding(session, previous, jar) if previous else None
+            cycle_for_feeding(session, previous, jar, factor=factor)
+            if previous
+            else None
         ),
         planned=feeds,
         anchored=anchored,
+        factor=factor,
+        peaks_recorded=learned.count,
     )
 
 
 def recent_cycles(
-    session: Session, jar: Jar, *, since: datetime, until: datetime
+    session: Session,
+    jar: Jar,
+    *,
+    since: datetime,
+    until: datetime,
+    factor: float | None = None,
 ) -> list[FedCycle]:
     """The feeds whose rise curves fall inside a window, oldest first.
 
@@ -306,8 +347,11 @@ def recent_cycles(
     rows.reverse()
 
     default_temp = settings_store.default_ferment_temp_c(session)
+    held = factor if factor is not None else jar_factor(session, jar)
     cycles = [
-        cycle_for_feeding(session, row, jar, default_temp_c=default_temp)
+        cycle_for_feeding(
+            session, row, jar, default_temp_c=default_temp, factor=held
+        )
         for row in rows
     ]
 
@@ -531,7 +575,7 @@ def planned_marks(
     would put its peak there, so the badge on the ribbon can offer the fix
     rather than only naming the problem.
     """
-    factor = jar_factor(jar)
+    factor = plan_for.factor
     temp_c = (
         plan_for.last_cycle.temp_c
         if plan_for.last_cycle
@@ -579,7 +623,9 @@ def jar_series(
 ) -> tuple[ribbon.RibbonSeries, JarPlan]:
     """One jar turned into the marks the ribbon lays out, and its plan."""
     made = jar_plan(session, jar, now=now, until=end)
-    cycles = recent_cycles(session, jar, since=start, until=end)
+    cycles = recent_cycles(
+        session, jar, since=start, until=end, factor=made.factor
+    )
 
     note = None
     if not cycles:
@@ -604,6 +650,7 @@ def jar_series(
             _observation_marks(session, jar, since=start, until=end)
         ),
         is_control=jar.is_control,
+        is_estimate=bool(cycles) and made.is_estimate,
         note=note,
     )
     return series, made

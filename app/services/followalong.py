@@ -116,6 +116,11 @@ def start_from_plan(
                 name=step.name,
                 step_key=step.key,
                 planned_min=minutes,
+                model_min=(
+                    round(step.spec.model_min)
+                    if step.spec.model_min is not None
+                    else None
+                ),
                 planned_temp_c=oven_temp_c if step.key == "bake" else None,
                 planned_start=at,
                 hands_on=step.hands_on,

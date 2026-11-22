@@ -1990,3 +1990,25 @@ table.steps tr.is-clash td {
   padding-top: 10px;
   border-top: 1px solid var(--border);
 }
+
+/* --- What the app has learned about a jar ------------------------------
+   One sentence, plainly put: the jar's own correction to the model, and
+   why it is only an estimate when it is. */
+
+.learning {
+  margin: 8px 0 0;
+  padding: 9px 11px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.learning.is-known {
+  background: color-mix(in srgb, var(--band-peak) 10%, transparent);
+}
+.learning .muted { display: block; margin-top: 2px; font-size: 13px; }
+
+.badge-estimate {
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+  color: var(--muted);
+}

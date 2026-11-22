@@ -75,6 +75,12 @@
 
     <div class="row-actions">
       <a class="btn" href="/jars/{{ jar.id }}/feed">Fed it</a>
+      {#- The measurement the app cannot make for itself, one tap from the
+          dashboard so it is never worth skipping. -#}
+      <form method="post" action="/jars/{{ jar.id }}/peaked">
+        <input type="hidden" name="next" value="/">
+        <button class="btn" type="submit">Peaked now</button>
+      </form>
       <a class="btn btn-secondary" href="/jars/{{ jar.id }}/observe">Observe</a>
     </div>
   </li>

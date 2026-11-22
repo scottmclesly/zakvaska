@@ -57,7 +57,8 @@
     {%- for row in ribbon.rows %}
     <g class="ribbon-row slot-{{ row.slot }} {% if row.is_control %}is-control{% endif %}">
       <text class="ribbon-name" x="{{ plot.x }}" y="{{ row.label_y }}">
-        {{ row.name }}{% if row.is_control %} · control{% endif %}
+        {{ row.name }}{% if row.is_control %} · control{% endif -%}
+        {%- if row.is_estimate %} · estimate{% endif %}
         {%- if row.note %} <tspan class="ribbon-note">· {{ row.note }}</tspan>{% endif %}
       </text>
 

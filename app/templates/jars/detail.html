@@ -77,6 +77,9 @@
           {% else %}
             peaked {{ hours_label(-readiness.hours_to_peak) }} ago
           {% endif %}
+          {%- if learning and not learning.is_confident %}
+          <span class="badge badge-estimate">estimate</span>
+          {%- endif %}
         </span>
       </dd>
     </div>
@@ -85,8 +88,23 @@
 
   <div class="row-actions">
     <a class="btn" href="/jars/{{ jar.id }}/feed">Fed it</a>
+    {#- One tap, because this is the only measurement the app cannot make
+        for itself and it has to cost nothing. -#}
+    <form method="post" action="/jars/{{ jar.id }}/peaked">
+      <input type="hidden" name="next" value="/jars/{{ jar.id }}">
+      <button class="btn" type="submit">Peaked now</button>
+    </form>
     <a class="btn btn-secondary" href="/jars/{{ jar.id }}/observe">Observe</a>
   </div>
+
+  {% if learning %}
+  <p class="learning {% if learning.is_confident %}is-known{% endif %}">
+    {% if learning.blurb %}{{ learning.blurb }}{% endif %}
+    {% if learning.caveat %}
+    <span class="muted">{{ learning.caveat }}</span>
+    {% endif %}
+  </p>
+  {% endif %}
 </section>
 
 {% if ribbon %}

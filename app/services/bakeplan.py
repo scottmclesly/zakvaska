@@ -119,6 +119,11 @@ class StepSpec:
     note: str | None = None
     #: True when a recipe stage supplied the duration instead of a default.
     from_recipe: bool = False
+    #: For a step the timing model predicted: what it said before this jar's
+    #: own measured correction was applied. Kept so that a levain which
+    #: peaked can be read as a fresh measurement of the jar rather than of
+    #: the correction already in force. None when nothing predicted it.
+    model_min: float | None = None
 
 
 @dataclass(frozen=True)
@@ -284,6 +289,7 @@ def step_specs(
     *,
     version: RecipeVersion | None = None,
     program: EquipmentProgram | None = None,
+    factor: float = 1.0,
 ) -> tuple[StepSpec, ...]:
     """The bake as a chain of durations, before any clock is involved.
 
@@ -291,12 +297,17 @@ def step_specs(
     the same arithmetic as forward scheduling rather than a second
     implementation of it. The one start-dependent step — waiting for the jar
     to come good — is added by `lay_out`.
+
+    `factor` is the chosen jar's measured correction: a levain built from a
+    jar that peaks a fifth late takes a fifth longer, and a bake day planned
+    without that is planned around the wrong afternoon.
     """
     specs: list[StepSpec] = []
 
-    levain_peak_h = timing.predict_peak_h(
+    model_peak_h = timing.predict_peak_h(
         inputs.levain_ratio, inputs.levain_temp_c
     )
+    levain_peak_h = model_peak_h * float(factor)
     levain_rise_min = _stage_minutes(version, "levain_rise")
     specs.append(
         StepSpec(
@@ -324,6 +335,12 @@ def step_specs(
                 f"{inputs.levain_temp_c:.0f} °C"
             ),
             from_recipe=levain_rise_min is not None,
+            # Only when the model is what predicted it. A recipe that says
+            # "sponge, four hours" is not a prediction about this jar, so a
+            # levain measured against it would measure the recipe.
+            model_min=(
+                model_peak_h * 60 if levain_rise_min is None else None
+            ),
         )
     )
 
@@ -695,13 +712,20 @@ def build(
     Returns the chain as well so the caller can search again — rebuilding it
     would mean reading the recipe twice and risking two different answers.
     """
-    specs = step_specs(inputs, version=version, program=program)
-
     jar_plan = None
     if jar is not None:
         jar_plan = plan_service.jar_plan(
             session, jar, now=now, until=now + timedelta(days=3)
         )
+
+    # The jar's own measured speed decides how long its levain takes, so the
+    # plan is read after the jar, not before it.
+    specs = step_specs(
+        inputs,
+        version=version,
+        program=program,
+        factor=jar_plan.factor if jar_plan else 1.0,
+    )
 
     # Wide enough to cover a plan started two days out and running a day.
     window_start = now - timedelta(hours=1)
@@ -717,11 +741,11 @@ def build(
             specs, inputs.start_at or now, busy=intervals, jar_plan=jar_plan
         )
 
-    levain_peak_h = timing.predict_peak_h(
-        inputs.levain_ratio, inputs.levain_temp_c
-    )
+    rise = next((one for one in specs if one.key == "levain_rise"), None)
     made = replace(
-        made, levain_g=inputs.levain_g, levain_peak_h=levain_peak_h
+        made,
+        levain_g=inputs.levain_g,
+        levain_peak_h=(rise.duration_min / 60) if rise else None,
     )
 
     workable = None

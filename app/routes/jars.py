@@ -36,6 +36,7 @@ from app.services import (
     charts,
     derived,
     jars as jar_service,
+    learning,
     plan as plan_service,
 )
 from app.services import photos as photo_service
@@ -228,6 +229,7 @@ def jar_detail(request: Request, ctx: Ctx, jar_id: int) -> HTMLResponse:
             "rise_pct": latest_rise,
             "ribbon": feeding_ribbon,
             "plan": made,
+            "learning": learning.learned(ctx.session, jar),
             "readiness": made.readiness_at(ctx.now),
             "nudges": plan_service.NUDGES,
             "next_feed_local": (
@@ -365,7 +367,7 @@ def _feed_context(ctx: ViewContext, jar, *, fed_at=None) -> dict:
             from_moment=ctx.now,
             target_at=made.next_feed_at,
             temp_c=temp_c,
-            factor=plan_service.jar_factor(jar),
+            factor=made.factor,
         )
     return {
         "plan": made,
@@ -553,6 +555,7 @@ async def log_observation(
     texture: Annotated[str, Form()] = "",
     observed_at: Annotated[str, Form()] = "",
     notes: Annotated[str, Form()] = "",
+    peaked: Annotated[str | None, Form()] = None,
     photo: Annotated[UploadFile | None, File()] = None,
 ):
     jar = _load(ctx, jar_id)
@@ -588,6 +591,7 @@ async def log_observation(
                     "start_height_mm": start_height_mm,
                     "height_mm": height_mm, "bubbles": bubbles,
                     "smell": smell, "texture": texture, "notes": notes,
+                    "peaked": f.checkbox(peaked),
                 },
                 "errors": errors,
             },
@@ -604,10 +608,30 @@ async def log_observation(
         smell=f.opt_str(smell),
         texture=f.opt_str(texture),
         notes=f.opt_str(notes),
+        peaked=f.checkbox(peaked),
     )
     _attach_photo(ctx, PhotoOwner.OBSERVATION, observation.id, shot)
     ctx.session.commit()
     return _see_other(f"/jars/{jar.id}")
+
+
+@router.post("/{jar_id}/peaked")
+def mark_peaked(
+    ctx: Ctx, jar_id: int, next_url: Annotated[str, Form(alias="next")] = ""
+):
+    """One tap: this jar is at its peak, now.
+
+    The whole of the app's ground truth about how fast a jar really is comes
+    from someone saying this, so it has to cost nothing — no form, no fields,
+    one button wherever the jar is on screen. It is an ordinary observation
+    with the peak flag set, so it lands on the timeline like any other.
+    """
+    jar = _load(ctx, jar_id)
+    jar_service.log_observation(
+        ctx.session, jar, observed_at=ctx.now, peaked=True
+    )
+    ctx.session.commit()
+    return _see_other(next_url or f"/jars/{jar.id}")
 
 
 # --- The feeding plan ------------------------------------------------------
@@ -644,7 +668,7 @@ def _next_feed_clash(ctx: ViewContext, jar, made):
                 if made.last_cycle
                 else settings_store.default_ferment_temp_c(ctx.session)
             ),
-            factor=plan_service.jar_factor(jar),
+            factor=made.factor,
         )
     return {"label": clash.label, "move_to": free, "advice": advice}
 

@@ -105,6 +105,11 @@ class RibbonSeries:
     planned: Sequence[PlannedMark] = ()
     observations: Sequence[ObservationMark] = ()
     is_control: bool = False
+    #: True while the jar's peak times are the model's guess about rye in
+    #: general rather than a measurement of this jar. Drawn as one word by
+    #: the row's label, because a curve that looks exact and is not is worse
+    #: than no curve.
+    is_estimate: bool = False
     #: Shown instead of a curve when there is nothing to draw.
     note: str | None = None
 
@@ -191,6 +196,7 @@ class RibbonRow:
     top: float
     bottom: float
     label_y: float
+    is_estimate: bool = False
     note: str | None = None
 
     @property
@@ -465,6 +471,7 @@ def ribbon(
                 top=curve_top,
                 bottom=baseline,
                 label_y=label_y,
+                is_estimate=one.is_estimate,
                 note=one.note,
             )
         )

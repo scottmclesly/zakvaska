@@ -65,6 +65,16 @@
     <input name="observed_at" type="datetime-local" value="{{ now_local }}">
   </label>
 
+  {#- The one field here that changes what the app predicts. -#}
+  <label class="check">
+    <input type="checkbox" name="peaked" value="1"
+           {% if v.get('peaked') %}checked{% endif %}>
+    <span>
+      This is its peak
+      <em>what makes the app learn how fast this jar really is</em>
+    </span>
+  </label>
+
   <label>
     <span>Notes <em>optional</em></span>
     <textarea name="notes" rows="2">{{ v.get('notes', '') }}</textarea>

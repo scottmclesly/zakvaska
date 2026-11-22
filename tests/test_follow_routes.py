@@ -26,8 +26,15 @@ TZ = ZoneInfo("America/New_York")
 
 
 def _release(session) -> None:
-    """Let go of the read transaction so the request can write."""
+    """Let go of the read transaction, and of what was read in it.
+
+    Sessions here are made with `expire_on_commit=False`, so anything this
+    one has already loaded stays loaded — including rows the HTTP requests
+    have since changed underneath it. Expiring is what makes a read after a
+    request show what the request actually did.
+    """
     session.rollback()
+    session.expire_all()
 
 
 def _version(session, *, name="Borodinsky", levain=True) -> int:

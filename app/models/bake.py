@@ -128,6 +128,12 @@ class BakeStageLog(Base):
     step_key: Mapped[str | None] = mapped_column(String(32))
     # Copied from the recipe version, so the plan survives a recipe edit.
     planned_min: Mapped[int | None] = mapped_column(Integer)
+    #: What the timing model predicted for this step *before* the jar's own
+    #: measured correction was applied, where the two differ. Only a rise
+    #: has one. Keeping it is what lets a levain that peaked be read as a
+    #: fresh measurement of the jar rather than a measurement of the
+    #: correction already in force.
+    model_min: Mapped[int | None] = mapped_column(Integer)
     planned_temp_c: Mapped[float | None] = mapped_column(Float)
     # Back-scheduling fills this in; v1 leaves it null (docs/TODO-v1.md).
     planned_start: Mapped[datetime | None] = mapped_column(UtcDateTime)
@@ -169,6 +175,19 @@ class BakeStageLog(Base):
         if self.actual_start is None or self.actual_end is None:
             return None
         return round((self.actual_end - self.actual_start).total_seconds() / 60)
+
+    @property
+    def model_ratio(self) -> float | None:
+        """How much slower than the bare model this rise really was.
+
+        The number `services.learning` averages: 1.2 means this jar took a
+        fifth longer to peak than the model expects of any jar.
+        """
+        actual = self.actual_min
+        base = self.model_min or self.planned_min
+        if actual is None or not base or self.at_peak is not True:
+            return None
+        return actual / base
 
     @property
     def planned_end(self) -> datetime | None:

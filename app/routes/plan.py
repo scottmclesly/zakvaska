@@ -260,6 +260,14 @@ def _context(request: Request, ctx: ViewContext) -> dict:
         "recipe": version.recipe if version else None,
         "jar": jar,
         "jar_plan": jar_plan,
+        # The levain's rise is predicted from the jar, so when the jar has
+        # not been watched enough times the whole chain is a guess and the
+        # page says so rather than printing exact clock times.
+        "jar_estimate": bool(
+            jar_plan is not None
+            and jar_plan.last_cycle is not None
+            and jar_plan.is_estimate
+        ),
         "program": program,
         "versions": recipe_service.plannable_versions(ctx.session),
         "jars": jar_service.list_jars(ctx.session),
