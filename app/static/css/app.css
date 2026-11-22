@@ -102,16 +102,29 @@ h2:not(.section-title),
 
 /* Layout -------------------------------------------------------------- */
 
+/* One column width for the whole app, so every page lines up and the
+   charts get room to be read. Wider than a reading measure on purpose:
+   the ribbon and the rise chart are the point of these pages, and both
+   are time axes that want width. */
 .wrap {
   flex: 1;
   width: 100%;
-  max-width: 880px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: var(--gutter);
 }
 
 .hero h1 { margin: 8px 0 4px; font-size: 1.5rem; }
 .hero .sub { margin: 0 0 20px; color: var(--muted); }
+
+/* The page is wide for the charts and the tables, not for the sentences.
+   Prose keeps a reading measure so a wide window does not turn every
+   explanation into one long line. */
+.hero .sub,
+.card > p,
+.card > ul:not([class]) {
+  max-width: 74ch;
+}
 
 .card {
   background: var(--surface);
@@ -412,7 +425,7 @@ code {
 }
 
 .alert-banner-inner {
-  max-width: 880px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 14px var(--gutter);
 }
@@ -1013,11 +1026,15 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 
 /* --- The shelf ---------------------------------------------------------- */
 
-/* One shared plank, because comparing two jars side by side is the point.
-   It bleeds to the screen edges and scrolls sideways once there are more
-   jars than fit, so the plank always runs the whole width of them. */
+/* One shared plank, because comparing two jars side by side is the point,
+   and it scrolls sideways once there are more jars than fit so the plank
+   always runs the whole width of them.
+
+   It lines up with every other block on the page rather than bleeding to
+   the window edge: a dashboard whose blocks all start and end at the same
+   two x positions is far easier to read down. */
 .shelf {
-  margin: 0 calc(var(--gutter) * -1) 24px;
+  margin: 0 0 24px;
   padding: 16px 0 28px;
   overflow-x: auto;
   background: linear-gradient(
@@ -1032,7 +1049,7 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .shelf-jars {
   list-style: none;
   margin: 0;
-  padding: 0 var(--gutter);
+  padding: 0 8px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -1456,14 +1473,15 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 }
 .chart-head .section-title { margin: 0; }
 
-/* Capped rather than full-bleed: the figures on the axes are drawn in the
-   SVG's own units, so a chart stretched across a wide card scales them up
-   to shouting. This keeps them near the size of the text around them in
-   either direction. */
+/* Fills its card, like the ribbon does, so the two line up and the plot
+   gets the width the page now has. Everything inside is drawn in the SVG's
+   own units, so a wider rendering scales the type and the strokes up with
+   it — which is why the sizes below are written small and bumped back up
+   on a phone, where the same drawing is squeezed instead of stretched.
+   Changing the width without re-tuning those is what makes a chart shout. */
 .chart {
   display: block;
   width: 100%;
-  max-width: 470px;
   height: auto;
   margin: 4px auto 0;
   overflow: visible;
@@ -1471,46 +1489,46 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 
 /* Graph paper, faintly. */
 .chart-paper { fill: color-mix(in srgb, var(--accent) 4%, transparent); }
-.chart-rule { stroke: var(--border); stroke-width: 1; }
+.chart-rule { stroke: var(--border); stroke-width: 0.5; }
 /* The two lines that mean something: where it started, and doubled. */
 .chart-rule.is-baseline {
   stroke: color-mix(in srgb, var(--text) 32%, transparent);
-  stroke-width: 1.3;
+  stroke-width: 0.6;
 }
 .chart-rule.is-doubled {
   stroke: color-mix(in srgb, var(--accent) 65%, transparent);
-  stroke-width: 1.4;
-  stroke-dasharray: 5 4;
+  stroke-width: 0.7;
+  stroke-dasharray: 2.5 2;
 }
-.chart-tick { stroke: var(--border); stroke-width: 1.2; }
+.chart-tick { stroke: var(--border); stroke-width: 0.6; }
 .chart-ylabel,
 .chart-xlabel {
   fill: var(--muted);
-  font-size: 14px;
+  font-size: 7px;
   font-variant-numeric: tabular-nums;
 }
 .chart-note {
   fill: color-mix(in srgb, var(--accent) 85%, transparent);
   font-family: var(--display);
   font-style: italic;
-  font-size: 13px;
+  font-size: 6.5px;
 }
 
 .chart-path {
   fill: none;
   stroke: var(--series);
-  stroke-width: 2.4;
+  stroke-width: 1.2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 .chart-dot {
   fill: var(--series);
   stroke: var(--surface);
-  stroke-width: 1.4;
+  stroke-width: 0.7;
 }
 /* The control is dashed as well as a different colour, so which line is
    which survives a photocopy — and colour blindness. */
-.chart-line.is-control .chart-path { stroke-dasharray: 7 4; }
+.chart-line.is-control .chart-path { stroke-dasharray: 3.5 2; }
 
 .chart-line,
 .chart-key-item { --series: #9a6f41; }
@@ -1543,6 +1561,22 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
   );
 }
 .chart-caption { margin: 2px 0 0; }
+
+@media (max-width: 560px) {
+  /* A phone squeezes the chart to about a third of the width a desktop
+     gives it, so everything drawn in the SVG's units has to be written
+     larger to survive the trip. Same rendered sizes as the wide case. */
+  .chart-ylabel,
+  .chart-xlabel { font-size: 13px; }
+  .chart-note { font-size: 12px; }
+  .chart-dot { r: 4; stroke-width: 1.4; }
+  .chart-path { stroke-width: 2.2; }
+  .chart-rule { stroke-width: 0.9; }
+  .chart-rule.is-baseline { stroke-width: 1.2; }
+  .chart-rule.is-doubled { stroke-width: 1.3; stroke-dasharray: 5 4; }
+  .chart-tick { stroke-width: 1.1; }
+  .chart-line.is-control .chart-path { stroke-dasharray: 7 4; }
+}
 
 @media (max-width: 560px) {
   /* The size label stays: on a sized program it says which loaf this row
@@ -1665,14 +1699,14 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .ribbon-tick.is-day { stroke: var(--muted); stroke-width: 1.1; }
 .ribbon-xlabel, .ribbon-daylabel {
   fill: var(--muted);
-  font-size: 8.5px;
+  font-size: 7px;
   font-variant-numeric: tabular-nums;
 }
-.ribbon-daylabel { font-size: 9px; font-weight: 600; }
+.ribbon-daylabel { font-size: 7.5px; font-weight: 600; }
 
 .ribbon-name {
   fill: var(--text);
-  font-size: 10.5px;
+  font-size: 8.5px;
   font-weight: 600;
 }
 .ribbon-note { fill: var(--muted); font-weight: 400; }
@@ -1802,6 +1836,7 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
   /* The ribbon is the one thing that genuinely wants more width than a
      phone has, so it gets taller type rather than a scrollbar. */
   .ribbon-xlabel { font-size: 9.5px; }
+  .ribbon-daylabel { font-size: 9.5px; }
   .ribbon-name { font-size: 11.5px; }
 }
 

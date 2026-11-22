@@ -79,7 +79,7 @@
       <polyline class="chart-path" points="{{ line.polyline }}"/>
       {%- endif %}
       {%- for point in line.points %}
-      <circle class="chart-dot" cx="{{ point.x | round(2) }}" cy="{{ point.y | round(2) }}" r="4">
+      <circle class="chart-dot" cx="{{ point.x | round(2) }}" cy="{{ point.y | round(2) }}" r="2">
         <title>{{ line.name }} — {{ point.value | percent }} at {{ point.at | local_dt }}</title>
       </circle>
       {%- endfor %}
