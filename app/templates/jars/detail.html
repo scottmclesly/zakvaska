@@ -64,6 +64,23 @@
       <dd>{{ last_hydration | percent }}</dd>
     </div>
     {% endif %}
+    {% if readiness %}
+    <div>
+      <dt>Right now</dt>
+      <dd>
+        <span class="band-text band-{{ readiness.band.value }}">
+          {{ readiness.band.label }}
+        </span>
+        <br><span class="muted small">
+          {% if readiness.hours_to_peak > 0 %}
+            peaks in {{ hours_label(readiness.hours_to_peak) }}
+          {% else %}
+            peaked {{ hours_label(-readiness.hours_to_peak) }} ago
+          {% endif %}
+        </span>
+      </dd>
+    </div>
+    {% endif %}
   </dl>
 
   <div class="row-actions">
@@ -71,6 +88,14 @@
     <a class="btn btn-secondary" href="/jars/{{ jar.id }}/observe">Observe</a>
   </div>
 </section>
+
+{% if ribbon %}
+{% with ribbon_title = "This jar's cycle" %}
+  {% include "partials/ribbon.html" %}
+{% endwith %}
+{% endif %}
+
+{% include "partials/feed_plan.html" %}
 
 {% if rise_chart %}
 {% with chart = rise_chart, chart_title = "How it rises", chart_legend = false %}

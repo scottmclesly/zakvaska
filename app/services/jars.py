@@ -249,6 +249,8 @@ class JarCard:
 
 
 def jar_card(session: Session, jar: Jar, now: datetime) -> JarCard:
+    from app.services import alerts as alert_service
+
     previous = last_feeding(session, jar.id)
     observation = session.scalars(
         select(Observation)
@@ -258,7 +260,14 @@ def jar_card(session: Session, jar: Jar, now: datetime) -> JarCard:
     ).first()
     return JarCard(
         jar=jar,
-        status=feed_status(jar, previous.fed_at if previous else None, now),
+        # The same resolver the alerts use, so a card never names a time the
+        # alert disagrees with.
+        status=feed_status(
+            jar,
+            previous.fed_at if previous else None,
+            now,
+            due=alert_service.due_at(session, jar, previous, now),
+        ),
         last_feeding=previous,
         last_observation=observation,
     )

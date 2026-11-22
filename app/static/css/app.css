@@ -1618,3 +1618,204 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
   padding-top: 12px;
   border-top: 1px dashed var(--border);
 }
+
+/* --- The feeding ribbon --------------------------------------------- */
+/*
+   Band colours read as a journey, not a palette: cool while it climbs,
+   warm and confident at the peak, then draining away to the dull red of a
+   jar that has been waiting too long. Picked to stay distinguishable in
+   both themes and without relying on hue alone — the curve's height says
+   the same thing the colour does.
+*/
+:root {
+  --band-rising: #6d8fa8;
+  --band-peak: #2f8f5b;
+  --band-ok: #9a8b2a;
+  --band-past: #c2702a;
+  --band-hungry: #a33b2a;
+  --busy-shade: #6d6054;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --band-rising: #8fb3cc;
+    --band-peak: #5fc08a;
+    --band-ok: #ccb94e;
+    --band-past: #e09a5a;
+    --band-hungry: #e07a62;
+    --busy-shade: #a99a8b;
+  }
+}
+
+.ribbon-card { display: grid; gap: 8px; }
+.ribbon {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.ribbon-busy-band {
+  fill: var(--busy-shade);
+  opacity: 0.14;
+}
+.ribbon-tick {
+  stroke: var(--border);
+  stroke-width: 0.8;
+}
+.ribbon-tick.is-day { stroke: var(--muted); stroke-width: 1.1; }
+.ribbon-xlabel, .ribbon-daylabel {
+  fill: var(--muted);
+  font-size: 8.5px;
+  font-variant-numeric: tabular-nums;
+}
+.ribbon-daylabel { font-size: 9px; font-weight: 600; }
+
+.ribbon-name {
+  fill: var(--text);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.ribbon-note { fill: var(--muted); font-weight: 400; }
+.ribbon-baseline { stroke: var(--border); stroke-width: 1; }
+
+.ribbon-area {
+  fill: var(--series);
+  opacity: 0.1;
+}
+.ribbon-path {
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.band-rising { stroke: var(--band-rising); }
+.band-peak { stroke: var(--band-peak); stroke-width: 2.8; }
+.band-ok { stroke: var(--band-ok); }
+.band-past { stroke: var(--band-past); }
+.band-hungry { stroke: var(--band-hungry); stroke-dasharray: 3 2.5; }
+
+.ribbon-feed-dot { fill: var(--series); }
+.ribbon-feed-stem {
+  stroke: var(--series);
+  stroke-width: 0.7;
+  opacity: 0.3;
+}
+.ribbon-ratio {
+  fill: var(--muted);
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.ribbon-peak { fill: var(--band-peak); }
+.ribbon-obs {
+  fill: var(--surface);
+  stroke: var(--series);
+  stroke-width: 1.6;
+}
+
+/* Planned feeds are hollow: they have not happened yet. */
+.ribbon-planned-dot {
+  fill: var(--surface);
+  stroke: var(--series);
+  stroke-width: 1.6;
+}
+.ribbon-planned-stem {
+  stroke: var(--series);
+  stroke-width: 0.9;
+  stroke-dasharray: 2 2;
+  opacity: 0.6;
+}
+.ribbon-planned.is-clash .ribbon-planned-dot {
+  stroke: var(--band-hungry);
+  stroke-width: 2;
+}
+.ribbon-planned.is-clash .ribbon-planned-stem {
+  stroke: var(--band-hungry);
+  opacity: 0.85;
+}
+.ribbon-warn {
+  fill: var(--band-hungry);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ribbon-now line {
+  stroke: var(--accent);
+  stroke-width: 1.4;
+}
+.ribbon-now circle { fill: var(--accent); }
+
+.ribbon-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.ribbon-key li { display: inline-flex; align-items: center; gap: 5px; }
+.ribbon-swatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--muted);
+}
+.ribbon-swatch.band-rising { background: var(--band-rising); }
+.ribbon-swatch.band-peak { background: var(--band-peak); height: 4px; }
+.ribbon-swatch.band-ok { background: var(--band-ok); }
+.ribbon-swatch.band-past { background: var(--band-past); }
+.ribbon-swatch.band-hungry { background: var(--band-hungry); }
+.ribbon-swatch.is-busy {
+  height: 10px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--busy-shade) 20%, transparent);
+}
+
+/* --- Moving a planned feed ------------------------------------------ */
+
+.feedplan { display: grid; gap: 10px; }
+.feedplan-when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+}
+.feedplan-time { font-size: 18px; font-family: var(--display); }
+.nudge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.nudge button {
+  min-width: 56px;
+  font-variant-numeric: tabular-nums;
+}
+.clash-note {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--band-hungry) 45%, var(--border));
+  border-left-width: 3px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--band-hungry) 7%, transparent);
+}
+
+@media (max-width: 560px) {
+  /* The ribbon is the one thing that genuinely wants more width than a
+     phone has, so it gets taller type rather than a scrollbar. */
+  .ribbon-xlabel { font-size: 9.5px; }
+  .ribbon-name { font-size: 11.5px; }
+}
+
+/* A band named in prose rather than drawn: same colours, as text. */
+.band-text { font-weight: 600; }
+.band-text.band-rising { color: var(--band-rising); }
+.band-text.band-peak { color: var(--band-peak); }
+.band-text.band-ok { color: var(--band-ok); }
+.band-text.band-past { color: var(--band-past); }
+.band-text.band-hungry { color: var(--band-hungry); }
+
+/* Advice the app offers but does not act on: a quieter card than an error. */
+.advice {
+  border-left: 3px solid var(--band-peak);
+  background: color-mix(in srgb, var(--band-peak) 6%, transparent);
+}
+.advice p { margin: 4px 0; }

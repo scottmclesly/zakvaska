@@ -317,3 +317,13 @@ def _trim(value: float) -> str:
     """One decimal place, without the noise: 4.0 -> '4', 4.50 -> '4.5'."""
     text = f"{value:.1f}".rstrip("0").rstrip(".")
     return text or "0"
+
+
+def hours_label(hours: float) -> str:
+    """A span of hours as a person says it: '20 min', '4.5 h', '1 d 2 h'."""
+    if hours < 1:
+        return f"{round(hours * 60)} min"
+    if hours < 48:
+        return f"{_trim(hours)} h"
+    days, rest = divmod(hours, 24)
+    return f"{int(days)} d {_trim(rest)} h" if rest >= 0.1 else f"{int(days)} d"

@@ -12,7 +12,53 @@
 </div>
 {% endif %}
 
-<form class="card form" method="post" action="/jars/{{ jar.id }}/feed" enctype="multipart/form-data">
+{% if advice %}
+<section class="card advice" role="note">
+  <h2 class="section-title">To peak at the right time</h2>
+  <p>
+    Next feed is planned for <strong>{{ advice.target_at | local_time }}</strong>
+    {{ advice.target_at | local_day }} — feed about
+    <strong>{{ advice.label }}</strong> at
+    {{ advice.temp_c | temp(temp_unit) }} and it should peak around then.
+  </p>
+  {% if advice.clamped_note %}
+  <p class="muted small">{{ advice.clamped_note }}</p>
+  {% endif %}
+  <p class="muted small">
+    Advice, not a default: the amounts below are still last time's.
+  </p>
+</section>
+{% endif %}
+
+{% if late and late.is_off_plan %}
+<section class="card clash-note" role="note">
+  <p>
+    <strong>
+      This feed is {{ hours_label(late.hours_late | abs) }}
+      {{ "late" if late.is_late else "early" }}.
+    </strong>
+    It was planned for {{ late.planned_at | local_time }}.
+  </p>
+  <p class="muted small">
+    Keeping your usual times leaves the rhythm alone, and the advice above
+    says what to feed it so the peak still lands right. Shifting moves every
+    later feed to suit when you actually fed it.
+  </p>
+  <div class="row-actions">
+    <label class="checkbox">
+      <input type="radio" name="schedule_choice" value="keep" form="feed-form" checked>
+      <span>Keep my usual times</span>
+    </label>
+    <label class="checkbox">
+      <input type="radio" name="schedule_choice" value="shift" form="feed-form">
+      <span>Shift my schedule</span>
+    </label>
+  </div>
+</section>
+{% endif %}
+
+<form class="card form" id="feed-form" method="post"
+      action="/jars/{{ jar.id }}/feed" enctype="multipart/form-data">
   {#- Grams are what gets stored, but the field takes whatever unit the
       switch is showing, and a unit written out beats that either way. -#}
   <fieldset class="grams">

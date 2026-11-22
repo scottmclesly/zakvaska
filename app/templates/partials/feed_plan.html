@@ -1,0 +1,106 @@
+{# The next planned feed, and the ways to move it.
+
+   Expects `jar`, `plan` (services.plan.JarPlan), `nudges`, `next_feed_local`
+   and `next_feed_clash`. Swapped in place by HTMX after every change, so the
+   whole panel — including the clash warning — is always consistent with the
+   anchor that was just written.
+
+   Moving the next feed moves every later one with it: the buttons write the
+   jar's schedule anchor and the rest are counted from it.
+#}
+<section class="card feedplan" id="feed-plan">
+  <h2 class="section-title">Next feed</h2>
+
+  {% if errors %}
+  <div class="errors" role="alert">
+    <ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  {% if plan.next_feed_at %}
+  <div class="feedplan-when">
+    <span class="feedplan-time">{{ plan.next_feed_at | local_time }}</span>
+    <span class="muted">{{ plan.next_feed_at | local_day }}</span>
+    <span class="muted">· {{ plan.next_feed_at | until(now) }}</span>
+    {% if plan.anchored %}
+    <span class="badge" title="This jar's feeds are on times you chose.">moved</span>
+    {% endif %}
+  </div>
+
+  <p class="muted small">
+    Every {{ plan.cycle_h | round | int }} hours. Moving this one moves the
+    ones after it by the same amount.
+  </p>
+
+  {% if next_feed_clash %}
+  <div class="clash-note" role="note">
+    <strong>That lands in {{ next_feed_clash.label }}.</strong>
+    {% if next_feed_clash.move_to %}
+    <span class="muted small">
+      The first clear time is {{ next_feed_clash.move_to | local_time }}
+      on {{ next_feed_clash.move_to | local_day }}{%
+        if next_feed_clash.advice and not next_feed_clash.advice.clamped_note %},
+      and feeding about {{ next_feed_clash.advice.label }} now would put the
+      peak there{% endif %}.
+      {%- if next_feed_clash.advice and next_feed_clash.advice.clamped_note %}
+      {{ next_feed_clash.advice.clamped_note }} Somewhere cooler would stretch
+      it further.
+      {%- endif %}
+    </span>
+    <form method="post" action="/jars/{{ jar.id }}/plan/move"
+          hx-post="/jars/{{ jar.id }}/plan/move"
+          hx-target="#feed-plan" hx-swap="outerHTML">
+      <input type="hidden" name="at"
+             value="{{ next_feed_clash.move_to | local_dt('%Y-%m-%dT%H:%M') }}">
+      <button class="btn btn-small" type="submit">
+        Move to {{ next_feed_clash.move_to | local_time }}
+      </button>
+    </form>
+    {% else %}
+    <span class="muted small">
+      There is no clear time in the next day — worth a look at your busy
+      blocks in <a href="/settings">settings</a>.
+    </span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <form class="nudge" method="post" action="/jars/{{ jar.id }}/plan/nudge"
+        hx-post="/jars/{{ jar.id }}/plan/nudge"
+        hx-target="#feed-plan" hx-swap="outerHTML">
+    {% for minutes in nudges %}
+    <button class="btn btn-small btn-secondary" type="submit"
+            name="minutes" value="{{ minutes }}">{{ nudge_label(minutes) }}</button>
+    {% endfor %}
+  </form>
+
+  <form class="form" method="post" action="/jars/{{ jar.id }}/plan/move"
+        hx-post="/jars/{{ jar.id }}/plan/move"
+        hx-target="#feed-plan" hx-swap="outerHTML">
+    <label>
+      <span>Or put it at</span>
+      <input type="datetime-local" name="at" value="{{ next_feed_local }}">
+    </label>
+    <div class="row-actions">
+      <button class="btn btn-small" type="submit">Move</button>
+      {% if plan.anchored %}
+      <button class="btn btn-small btn-secondary" type="submit"
+              formaction="/jars/{{ jar.id }}/plan/reset"
+              hx-post="/jars/{{ jar.id }}/plan/reset"
+              hx-target="#feed-plan" hx-swap="outerHTML">
+        Back to the usual rhythm
+      </button>
+      {% endif %}
+    </div>
+  </form>
+
+  {% else %}
+  <p class="muted">
+    {% if jar.state.wants_feeding %}
+      Nothing planned yet — log a feed and the rhythm starts from there.
+    {% else %}
+      No feeds planned while this jar is {{ jar.state.label.lower() }}.
+    {% endif %}
+  </p>
+  {% endif %}
+</section>

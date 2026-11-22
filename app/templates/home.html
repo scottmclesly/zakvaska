@@ -13,6 +13,12 @@
 {% if cards %}
 {% with shelf_cards = cards %}{% include "partials/shelf.html" %}{% endwith %}
 
+{% if ribbon %}
+{% with ribbon_title = "The next while" %}
+  {% include "partials/ribbon.html" %}
+{% endwith %}
+{% endif %}
+
 {# The shelf shows the jars; the cards below carry the numbers. #}
 <ul class="jar-grid">
   {% for card in cards %}
@@ -34,12 +40,13 @@
         <dd>{{ card.status.last_fed_at | since(now) }}</dd>
       </div>
       <div>
-        <dt>Next due</dt>
+        <dt>Next feed</dt>
         <dd>
           {% if card.status.next_due_at %}
             <span class="{% if card.status.is_overdue %}overdue-text{% endif %}">
               {{ card.status.next_due_at | until(now) }}
             </span>
+            <br><span class="muted small">{{ card.status.next_due_at | local_time }}</span>
           {% elif jar.state.wants_feeding %}
             <span class="muted">after first feed</span>
           {% else %}
@@ -47,6 +54,17 @@
           {% endif %}
         </dd>
       </div>
+      {% set made = plans.get(jar.id) if plans else none %}
+      {% set ready = made.readiness_at(now) if made else none %}
+      {% if ready %}
+      <div>
+        <dt>Right now</dt>
+        <dd>
+          <span class="band-text band-{{ ready.band.value }}">{{ ready.band.label }}</span>
+          <br><span class="muted small">{{ ready.band.blurb }}</span>
+        </dd>
+      </div>
+      {% endif %}
       {% if card.rise_pct is not none %}
       <div>
         <dt>Last rise</dt>

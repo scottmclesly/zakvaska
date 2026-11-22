@@ -45,8 +45,21 @@ class FeedStatus:
         return self.last_fed_at is None
 
 
-def feed_status(jar: Jar, last_fed_at: datetime | None, now: datetime) -> FeedStatus:
-    due = next_due_at(jar, last_fed_at)
+def feed_status(
+    jar: Jar,
+    last_fed_at: datetime | None,
+    now: datetime,
+    *,
+    due: datetime | None = None,
+) -> FeedStatus:
+    """Where this jar stands. `due` overrides the interval arithmetic.
+
+    Passing it is how a planned feed becomes the due time (services/plan.py):
+    the card, the ribbon and the alert then all name the same moment, which
+    they must, or moving a feed would change one and not the others.
+    """
+    if due is None:
+        due = next_due_at(jar, last_fed_at)
     overdue = due is not None and now >= due
     return FeedStatus(
         last_fed_at=last_fed_at,

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
 from app.routes.deps import ViewContext, get_view_context
-from app.services import charts, jars as jar_service
+from app.services import charts, jars as jar_service, plan as plan_service
 from app.templates_env import render
 
 router = APIRouter()
@@ -25,6 +25,11 @@ def home(request: Request, ctx: Ctx) -> HTMLResponse:
         jar_service.rise_series(ctx.session, [card.jar for card in cards]),
         tz=ctx.tz,
     )
+    # Stacked ribbons on one time axis: the jars can be read against each
+    # other, and a feed planned at four in the morning is visible as such.
+    feeding_ribbon, plans = plan_service.build_ribbon(
+        ctx.session, [card.jar for card in cards], now=ctx.now, tz=ctx.tz
+    )
     return render(
         request=request,
         ctx=ctx,
@@ -33,6 +38,8 @@ def home(request: Request, ctx: Ctx) -> HTMLResponse:
             "title": "zakvaska",
             "cards": cards,
             "rise_chart": rise,
+            "ribbon": feeding_ribbon,
+            "plans": plans,
             "archived": [
                 jar
                 for jar in jar_service.list_jars(ctx.session, include_archived=True)

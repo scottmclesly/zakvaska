@@ -22,6 +22,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models.alert import Alert
 from app.models.enums import AlertKind
+from app.models.feeding import Feeding
 from app.models.jar import Jar
 from app.services.schedule import last_feeding, next_due_at
 
@@ -69,6 +70,34 @@ def _drop_superseded(
     return dropped
 
 
+def due_at(
+    session: Session,
+    jar: Jar,
+    previous: Feeding | None,
+    now: datetime,
+) -> datetime | None:
+    """When this jar is next due a feed.
+
+    The *planned* feed wins where there is a plan, which is what makes a
+    moved feed actually change when the app prompts — the whole point of
+    being able to move one. The fixed interval stays the fallback for a jar
+    with no plan: one that has never been fed, or one in the fridge, where a
+    daily rhythm is not what is happening.
+
+    Looks only a fortnight ahead. A plan is a repeating grid, so the first
+    feed on it is all this needs, and asking for more would be arithmetic
+    thrown away.
+    """
+    from app.services import plan as plan_service
+
+    made = plan_service.jar_plan(
+        session, jar, now=now, until=now + timedelta(days=14)
+    )
+    if made.has_plan:
+        return made.next_feed_at
+    return next_due_at(jar, previous.fed_at if previous else None)
+
+
 def reconcile(session: Session, now: datetime) -> ReconcileResult:
     """Bring the alert table in line with the jars. Idempotent."""
     result = ReconcileResult()
@@ -79,7 +108,7 @@ def reconcile(session: Session, now: datetime) -> ReconcileResult:
 
     for jar in jars:
         previous = last_feeding(session, jar.id)
-        due = next_due_at(jar, previous.fed_at if previous else None)
+        due = due_at(session, jar, previous, now)
 
         # Dormant, dried, archived or never fed: nothing to chase.
         result.dropped += _drop_superseded(session, jar.id, due)

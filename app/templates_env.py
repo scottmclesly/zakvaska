@@ -13,6 +13,8 @@ from app import __version__
 from app.config import get_settings
 from app.services import alerts as alert_service
 from app.services import measures
+from app.services import plan as plan_service
+from app.services import timing
 from app.services import recipes as recipe_service
 from app.services.units import (
     format_temp,
@@ -214,6 +216,10 @@ templates.env.globals["total_unit_label"] = lambda unit: (
 )
 # The pages that draw these walk the cycles and stages themselves, so they
 # ask for the bar rather than having one threaded through every route.
+# The nudge buttons beside a planned feed name themselves.
+templates.env.globals["nudge_label"] = plan_service.nudge_label
+# "4.5 h", "2 d 2 h" — a span of hours as a person says it.
+templates.env.globals["hours_label"] = timing.hours_label
 templates.env.globals["cycle_bar"] = recipe_service.cycle_bar
 templates.env.globals["stage_bar"] = recipe_service.stage_bar
 
