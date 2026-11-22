@@ -1,21 +1,44 @@
-{# Outstanding feeding alerts. Included on every page by templates_env.render. #}
-<aside class="alert-banner" role="alert" aria-label="Feeding alerts">
+{# Outstanding alerts. Included on every page by templates_env.render.
+
+   Two kinds share the banner because they share a lifecycle: a jar that
+   wants feeding, and a step of a bake that is due. The snooze and dismiss
+   controls are identical for both — only the words and where "deal with
+   it" leads differ.
+#}
+{%- set feeds = alerts | rejectattr("is_about_a_bake") | list -%}
+{%- set steps = alerts | selectattr("is_about_a_bake") | list -%}
+<aside class="alert-banner" role="alert" aria-label="Alerts">
   <div class="alert-banner-inner">
     <p class="alert-banner-head">
       <span class="alert-count">{{ alerts | length }}</span>
-      jar{{ "" if alerts | length == 1 else "s" }} need{{ "s" if alerts | length == 1 else "" }} feeding
+      {%- if not steps %}
+      jar{{ "" if feeds | length == 1 else "s" }} need{{ "s" if feeds | length == 1 else "" }} feeding
+      {%- elif not feeds %}
+      bake step{{ "" if steps | length == 1 else "s" }} due
+      {%- else %}
+      thing{{ "" if alerts | length == 1 else "s" }} need{{ "s" if alerts | length == 1 else "" }} you
+      {%- endif %}
     </p>
 
     <ul class="alert-list">
       {% for alert in alerts %}
-      <li class="alert-item">
+      <li class="alert-item {% if alert.is_about_a_bake %}is-stage{% endif %}">
         <div class="alert-what">
-          <a class="alert-jar" href="/jars/{{ alert.jar_id }}">{{ alert.jar.name }}</a>
-          <span class="muted">{{ alert.due_at | until(now) }}</span>
+          <a class="alert-jar" href="{{ alert.url }}">{{ alert.subject }}</a>
+          <span class="muted">
+            {%- if alert.is_about_a_bake %}
+            {{ alert.stage_log.bake.label }} ·
+            {%- endif %}
+            {{ alert.due_at | until(now) }}
+          </span>
         </div>
 
         <div class="alert-actions">
+          {% if alert.is_about_a_bake %}
+          <a class="btn btn-small" href="{{ alert.url }}">Open the bake</a>
+          {% else %}
           <a class="btn btn-small" href="/jars/{{ alert.jar_id }}/feed">Fed it</a>
+          {% endif %}
 
           {% for minutes, label in snooze_choices %}
           <form method="post" action="/alerts/{{ alert.id }}/snooze">

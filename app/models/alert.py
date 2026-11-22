@@ -1,8 +1,13 @@
-"""Feeding alerts.
+"""Alerts: a jar that wants feeding, or a bake-day step that is due.
 
 Rows are derived state, not a log: every one of them can be rebuilt from the
-jars and their feedings. That is what makes a restart safe — the scheduler
-recomputes from the database rather than holding anything in memory.
+jars and their feedings, or from a bake's planned stage times. That is what
+makes a restart safe — the scheduler recomputes from the database rather
+than holding anything in memory.
+
+One table for both kinds, because the lifecycle is the same and so is the
+banner: fire, then acknowledge or snooze. Exactly one of `jar_id` and
+`stage_log_id` is set, and which one it is says what the alert is about.
 """
 
 from __future__ import annotations
@@ -18,20 +23,34 @@ from app.models.enums import AlertKind
 from app.models.types import UtcDateTime
 
 if TYPE_CHECKING:
+    from app.models.bake import BakeStageLog
     from app.models.jar import Jar
 
 
 class Alert(Base):
     __tablename__ = "alert"
     __table_args__ = (
-        # One alert per jar per due moment. This is what lets the scheduler
-        # run every minute and stay idempotent.
+        # One alert per jar per due moment, and one per stage per due moment.
+        # This is what lets the scheduler run every minute and stay
+        # idempotent. SQLite treats NULLs as distinct in a unique index, so
+        # the two constraints do not get in each other's way: a feeding
+        # alert leaves `stage_log_id` null and a stage alert leaves
+        # `jar_id` null.
         UniqueConstraint("jar_id", "kind", "due_at", name="one_per_due"),
+        UniqueConstraint(
+            "stage_log_id", "kind", "due_at", name="one_per_stage_due"
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    jar_id: Mapped[int] = mapped_column(
-        ForeignKey("jar.id", ondelete="CASCADE"), nullable=False, index=True
+    #: Set on a feeding alert. Null on a stage alert.
+    jar_id: Mapped[int | None] = mapped_column(
+        ForeignKey("jar.id", ondelete="CASCADE"), index=True
+    )
+    #: Set on a stage alert. Null on a feeding alert. CASCADE, because a
+    #: stage log that is gone can have nothing outstanding against it.
+    stage_log_id: Mapped[int | None] = mapped_column(
+        ForeignKey("bake_stage_log.id", ondelete="CASCADE"), index=True
     )
     kind: Mapped[AlertKind] = mapped_column(
         Enum(AlertKind, native_enum=False, validate_strings=True, length=16),
@@ -50,7 +69,10 @@ class Alert(Base):
 
     created_at = created_at_column()
 
-    jar: Mapped[Jar] = relationship(back_populates="alerts")
+    jar: Mapped[Jar | None] = relationship(back_populates="alerts")
+    stage_log: Mapped[BakeStageLog | None] = relationship(
+        back_populates="alerts"
+    )
 
     @property
     def effective_due_at(self) -> datetime:
@@ -76,6 +98,24 @@ class Alert(Base):
             and self.acknowledged_at is None
             and not self.is_snoozed_at(now)
         )
+
+    @property
+    def is_about_a_bake(self) -> bool:
+        return self.stage_log_id is not None
+
+    @property
+    def subject(self) -> str:
+        """What to call this alert in one short phrase."""
+        if self.stage_log is not None:
+            return self.stage_log.name
+        return self.jar.name if self.jar is not None else "something"
+
+    @property
+    def url(self) -> str:
+        """Where tapping the alert should take you, to deal with it."""
+        if self.stage_log is not None:
+            return f"/bakes/{self.stage_log.bake_id}"
+        return f"/jars/{self.jar_id}/feed"
 
     def __repr__(self) -> str:
         return (

@@ -18,11 +18,14 @@ from app.models.enums import (
 )
 from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
+from app.services import alerts as alert_service
 from app.services import bakes as bake_service
+from app.services import followalong
 from app.services import jars as jar_service
 from app.services import measures
 from app.services import photos as photo_service
 from app.services import recipes as recipe_service
+from app.services import ribbon as ribbon_service
 from app.services import scaling
 from app.services.units import temp_to_celsius
 from app.templates_env import render
@@ -250,6 +253,39 @@ def create_bake(
 # --- The running sheet -----------------------------------------------------
 
 
+def _follow_context(ctx: ViewContext, bake) -> dict:
+    """The Now panel and the timeline, for a bake laid out on the clock.
+
+    Both are worked out fresh on every render: planned times are stored,
+    but what is underway and what clashes are read off the clock and the
+    busy blocks, which may have been edited since the bake began.
+    """
+    if not followalong.has_plan(bake):
+        return {"now_view": None, "timeline": None}
+
+    intervals = followalong.busy_for(ctx.session, bake, now=ctx.now, tz=ctx.tz)
+    steps = followalong.planned_steps(bake, busy=intervals)
+    first, last = ribbon_service.timeline_window(
+        steps[0].start, steps[-1].end, ctx.now
+    )
+    return {
+        "now_view": followalong.now_view(bake, now=ctx.now, busy=intervals),
+        "timeline": ribbon_service.timeline(
+            steps,
+            start=first,
+            end=last,
+            now=ctx.now,
+            tz=ctx.tz,
+            busy=tuple(
+                ribbon_service.BusyMark(
+                    start=one.start, end=one.end, label=one.label
+                )
+                for one in intervals
+            ),
+        ),
+    }
+
+
 @router.get("/{bake_id}", response_class=HTMLResponse)
 def bake_detail(request: Request, ctx: Ctx, bake_id: int) -> HTMLResponse:
     bake = _load(ctx, bake_id)
@@ -266,6 +302,7 @@ def bake_detail(request: Request, ctx: Ctx, bake_id: int) -> HTMLResponse:
             "elapsed_min": bake_service.elapsed_min(bake, ctx.now),
             "statuses": list(BakeStatus),
             "photos": photo_service.list_for(ctx.session, PhotoOwner.BAKE, bake.id),
+            **_follow_context(ctx, bake),
         },
     )
 
@@ -273,7 +310,10 @@ def bake_detail(request: Request, ctx: Ctx, bake_id: int) -> HTMLResponse:
 @router.post("/{bake_id}/stages/{log_id}/start")
 def stage_start(ctx: Ctx, bake_id: int, log_id: int):
     bake = _load(ctx, bake_id)
-    bake_service.start_stage(ctx.session, bake, _load_stage(ctx, bake, log_id), ctx.now)
+    log = _load_stage(ctx, bake, log_id)
+    bake_service.start_stage(ctx.session, bake, log, ctx.now)
+    # Doing the step is as good an answer to its alert as dismissing it.
+    alert_service.acknowledge_for_stage(ctx.session, log.id, ctx.now)
     ctx.session.commit()
     return _see_other(f"/bakes/{bake.id}")
 
@@ -281,7 +321,31 @@ def stage_start(ctx: Ctx, bake_id: int, log_id: int):
 @router.post("/{bake_id}/stages/{log_id}/end")
 def stage_end(ctx: Ctx, bake_id: int, log_id: int):
     bake = _load(ctx, bake_id)
-    bake_service.end_stage(ctx.session, bake, _load_stage(ctx, bake, log_id), ctx.now)
+    log = _load_stage(ctx, bake, log_id)
+    bake_service.end_stage(ctx.session, bake, log, ctx.now)
+    alert_service.acknowledge_for_stage(ctx.session, log.id, ctx.now)
+    ctx.session.commit()
+    return _see_other(f"/bakes/{bake.id}")
+
+
+@router.post("/{bake_id}/replan")
+def replan(ctx: Ctx, bake_id: int):
+    """Shift everything still to come, chained from this moment."""
+    bake = _load(ctx, bake_id)
+    followalong.replan(ctx.session, bake, now=ctx.now)
+    ctx.session.commit()
+    return _see_other(f"/bakes/{bake.id}")
+
+
+@router.post("/{bake_id}/stages/{log_id}/peak")
+def stage_peak(
+    ctx: Ctx, bake_id: int, log_id: int, at_peak: Annotated[str, Form()] = "1"
+):
+    """Answer "was it at its peak?" about a rise that has just ended."""
+    bake = _load(ctx, bake_id)
+    followalong.answer_peak(
+        ctx.session, _load_stage(ctx, bake, log_id), at_peak=at_peak == "1"
+    )
     ctx.session.commit()
     return _see_other(f"/bakes/{bake.id}")
 
@@ -312,6 +376,8 @@ def finish(ctx: Ctx, bake_id: int, status: Annotated[str, Form()] = BakeStatus.D
     chosen = BakeStatus(status)
     if chosen.is_finished:
         bake_service.finish_bake(ctx.session, bake, ctx.now, status=chosen)
+        # Nothing is still due on a bake that is out of the oven.
+        alert_service.acknowledge_for_bake(ctx.session, bake, ctx.now)
     else:
         bake_service.reopen_bake(ctx.session, bake)
     ctx.session.commit()
@@ -322,6 +388,8 @@ def finish(ctx: Ctx, bake_id: int, status: Annotated[str, Form()] = BakeStatus.D
 def archive(ctx: Ctx, bake_id: int, archived: Annotated[str, Form()] = "1"):
     bake = _load(ctx, bake_id)
     bake_service.set_archived(ctx.session, bake, archived == "1")
+    if archived == "1":
+        alert_service.acknowledge_for_bake(ctx.session, bake, ctx.now)
     ctx.session.commit()
     return _see_other(f"/bakes/{bake.id}")
 

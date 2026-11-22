@@ -44,11 +44,17 @@ def alerts_json(ctx: Ctx) -> JSONResponse:
                 {
                     "id": alert.id,
                     "jar_id": alert.jar_id,
-                    "jar_name": alert.jar.name,
+                    # Kept for the jar case the browser already knows about;
+                    # `subject` is the one that works for both kinds.
+                    "jar_name": alert.jar.name if alert.jar else None,
+                    "subject": alert.subject,
+                    "bake_id": (
+                        alert.stage_log.bake_id if alert.stage_log else None
+                    ),
                     "kind": alert.kind.value,
                     "due_at": alert.due_at.isoformat(),
                     "overdue_by": humanize_until(alert.due_at, ctx.now),
-                    "url": f"/jars/{alert.jar_id}/feed",
+                    "url": alert.url,
                 }
                 for alert in showing
             ],

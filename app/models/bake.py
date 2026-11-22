@@ -8,7 +8,7 @@ plan a loaf was baked to is part of the record, not a live reference.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
@@ -29,6 +29,7 @@ from app.models.enums import BakeMethod, BakeStatus
 from app.models.types import UtcDateTime
 
 if TYPE_CHECKING:
+    from app.models.alert import Alert
     from app.models.jar import Jar
     from app.models.recipe import EquipmentProgram, RecipeVersion
 
@@ -121,17 +122,38 @@ class BakeStageLog(Base):
     seq: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     name: Mapped[str] = mapped_column(String(120), nullable=False)
+    #: Which generated step of the planner this came from ("levain_rise",
+    #: "bake"), where a planner laid the bake out. Null for a stage copied
+    #: straight from a recipe version, whose names are the baker's own.
+    step_key: Mapped[str | None] = mapped_column(String(32))
     # Copied from the recipe version, so the plan survives a recipe edit.
     planned_min: Mapped[int | None] = mapped_column(Integer)
     planned_temp_c: Mapped[float | None] = mapped_column(Float)
     # Back-scheduling fills this in; v1 leaves it null (docs/TODO-v1.md).
     planned_start: Mapped[datetime | None] = mapped_column(UtcDateTime)
 
+    #: Needs doing, so it is worth an alert at its start.
+    hands_on: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    #: Minds nobody being there until it ends, so it is worth an alert then.
+    must_be_home: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+
     actual_start: Mapped[datetime | None] = mapped_column(UtcDateTime)
     actual_end: Mapped[datetime | None] = mapped_column(UtcDateTime)
+    #: Answered only for a rise that was asked about when it ended: True if
+    #: it was at its peak, False if it was used anyway. Null means unasked.
+    #: A True here with `planned_min` and `actual_min` is one measurement of
+    #: how fast this jar really is.
+    at_peak: Mapped[bool | None] = mapped_column(Boolean)
     notes: Mapped[str | None] = mapped_column(Text)
 
     bake: Mapped[Bake] = relationship(back_populates="stage_logs")
+    alerts: Mapped[list[Alert]] = relationship(
+        back_populates="stage_log", cascade="all, delete-orphan"
+    )
 
     @property
     def is_running(self) -> bool:
@@ -147,6 +169,17 @@ class BakeStageLog(Base):
         if self.actual_start is None or self.actual_end is None:
             return None
         return round((self.actual_end - self.actual_start).total_seconds() / 60)
+
+    @property
+    def planned_end(self) -> datetime | None:
+        """When the plan says this step finishes."""
+        if self.planned_start is None or self.planned_min is None:
+            return None
+        return self.planned_start + timedelta(minutes=self.planned_min)
+
+    @property
+    def is_planned(self) -> bool:
+        return self.planned_start is not None
 
     @property
     def drift_min(self) -> int | None:

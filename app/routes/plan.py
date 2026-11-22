@@ -1,9 +1,14 @@
 """The bake-day planner: /plan.
 
-Nothing is stored. The whole plan is recomputed from the query string on
-every request, which is what lets the start-time slider scrub it live over
-HTMX and what makes a plan shareable as a link. Phase D is where a plan
-becomes a bake with its times written down.
+Nothing is stored while a plan is being fiddled with. The whole thing is
+recomputed from the query string on every request, which is what lets the
+start-time slider scrub it live over HTMX and what makes a plan shareable as
+a link.
+
+"Start this bake" is where that stops: it posts the same query string back
+and writes the plan down as a bake with a planned time against every step
+(`services.followalong`). From then on the bake page is in charge and the
+times are a record rather than a suggestion.
 """
 
 from __future__ import annotations
@@ -12,15 +17,17 @@ from dataclasses import replace
 from datetime import datetime, timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
 
+from app.models.enums import BakeMethod
 from app.models.jar import Jar
 from app.models.recipe import EquipmentProgram, RecipeVersion
 from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
 from app.services import bakeplan
 from app.services import busy as busy_service
+from app.services import followalong
 from app.services import jars as jar_service
 from app.services import plan as plan_service
 from app.services import recipes as recipe_service
@@ -258,6 +265,12 @@ def _context(request: Request, ctx: ViewContext) -> dict:
         "jars": jar_service.list_jars(ctx.session),
         "programs": recipe_service.list_programs(ctx.session),
         "mode": "ready" if inputs.is_backward else "start",
+        # What "Start this bake" posts: the plan's own ends as absolute
+        # local times, so the bake is laid out exactly as it was drawn
+        # rather than from wherever the slider happened to be pointing.
+        "commit_at": f.utc_to_local_input(
+            made.end if inputs.is_backward else made.start, ctx.tz
+        ),
         # The slider is an offset in minutes from now, so the browser needs
         # no date arithmetic and the control stays a plain range input.
         "slider_min": -int(SLIDER_HOURS * 60 / 4),
@@ -290,3 +303,54 @@ def plan_steps(request: Request, ctx: Ctx) -> HTMLResponse:
         request=request, ctx=ctx, name="plan/result.html",
         context=_context(request, ctx),
     )
+
+
+@router.post("/start")
+async def start_bake(request: Request, ctx: Ctx):
+    """Write this plan down as a bake, and go and follow it along.
+
+    The form posts the same fields the page was rendered from, and they go
+    through the same `_read_inputs`, so the bake cannot end up carrying a
+    different plan from the one that was on screen. The start time comes
+    over as an absolute moment rather than the slider's offset, because
+    "four hours from now" means something different by the time the button
+    is pressed.
+    """
+    params = await request.form()
+    version = _version(ctx, _int(params, "version"))
+    if version is None:
+        raise HTTPException(
+            status_code=400, detail="Choose a recipe before starting a bake"
+        )
+
+    jar = _jar(ctx, _int(params, "jar"))
+    inputs, _ = _read_inputs(ctx, params, version=version)
+    program = _program(ctx, inputs.program_id)
+
+    made, _, _ = bakeplan.build(
+        ctx.session,
+        version=version,
+        jar=jar,
+        inputs=inputs,
+        now=ctx.now,
+        tz=ctx.tz,
+        program=program,
+    )
+
+    bake = followalong.start_from_plan(
+        ctx.session,
+        version=version,
+        plan=made,
+        now=ctx.now,
+        jar_id=jar.id if jar else None,
+        method=(
+            BakeMethod.BREAD_MAKER if program is not None else BakeMethod.OVEN
+        ),
+        equipment_program_id=program.id if program else None,
+        crust_setting=version.default_crust,
+        loaf_size=version.default_loaf_size,
+        oven_temp_c=inputs.bake_temp_c,
+        total_flour_g=inputs.total_flour_g,
+    )
+    ctx.session.commit()
+    return RedirectResponse(f"/bakes/{bake.id}", status_code=303)

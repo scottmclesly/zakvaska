@@ -1,0 +1,133 @@
+{# Where a bake has got to. Expects `now_view` (services.followalong.NowView)
+   and `bake`.
+
+   The one panel that has to be readable with flour on your hands, so it says
+   three things and no more: what is on now, what the next thing to do is, and
+   whether the day has slipped. Everything else is further down the page.
+#}
+{%- set view = now_view -%}
+<section class="card bake-now {% if view.is_behind %}is-behind{% endif %}">
+  <h2 class="section-title">Right now</h2>
+
+  {% if view.is_done %}
+  <p class="now-head">Every step is ticked off.</p>
+  {% if view.ends_at %}
+  <p class="muted">The plan had it finishing {{ view.ends_at | local_time }}.</p>
+  {% endif %}
+
+  {% else %}
+  {%- set current = view.current -%}
+  <p class="now-head">
+    {% if view.running %}
+      <strong>{{ view.running.name }}</strong>
+      <span class="muted">started {{ view.running.actual_start | local_time }},
+        {{ view.running.actual_start | since(now) }}</span>
+    {% elif view.due_now %}
+      <strong>{{ view.due_now.name }}</strong>
+      <span class="muted">due now — the plan has it running since
+        {{ view.due_now.planned_start | local_time }}</span>
+    {% elif current and current.planned_start %}
+      <span class="muted">Nothing on yet. Next:</span>
+      <strong>{{ current.name }}</strong>
+      <span class="muted">{{ current.planned_start | local_time }},
+        {{ current.planned_start | until(now) }}</span>
+    {% elif current %}
+      <span class="muted">Nothing on yet. Next:</span>
+      <strong>{{ current.name }}</strong>
+    {% endif %}
+  </p>
+
+  {% if view.running and view.running.planned_end %}
+  <p class="now-sub">
+    Planned to end {{ view.running.planned_end | local_time }}
+    ({{ view.running.planned_end | until(now) }}).
+  </p>
+  {% endif %}
+
+  {#- Only worth its own line when it is not the step already named above. -#}
+  {% if view.next_hands_on and view.next_hands_on is not sameas current %}
+  <p class="now-next">
+    <span class="now-label">Next thing to do</span>
+    <strong>{{ view.next_hands_on.name }}</strong>
+    {% if view.next_hands_on.planned_start %}
+    <span class="muted">{{ view.next_hands_on.planned_start | local_time }} ·
+      {{ view.next_hands_on.planned_start | until(now) }}</span>
+    {% endif %}
+  </p>
+  {% endif %}
+
+  {% if view.is_behind %}
+  <p class="now-behind">
+    The day has slipped about {{ hours_label(view.behind_min / 60) }} behind
+    the plan. Re-planning from now moves every step still to come.
+  </p>
+  {% endif %}
+
+  {% if view.ends_at %}
+  <p class="muted now-ends">
+    As planned, the last step ends {{ view.ends_at | local_time }}
+    ({{ view.ends_at | local_day }}).
+  </p>
+  {% endif %}
+  {% endif %}
+
+  {% if view.clashes %}
+  {#- The first few only: the timeline below shades the rest. -#}
+  <ul class="now-clashes">
+    {% for clash in view.clashes[:3] %}
+    <li>
+      <strong>{{ clash.log.name }}</strong>
+      {% if clash.at_end %}ends{% else %}starts{% endif %}
+      {% if clash.moment %}{{ clash.moment | local_time }}{% endif %},
+      inside {{ clash.label }}.
+    </li>
+    {% endfor %}
+    {% if view.clashes | length > 3 %}
+    <li class="muted">
+      and {{ view.clashes | length - 3 }} more later in the day.
+    </li>
+    {% endif %}
+  </ul>
+  {% endif %}
+
+  <div class="row-actions">
+    {% if view.running %}
+    <form method="post" action="/bakes/{{ bake.id }}/stages/{{ view.running.id }}/end">
+      <button class="btn btn-big" type="submit">Done with {{ view.running.name }}</button>
+    </form>
+    {% elif view.next_up %}
+    <form method="post" action="/bakes/{{ bake.id }}/stages/{{ view.next_up.id }}/start">
+      <button class="btn btn-big" type="submit">Start {{ view.next_up.name }}</button>
+    </form>
+    {% endif %}
+
+    {% if not view.is_done %}
+    <form method="post" action="/bakes/{{ bake.id }}/replan">
+      <button class="btn btn-secondary" type="submit">Re-plan from now</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if view.ask_peak %}
+  {#- The one question that turns a bake into a measurement of the jar. -#}
+  <div class="peak-ask">
+    <p>
+      <strong>Was the levain at its peak?</strong>
+      It rose for {{ view.ask_peak.actual_min }} min; the plan expected
+      {{ view.ask_peak.planned_min }} min.
+    </p>
+    <div class="row-actions">
+      <form method="post"
+            action="/bakes/{{ bake.id }}/stages/{{ view.ask_peak.id }}/peak">
+        <input type="hidden" name="at_peak" value="1">
+        <button class="btn" type="submit">Yes, at its peak</button>
+      </form>
+      <form method="post"
+            action="/bakes/{{ bake.id }}/stages/{{ view.ask_peak.id }}/peak">
+        <input type="hidden" name="at_peak" value="0">
+        <button class="btn btn-secondary" type="submit">No, I used it anyway</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</section>

@@ -121,6 +121,24 @@
         {% endfor %}
       </tbody>
     </table>
+    {% if version %}
+    {#- The one thing on this page that writes anything down. Every input
+        goes with it, and the start time as an absolute moment, so the bake
+        carries exactly the plan on screen. -#}
+    <form class="plan-commit" method="post" action="/plan/start">
+      {% for key, value in keep_params.items() %}
+      <input type="hidden" name="{{ key }}" value="{{ value }}">
+      {% endfor %}
+      <input type="hidden" name="mode" value="{{ mode }}">
+      <input type="hidden" name="at" value="{{ commit_at }}">
+      <button class="btn btn-big" type="submit">Start this bake</button>
+      <span class="muted small">
+        Writes these times down as a bake, and starts reminding you about
+        each step.
+      </span>
+    </form>
+    {% endif %}
+
     {% if plan.levain_g %}
     <p class="muted small">
       The recipe wants {{ plan.levain_g | weigh(weight_unit, 'rye levain', 'levain') }}

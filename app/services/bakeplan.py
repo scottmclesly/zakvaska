@@ -479,6 +479,32 @@ def _jar_wait(
     )
 
 
+def conflict_for(
+    spec: StepSpec,
+    start: datetime,
+    end: datetime,
+    intervals: Sequence[BusyInterval],
+) -> BusyInterval | None:
+    """Whether a step at this time lands somewhere the baker is not.
+
+    The rule, from the plan: a **hands-on** step clashes if any of it falls
+    in a busy block — it is work, and work needs doing. A **must-be-home**
+    step clashes only if its *end* does, because a rise minds nobody being
+    there until the moment it is ready.
+
+    One function, because a planned bake and a bake already underway must
+    agree about what clashes: the running sheet re-checks a step that has
+    been moved by exactly this rule.
+    """
+    if spec.hands_on:
+        clashes = busy_service.overlapping(intervals, start, end)
+        if clashes:
+            return clashes[0]
+    if spec.must_be_home:
+        return busy_service.covering(intervals, end)
+    return None
+
+
 def lay_out(
     specs: Sequence[StepSpec],
     start: datetime,
@@ -486,13 +512,7 @@ def lay_out(
     busy: Sequence[BusyInterval] = (),
     jar_plan: plan_service.JarPlan | None = None,
 ) -> BakePlan:
-    """Walk the chain forward from `start`, flagging what clashes.
-
-    The conflict rule, from the plan: a **hands-on** step clashes if any of
-    it falls in a busy block — it is work, and work needs doing. A
-    **must-be-home** step clashes only if its *end* does, because a rise
-    minds nobody being there until the moment it is ready.
-    """
+    """Walk the chain forward from `start`, flagging what clashes."""
     intervals = list(busy)
     wait_min, warning = _jar_wait(jar_plan, start)
 
@@ -512,13 +532,14 @@ def lay_out(
     at = start
     for spec in chain:
         ends = at + timedelta(minutes=spec.duration_min)
-        conflict = None
-        if spec.hands_on:
-            clashes = busy_service.overlapping(intervals, at, ends)
-            conflict = clashes[0] if clashes else None
-        if conflict is None and spec.must_be_home:
-            conflict = busy_service.covering(intervals, ends)
-        steps.append(Step(spec=spec, start=at, end=ends, conflict=conflict))
+        steps.append(
+            Step(
+                spec=spec,
+                start=at,
+                end=ends,
+                conflict=conflict_for(spec, at, ends, intervals),
+            )
+        )
         at = ends
 
     return BakePlan(

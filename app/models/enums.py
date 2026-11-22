@@ -125,7 +125,27 @@ class PhotoOwner(enum.StrEnum):
 
 
 class AlertKind(enum.StrEnum):
+    """What an alert is chasing.
+
+    Both kinds go down the same reconcile / fire / acknowledge / snooze path:
+    a stage alert is a feeding alert that happens to be about a bake, which
+    is what lets one banner and one notification permission cover both.
+    """
+
     FEED_DUE = "feed_due"
+    #: A bake-day step is due to be started, or a rise is due to be used.
+    STAGE_DUE = "stage_due"
+
+    @property
+    def label(self) -> str:
+        return {
+            AlertKind.FEED_DUE: "Feed due",
+            AlertKind.STAGE_DUE: "Bake step due",
+        }[self]
+
+    @property
+    def is_about_a_bake(self) -> bool:
+        return self is AlertKind.STAGE_DUE
 
 
 class BusyKind(enum.StrEnum):

@@ -1,9 +1,10 @@
-"""The in-process job that fires feeding alerts.
+"""The in-process job that fires alerts.
 
 APScheduler holds no alert state of its own: every tick just calls
-`alerts.reconcile`, which reads the jars and feedings and works out what
-should exist. A restart therefore loses nothing — the first tick (and the
-explicit run at startup) rebuilds the same picture.
+`alerts.reconcile`, which reads the jars and their feedings, and the planned
+step times of any bake underway, and works out what should exist. A restart
+therefore loses nothing — the first tick (and the explicit run at startup)
+rebuilds the same picture.
 """
 
 from __future__ import annotations
@@ -33,7 +34,12 @@ def reconcile_now() -> alerts.ReconcileResult:
         if result.changed:
             session.commit()
             for alert in result.fired:
-                log.info("alert fired for jar %s (due %s)", alert.jar_id, alert.due_at)
+                log.info(
+                    "alert fired: %s %s (due %s)",
+                    alert.kind.value,
+                    alert.subject,
+                    alert.due_at,
+                )
         else:
             session.rollback()
         return result

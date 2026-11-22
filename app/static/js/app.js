@@ -71,8 +71,15 @@ if ("serviceWorker" in navigator) {
   }
 
   function notify(alert) {
-    var note = new Notification("zakvaska: feed " + alert.jar_name, {
-      body: alert.jar_name + " is " + alert.overdue_by + ".",
+    var bake = alert.kind === "stage_due";
+    var title = bake
+      ? "zakvaska: " + alert.subject
+      : "zakvaska: feed " + alert.subject;
+    var body = bake
+      ? alert.subject + " is due " + alert.overdue_by + "."
+      : alert.subject + " is " + alert.overdue_by + ".";
+    var note = new Notification(title, {
+      body: body,
       tag: "zakvaska-alert-" + alert.id,
       icon: "/static/icons/icon-192.png",
     });

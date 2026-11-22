@@ -1913,3 +1913,80 @@ table.steps tr.is-clash td {
   table.steps th, table.steps td { padding: 6px 3px; }
   .baketimeline .step-label { font-size: 9px; }
 }
+
+/* --- Following a bake along --------------------------------------------
+   The Now panel is read standing up, mid-task, so it is larger than the
+   rest of the page and the one thing to do next is the loudest thing on
+   it. */
+
+.bake-now { display: grid; gap: 8px; }
+.bake-now.is-behind {
+  border-color: color-mix(in srgb, var(--band-past) 45%, var(--border));
+}
+
+.now-head { margin: 0; font-size: 17px; line-height: 1.4; }
+.now-head strong { font-size: 19px; }
+.now-sub,
+.now-ends { margin: 0; font-size: 14px; }
+
+.now-next {
+  display: grid;
+  gap: 2px;
+  margin: 2px 0 0;
+  padding: 9px 11px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+.now-next strong { font-size: 18px; }
+.now-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.now-behind {
+  margin: 0;
+  color: var(--band-past);
+  font-size: 14px;
+}
+
+.now-clashes {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+}
+.now-clashes strong { color: var(--band-hungry); }
+
+/* The levain question. Asked once, and then it is a fact about the jar. */
+.peak-ask {
+  display: grid;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--band-peak) 40%, var(--border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--band-peak) 7%, transparent);
+}
+.peak-ask p { margin: 0; font-size: 14px; }
+
+.badge-handson {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+.stage-peak {
+  margin: 2px 0 0;
+  color: var(--band-peak);
+  font-size: 13px;
+}
+
+.plan-commit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
