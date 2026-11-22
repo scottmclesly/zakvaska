@@ -10,6 +10,9 @@ from __future__ import annotations
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from app.models.enums import IngredientRole
+from app.services import measures
+
 
 def opt_str(value: str | None) -> str | None:
     if value is None:
@@ -33,6 +36,50 @@ def req_float(value: str | None, *, field: str) -> float:
     if parsed is None:
         raise ValueError(f"{field} is required")
     return parsed
+
+
+def opt_weight(
+    value: str | None,
+    unit: str = measures.METRIC,
+    *,
+    field: str,
+    name: str | None = None,
+    role: IngredientRole | str | None = None,
+) -> float | None:
+    """A weight field, in whatever unit the user is working in, as grams.
+
+    The field takes "250 g", "8 oz", "1 lb 2 oz" or "1 1/2 cups" whatever the
+    display unit is; a bare number is read in the unit on display. Grams are
+    what gets stored (CLAUDE.md). See measures.parse_quantity.
+    """
+    try:
+        return measures.parse_quantity(value, unit, name=name, role=role)
+    except ValueError as exc:
+        raise ValueError(f"{field}: {exc}") from None
+
+
+def req_weight(
+    value: str | None,
+    unit: str = measures.METRIC,
+    *,
+    field: str,
+    name: str | None = None,
+    role: IngredientRole | str | None = None,
+) -> float:
+    parsed = opt_weight(value, unit, field=field, name=name, role=role)
+    if parsed is None:
+        raise ValueError(f"{field} is required")
+    return parsed
+
+
+def opt_total_weight(
+    value: str | None, unit: str = measures.METRIC, *, field: str
+) -> float | None:
+    """A total flour or dough weight — never read as cups. See parse_total."""
+    try:
+        return measures.parse_total(value, unit)
+    except ValueError as exc:
+        raise ValueError(f"{field}: {exc}") from None
 
 
 def opt_int(value: str | None, *, field: str) -> int | None:

@@ -15,6 +15,7 @@ grams are what we store and the cups are only a reading.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from app.models.enums import IngredientRole
@@ -254,8 +255,13 @@ def in_us_volume(
     *,
     name: str | None = None,
     role: IngredientRole | str | None = None,
+    numeric: bool = False,
 ) -> Measure:
-    """Cups, tablespoons or teaspoons, whichever gives a number worth reading."""
+    """Cups, tablespoons or teaspoons, whichever gives a number worth reading.
+
+    `numeric` is for a form input rather than a page: "a pinch" reads better
+    on a page but cannot be typed back in, so an editable field gets a number.
+    """
     per_cup = grams_per_cup(name, role)
     cups = grams / per_cup
 
@@ -263,12 +269,15 @@ def in_us_volume(
         text = f"{_fraction(cups)} {'cup' if cups <= 1 else 'cups'}"
     else:
         tbsp = cups * TBSP_PER_CUP
-        if tbsp >= 1:
+        # Rounded first: a recipe's percentage is stored to a tenth, so the
+        # manual's "1 tbsp." can come back as 0.99 of one and would read as
+        # "3 tsp" when the book plainly says a tablespoon.
+        if round(tbsp, 1) >= 1:
             text = f"{_fraction(tbsp)} tbsp"
         else:
             tsp = cups * TSP_PER_CUP
             if tsp < 0.125:
-                text = "a pinch"
+                text = f"{_trim(tsp, 2)} tsp" if numeric else "a pinch"
             else:
                 text = f"{_fraction(tsp)} tsp"
     return Measure(text=text, grams=grams, approximate=True)
@@ -310,3 +319,348 @@ def next_unit(unit: str) -> str:
         return UNIT_CYCLE[(UNIT_CYCLE.index(unit) + 1) % len(UNIT_CYCLE)]
     except ValueError:
         return UNIT_CYCLE[0]
+
+
+# --- Reading what the baker typed ------------------------------------------
+#
+# The other direction. Most of Scott's recipes are written in cups or in
+# ounces, so every weight field has to take them as well as grams: a bare
+# number means whatever unit the switch is showing, and a number with a unit
+# on it means that unit, whichever mode the app happens to be in.
+
+#: Weight words, and what one of them weighs in grams.
+GRAMS_PER_WORD: dict[str, float] = {
+    "g": 1.0,
+    "gm": 1.0,
+    "gr": 1.0,
+    "gram": 1.0,
+    "grams": 1.0,
+    "gramme": 1.0,
+    "grammes": 1.0,
+    "kg": 1000.0,
+    "kilo": 1000.0,
+    "kilos": 1000.0,
+    "kilogram": 1000.0,
+    "kilograms": 1000.0,
+    "oz": GRAMS_PER_OUNCE,
+    "ozs": GRAMS_PER_OUNCE,
+    "ounce": GRAMS_PER_OUNCE,
+    "ounces": GRAMS_PER_OUNCE,
+    "lb": GRAMS_PER_OUNCE * OUNCES_PER_POUND,
+    "lbs": GRAMS_PER_OUNCE * OUNCES_PER_POUND,
+    "pound": GRAMS_PER_OUNCE * OUNCES_PER_POUND,
+    "pounds": GRAMS_PER_OUNCE * OUNCES_PER_POUND,
+}
+
+#: Volume words, and how many US cups one of them is. These need a density
+#: before they are grams, which is why they are kept apart.
+CUPS_PER_WORD: dict[str, float] = {
+    "c": 1.0,
+    "cup": 1.0,
+    "cups": 1.0,
+    "tbsp": 1 / TBSP_PER_CUP,
+    "tbsps": 1 / TBSP_PER_CUP,
+    "tbs": 1 / TBSP_PER_CUP,
+    "tbl": 1 / TBSP_PER_CUP,
+    "tblsp": 1 / TBSP_PER_CUP,
+    "tablespoon": 1 / TBSP_PER_CUP,
+    "tablespoons": 1 / TBSP_PER_CUP,
+    "tsp": 1 / TSP_PER_CUP,
+    "tsps": 1 / TSP_PER_CUP,
+    "teaspoon": 1 / TSP_PER_CUP,
+    "teaspoons": 1 / TSP_PER_CUP,
+    "pt": 2.0,
+    "pint": 2.0,
+    "pints": 2.0,
+    "qt": 4.0,
+    "quart": 4.0,
+    "quarts": 4.0,
+    "floz": 0.125,
+    "ml": 1 / 236.588,
+    "mls": 1 / 236.588,
+    "milliliter": 1 / 236.588,
+    "milliliters": 1 / 236.588,
+    "millilitre": 1 / 236.588,
+    "millilitres": 1 / 236.588,
+    "cc": 1 / 236.588,
+    "dl": 100 / 236.588,
+    "l": 1000 / 236.588,
+    "liter": 1000 / 236.588,
+    "liters": 1000 / 236.588,
+    "litre": 1000 / 236.588,
+    "litres": 1000 / 236.588,
+    # A stick of butter, which is how an American recipe says half a cup.
+    "stick": 0.5,
+    "sticks": 0.5,
+    # The small end, because the manual's recipes use both.
+    "dash": 0.125 / TSP_PER_CUP,
+    "dashes": 0.125 / TSP_PER_CUP,
+    "pinch": 0.0625 / TSP_PER_CUP,
+    "pinches": 0.0625 / TSP_PER_CUP,
+}
+
+#: Words that carry no quantity and are simply skipped.
+FILLER_WORDS = frozenset(
+    {
+        "a",
+        "an",
+        "about",
+        "approx",
+        "approximately",
+        "and",
+        "plus",
+        "of",
+        "scant",
+        "heaping",
+        "heaped",
+        "rounded",
+        "level",
+        "generous",
+        "packed",
+        "sifted",
+        "each",
+        "total",
+    }
+)
+
+#: What the keypad cannot type but a cookbook always does.
+FRACTION_GLYPHS: dict[str, float] = {
+    "½": 0.5,
+    "⅓": 1 / 3,
+    "⅔": 2 / 3,
+    "¼": 0.25,
+    "¾": 0.75,
+    "⅕": 0.2,
+    "⅖": 0.4,
+    "⅗": 0.6,
+    "⅘": 0.8,
+    "⅙": 1 / 6,
+    "⅚": 5 / 6,
+    "⅛": 0.125,
+    "⅜": 0.375,
+    "⅝": 0.625,
+    "⅞": 0.875,
+}
+
+#: The unit a bare number is in, per display mode.
+DEFAULT_WORD = {METRIC: "g", US_WEIGHT: "oz", US_VOLUME: "cup"}
+
+
+#: Shown whenever a field cannot be read, so the answer is in the error.
+EXAMPLES = "250 g, 8 oz, 1 lb 2 oz or 1 \u00bd cups"
+
+
+class QuantityError(ValueError):
+    """What the user typed is not a weight anyone could act on."""
+
+
+def _normalize(text: str) -> str:
+    """Lowercase, with the cookbook's typography spelled out."""
+    cleaned = text.strip().lower()
+    cleaned = cleaned.replace(" ", " ")
+    for glyph, value in FRACTION_GLYPHS.items():
+        # Spaces around it, so "1½" becomes two numbers that then add up.
+        cleaned = cleaned.replace(glyph, f" {value!r} ")
+    cleaned = cleaned.replace("fluid ounce", "floz").replace("fl oz", "floz")
+    cleaned = cleaned.replace("fl. oz", "floz").replace("fl.oz", "floz")
+    # Thousands separators, and the dash in "1-1/2".
+    cleaned = cleaned.replace(",", "")
+    for char in "-+/()":
+        if char == "/":
+            continue
+        cleaned = cleaned.replace(char, " ")
+    # A period that is not a decimal point is punctuation: "2 tbsp." .
+    cleaned = re.sub(r"\.(?!\d)", " ", cleaned)
+    # "3 / 4" is one fraction, however it was spaced.
+    cleaned = re.sub(r"\s*/\s*", "/", cleaned)
+    return " ".join(cleaned.split())
+
+
+def _tokens(text: str) -> list[str]:
+    """Numbers, fractions and words, each on its own — "250g" is two."""
+    out: list[str] = []
+    buffer = ""
+    kind = ""
+    for char in text + " ":
+        this = (
+            "num"
+            if char.isdigit() or char in "./"
+            else "word"
+            if char.isalpha()
+            else ""
+        )
+        if this != kind and buffer:
+            out.append(buffer)
+            buffer = ""
+        kind = this
+        if this:
+            buffer += char
+    if buffer:
+        out.append(buffer)
+    return out
+
+
+def _number(token: str) -> float:
+    """A token as a number: "2", "1.5" or "3/4"."""
+    if "/" in token:
+        top, _, bottom = token.partition("/")
+        try:
+            divisor = float(bottom)
+            if divisor == 0:
+                raise ZeroDivisionError
+            return float(top) / divisor
+        except (ValueError, ZeroDivisionError):
+            raise QuantityError(f'"{token}" is not a number') from None
+    try:
+        return float(token)
+    except ValueError:
+        raise QuantityError(f'"{token}" is not a number') from None
+
+
+def parse_quantity(
+    text: str | None,
+    unit: str = METRIC,
+    *,
+    name: str | None = None,
+    role: IngredientRole | str | None = None,
+) -> float | None:
+    """Grams, from however the baker wrote it down.
+
+    A bare number is read in whatever unit is on display, so the field agrees
+    with the label above it. A unit written out wins over that, in either
+    direction: "250 g" is grams while the app is showing cups, and "1 ½ cups"
+    is cups while it is showing grams. Several run-on amounts add up, because
+    that is how both a scale ("1 lb 4 oz") and a manual ("2 tbsp + 2 tsp")
+    write them.
+
+    Returns None for an empty field. Anything it cannot read raises
+    QuantityError, which is a ValueError, so routes handle it as they handle
+    every other bad field.
+    """
+    if text is None:
+        return None
+    raw = str(text).strip()
+    if not raw:
+        return None
+
+    # A hyphen is the mixed-number separator in "1-1/2", so it cannot simply
+    # be stripped: a minus sign — one that starts an amount — is caught here
+    # before normalizing turns it into a space and loses the sign.
+    if re.search(r"(?:^|[\s(])-\s*[\d.]", raw):
+        raise QuantityError("an amount cannot be negative")
+
+    default = DEFAULT_WORD.get(unit, "g")
+    per_cup = grams_per_cup(name, role)
+    grams = 0.0
+    pending: float | None = None
+    seen = False
+
+    def flush(word: str) -> None:
+        nonlocal grams, pending, seen
+        amount = 1.0 if pending is None else pending
+        if word in GRAMS_PER_WORD:
+            grams += amount * GRAMS_PER_WORD[word]
+        else:
+            grams += amount * CUPS_PER_WORD[word] * per_cup
+        pending = None
+        seen = True
+
+    for token in _tokens(_normalize(raw)):
+        if token[0].isdigit() or token[0] in "./":
+            value = _number(token)
+            pending = value if pending is None else pending + value
+        elif token in GRAMS_PER_WORD or token in CUPS_PER_WORD:
+            flush(token)
+        elif token in FILLER_WORDS:
+            continue
+        else:
+            raise QuantityError(
+                f'could not read "{raw}" as an amount '
+                f'("{token}" is not a unit I know) — try {EXAMPLES}'
+            )
+
+    if pending is not None:
+        flush(default)
+
+    if not seen:
+        raise QuantityError(
+            f'could not read "{raw}" as an amount — try {EXAMPLES}'
+        )
+    if grams < 0:
+        raise QuantityError("An amount cannot be negative")
+    return grams
+
+
+def parse_total(text: str | None, unit: str = METRIC) -> float | None:
+    """A total flour or dough weight, which is never read as cups.
+
+    See measure_total: cups of mixed dough would be a made-up number, so in
+    either US mode a bare number here is ounces. Writing the unit still wins.
+    """
+    mode = US_WEIGHT if unit in (US_VOLUME, US_WEIGHT) else METRIC
+    return parse_quantity(text, mode)
+
+
+def _ounce_text(ounces: float) -> str:
+    """Ounces with as few decimals as still weigh the right thing.
+
+    An ounce is a coarse unit for 2 g of salt: two decimals of one is a
+    quarter of a gram, so a small amount gets a third decimal rather than
+    being quietly rounded away on the way back in. 1.41 oz stays 1.41 oz.
+    """
+    for places in (1, 2, 3):
+        text = _trim(ounces, places)
+        if abs(float(text) * GRAMS_PER_OUNCE - ounces * GRAMS_PER_OUNCE) <= 0.05:
+            return text
+    return _trim(ounces, 3)
+
+
+def input_text(
+    grams: float | None,
+    unit: str = METRIC,
+    *,
+    name: str | None = None,
+    role: IngredientRole | str | None = None,
+) -> str:
+    """A stored weight as something editable, in the unit on display.
+
+    Not the same as `measure`: this has to go back through `parse_quantity`
+    unchanged, and grams are left bare so a gram field still reads as the
+    plain number it always did.
+
+    The round trip is only as exact as the unit allows — re-saving a form in
+    cups snaps the value to the nearest spoon. That is the deal with volume
+    measurement, and the reason grams are what gets stored.
+    """
+    if grams is None:
+        return ""
+    if unit == US_WEIGHT:
+        ounces = grams / GRAMS_PER_OUNCE
+        if ounces < OUNCES_PER_POUND:
+            return f"{_ounce_text(ounces)} oz"
+        pounds, rest = divmod(round(ounces, 1), OUNCES_PER_POUND)
+        if rest < 0.05:
+            return f"{int(pounds)} lb"
+        return f"{int(pounds)} lb {_trim(rest)} oz"
+    if unit == US_VOLUME:
+        return in_us_volume(grams, name=name, role=role, numeric=True).text
+    return _trim(grams, 1)
+
+
+def input_total_text(grams: float | None, unit: str = METRIC) -> str:
+    """The editable form of a total — grams, or ounces and pounds."""
+    mode = US_WEIGHT if unit in (US_VOLUME, US_WEIGHT) else METRIC
+    return input_text(grams, mode)
+
+
+def input_placeholder(unit: str = METRIC) -> str:
+    """An example in the unit on display, for an empty field."""
+    return {METRIC: "500", US_WEIGHT: "1 lb 2 oz", US_VOLUME: "3 cups"}.get(
+        unit, "500"
+    )
+
+
+def input_total_placeholder(unit: str = METRIC) -> str:
+    """The same for a total, which is a weight in either US mode."""
+    mode = US_WEIGHT if unit in (US_VOLUME, US_WEIGHT) else METRIC
+    return input_placeholder(mode)

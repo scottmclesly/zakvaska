@@ -32,6 +32,11 @@ class IngredientSpec:
     role: IngredientRole
     baker_pct: float
     notes: str | None = None
+    #: What this line weighs in the batch the recipe was written at, when it
+    #: was written as amounts rather than percentages. Not stored per line —
+    #: the percentage is the recipe — but it is what the form round-trips and
+    #: what `batch_flour_g` on the version is worked out from.
+    grams: float | None = None
 
 
 @dataclass
@@ -40,6 +45,35 @@ class StageSpec:
     duration_min: int | None = None
     temp_c: float | None = None
     notes: str | None = None
+
+
+def percentages_from_amounts(specs: Sequence[IngredientSpec]) -> float | None:
+    """Work the baker's percentages out of amounts that were typed in.
+
+    The inverse of `scaling.scale_to_flour`, and the reason a recipe written
+    in cups can be entered as it is written: total flour is 100%, so every
+    line with an amount becomes that amount over the flour's. Lines left
+    without an amount keep whatever percentage they already had, which is
+    what makes a half-and-half entry work.
+
+    Mutates the specs in place and returns the flour weight the percentages
+    are against — the version's `batch_flour_g`. None when no line that is
+    marked as flour has an amount, because then there is nothing to be a
+    percentage of.
+    """
+    flour = sum(
+        spec.grams
+        for spec in specs
+        if spec.grams is not None and spec.role is IngredientRole.FLOUR
+    )
+    if flour <= 0:
+        return None
+    for spec in specs:
+        if spec.grams is not None:
+            # A tenth of a percent: finer than that is false precision on a
+            # measurement that started life as a cup. See data/volumes.py.
+            spec.baker_pct = round(spec.grams / flour * 100, 1)
+    return flour
 
 
 # --- Reading ---------------------------------------------------------------
@@ -134,6 +168,7 @@ def create_recipe(
     notes: str | None = None,
     source: str | None = None,
     source_ref: str | None = None,
+    batch_flour_g: float | None = None,
 ) -> Recipe:
     recipe = Recipe(
         name=name, category=category, source=source, source_ref=source_ref
@@ -141,7 +176,9 @@ def create_recipe(
     session.add(recipe)
     session.flush()
 
-    version = RecipeVersion(recipe_id=recipe.id, version=1, notes=notes)
+    version = RecipeVersion(
+        recipe_id=recipe.id, version=1, notes=notes, batch_flour_g=batch_flour_g
+    )
     session.add(version)
     session.flush()
 
@@ -157,12 +194,14 @@ def add_version(
     ingredients: list[IngredientSpec],
     stages: list[StageSpec],
     notes: str | None = None,
+    batch_flour_g: float | None = None,
 ) -> RecipeVersion:
     """Record an edit as a new version, leaving the old one untouched."""
     version = RecipeVersion(
         recipe_id=recipe.id,
         version=next_version_number(session, recipe.id),
         notes=notes,
+        batch_flour_g=batch_flour_g,
     )
     session.add(version)
     session.flush()
@@ -192,9 +231,16 @@ def specs_from_version(
     version: RecipeVersion,
 ) -> tuple[list[IngredientSpec], list[StageSpec]]:
     """Turn a stored version back into editable input, to pre-fill the form."""
+    batch = version.batch_flour_g
     ingredients = [
         IngredientSpec(
-            name=i.name, role=i.role, baker_pct=i.baker_pct, notes=i.notes
+            name=i.name,
+            role=i.role,
+            baker_pct=i.baker_pct,
+            notes=i.notes,
+            # Only a version written at a known batch size has amounts to
+            # give back; a percentages-only recipe edits as percentages.
+            grams=None if not batch else i.baker_pct / 100 * batch,
         )
         for i in version.ingredients
     ]

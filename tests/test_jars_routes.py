@@ -179,7 +179,7 @@ class TestFeeding:
         )
 
         assert response.status_code == 400
-        assert "must be a number" in response.text
+        assert "could not read" in response.text
 
     def test_a_backdated_feeding_is_stored_at_the_time_given(self, client):
         jar_id = create_jar(client, "Rye")

@@ -134,7 +134,9 @@ class TestStarting:
             follow_redirects=False,
         )
         assert response.status_code == 400
-        assert "Total flour must be a number" in response.text
+        # The quotes come back HTML-escaped, so match around them.
+        assert "Total flour" in response.text
+        assert "could not read" in response.text
 
     def test_a_negative_flour_total_is_refused(self, client, session):
         recipe = seed_recipe(session)

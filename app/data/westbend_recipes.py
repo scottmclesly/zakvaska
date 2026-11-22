@@ -18,7 +18,7 @@ dough and dinner rolls — carry the stages the manual spells out.
 from __future__ import annotations
 
 from app.data.volumes import CUP, EGG_G, EGG_YOLK_G, TBSP, TSP, YEAST_PACKET_G, Item
-from app.data.volumes import to_ingredients
+from app.data.volumes import batch_flour_g, to_ingredients
 from app.models.enums import IngredientRole as R
 
 SOURCE = "West Bend L5951 manual"
@@ -45,6 +45,9 @@ def _recipe(
         "source_ref": f"p. {page}",
         "notes": f"{UNTESTED} {note}".strip(),
         "ingredients": to_ingredients(items),
+        # The manual's own batch, so the recipe reads in cups without being
+        # asked to scale first.
+        "flour_g": batch_flour_g(items),
         "stages": stages or [],
         "program": program,
         "loaf_size": loaf_size,

@@ -77,6 +77,14 @@ class RecipeVersion(Base):
     version: Mapped[int] = mapped_column(Integer, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
 
+    # The total flour this version was written at, in grams, when it was
+    # written as real amounts rather than percentages — a manual's recipe in
+    # cups, say. The percentages are still what the recipe *is*; this is the
+    # batch they were worked out from, so the page can show the amounts
+    # straight away and the edit form can hand back the cups that were typed.
+    # Null means the recipe was given as percentages and has no natural size.
+    batch_flour_g: Mapped[float | None] = mapped_column(Float)
+
     # What this recipe expects of the bread maker, so starting a bake does
     # not mean looking the program up in the manual every time. SET NULL
     # rather than CASCADE: archiving a program must not delete a version.

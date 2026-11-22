@@ -21,6 +21,7 @@ from app.models.enums import (
     SMELL_SUGGESTIONS,
     TEXTURE_SUGGESTIONS,
     BubbleLevel,
+    IngredientRole,
     JarOrigin,
     JarState,
 )
@@ -332,10 +333,22 @@ async def log_feeding(
     # Read before anything can fail, so the error page still has the form.
     shot = await photo.read() if photo is not None and photo.filename else None
 
+    # Read in whatever unit the switch is showing, and in whatever unit the
+    # baker wrote out if they wrote one. Stored in grams either way.
+    flour_name = f.opt_str(flour_type) or jar.flour_type or "flour"
     try:
-        starter = f.req_float(starter_g, field="Starter")
-        flour = f.req_float(flour_g, field="Flour")
-        water = f.req_float(water_g, field="Water")
+        starter = f.req_weight(
+            starter_g, ctx.weight_unit,
+            field="Starter", name="starter", role=IngredientRole.LEVAIN,
+        )
+        flour = f.req_weight(
+            flour_g, ctx.weight_unit,
+            field="Flour", name=flour_name, role=IngredientRole.FLOUR,
+        )
+        water = f.req_weight(
+            water_g, ctx.weight_unit,
+            field="Water", name="water", role=IngredientRole.WATER,
+        )
     except ValueError as exc:
         errors.append(str(exc))
         starter = flour = water = 0.0

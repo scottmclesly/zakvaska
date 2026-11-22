@@ -44,10 +44,15 @@ class SeedReport:
     cycles_added: int = 0
     recipes_added: list[str] = field(default_factory=list)
     recipes_skipped: list[str] = field(default_factory=list)
+    #: Recipes seeded before versions kept the batch they were written at,
+    #: now told what it was. See backfill_batches.
+    batches_filled: list[str] = field(default_factory=list)
 
     @property
     def added_anything(self) -> bool:
-        return bool(self.programs_added or self.recipes_added)
+        return bool(
+            self.programs_added or self.recipes_added or self.batches_filled
+        )
 
     def lines(self) -> list[str]:
         head = "Would add" if self.dry_run else "Added"
@@ -58,6 +63,11 @@ class SeedReport:
             f"Left alone: {len(self.programs_skipped)} programs, "
             f"{len(self.recipes_skipped)} recipes already there.",
         ]
+        if self.batches_filled:
+            out.append(
+                f"{head} the batch size to {len(self.batches_filled)} recipes "
+                "seeded before versions kept one."
+            )
         for name in self.programs_added:
             out.append(f"  + program  {name}")
         for name in self.recipes_added:
@@ -66,6 +76,8 @@ class SeedReport:
             out.append(f"  = program  {name} (already there)")
         for name in self.recipes_skipped:
             out.append(f"  = recipe   {name} (already there)")
+        for name in self.batches_filled:
+            out.append(f"  ~ recipe   {name} (batch size filled in)")
         return out
 
 
@@ -172,6 +184,7 @@ def seed_recipes(
             source=spec.get("source"),
             source_ref=spec.get("source_ref"),
             notes=spec["notes"],
+            batch_flour_g=spec.get("flour_g"),
             ingredients=[
                 IngredientSpec(
                     name=item["name"],
@@ -202,6 +215,43 @@ def seed_recipes(
     return report
 
 
+def backfill_batches(
+    session: Session, report: SeedReport, *, dry_run: bool = False
+) -> SeedReport:
+    """Tell an already-seeded recipe the batch it was written at.
+
+    The manual's recipes are written in cups, and a version now keeps the
+    flour weight those cups came to — which is what lets the page show the
+    amounts without being asked to scale first. Recipes seeded before that
+    column existed have it empty, and nothing in the reference data has
+    changed, so filling it in adds information rather than overwriting any.
+
+    Still add-only in spirit: a version that already has a batch, or whose
+    percentages have since been edited into a new version, is left alone.
+    """
+    from app.data.recipes import RECIPES
+
+    for spec in RECIPES:
+        flour = spec.get("flour_g")
+        if not flour:
+            continue
+        recipe = find_recipe(session, spec["name"], spec.get("source"))
+        if recipe is None:
+            continue
+        # Only the version the seeder itself wrote: v1, untouched since.
+        version = next((v for v in recipe.versions if v.version == 1), None)
+        if version is None or version.batch_flour_g is not None:
+            continue
+
+        report.batches_filled.append(spec["name"])
+        if not dry_run:
+            version.batch_flour_g = flour
+
+    if not dry_run and report.batches_filled:
+        session.flush()
+    return report
+
+
 # --- Both ------------------------------------------------------------------
 
 
@@ -209,6 +259,7 @@ def seed_all(session: Session, *, dry_run: bool = False) -> SeedReport:
     report = SeedReport(dry_run=dry_run)
     seed_programs(session, report, dry_run=dry_run)
     seed_recipes(session, report, dry_run=dry_run)
+    backfill_batches(session, report, dry_run=dry_run)
     if not dry_run:
         log.info(
             "seeded %d programs and %d recipes",

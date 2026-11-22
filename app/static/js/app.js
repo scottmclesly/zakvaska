@@ -154,7 +154,11 @@ document.addEventListener("click", (event) => {
   const flour = form.querySelector('[name="total_flour_g"]');
   const size = form.querySelector('[name="loaf_size"]');
   if (flour) {
-    flour.value = Math.round(parseFloat(button.dataset.flour));
+    // The field reads in whichever unit the switch is showing, so the
+    // button carries that text; the grams are the fallback.
+    flour.value =
+      button.dataset.flourText ||
+      String(Math.round(parseFloat(button.dataset.flour)));
     flour.dispatchEvent(new Event("input", { bubbles: true }));
   }
   if (size) size.value = button.dataset.size;

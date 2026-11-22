@@ -543,7 +543,7 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 
 @media (min-width: 720px) {
   .repeat-head { display: grid; }
-  .ingredient-row { grid-template-columns: 2fr 1.2fr 0.8fr 2fr; }
+  .ingredient-row { grid-template-columns: 2fr 1.1fr 1fr 0.7fr 1.6fr; }
   .stage-row { grid-template-columns: 2fr 0.8fr 0.8fr 2fr; }
   .repeat-head.repeat-row { align-items: center; padding: 0 0 4px; }
 }

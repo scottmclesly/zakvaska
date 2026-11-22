@@ -20,6 +20,7 @@ from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
 from app.services import bakes as bake_service
 from app.services import jars as jar_service
+from app.services import measures
 from app.services import photos as photo_service
 from app.services import recipes as recipe_service
 from app.services import scaling
@@ -93,7 +94,7 @@ def list_bakes(
 # --- Starting one ----------------------------------------------------------
 
 
-def _defaults_for(version) -> dict[str, str]:
+def _defaults_for(version, unit: str) -> dict[str, str]:
     """What the recipe says to set the machine to, as form values.
 
     A seeded West Bend recipe knows its program, loaf size and crust, so
@@ -109,6 +110,12 @@ def _defaults_for(version) -> dict[str, str]:
     if filled:
         # A recipe that names a program is a bread-maker recipe.
         filled.setdefault("method", BakeMethod.BREAD_MAKER.value)
+    if version.batch_flour_g:
+        # A recipe written as real amounts already says how much flour it
+        # makes, in the unit on display. Changing it rescales the bake.
+        filled["total_flour_g"] = measures.input_total_text(
+            version.batch_flour_g, unit
+        )
     return filled
 
 
@@ -123,7 +130,10 @@ def _start_context(ctx: ViewContext, version, *, values=None, errors=None) -> di
         "loaf_presets": scaling.loaf_presets(version.ingredients),
         # On a first visit the recipe's defaults fill the form; once the
         # form has been submitted, what the baker typed wins outright.
-        "values": values if values is not None else _defaults_for(version),
+        "values": values
+        if values is not None
+        else _defaults_for(version, ctx.weight_unit),
+        "total_placeholder": measures.input_total_placeholder(ctx.weight_unit),
         "errors": errors or [],
         "now_local": f.utc_to_local_input(ctx.now, ctx.tz),
     }
@@ -176,7 +186,9 @@ def create_bake(
     }
 
     try:
-        flour = f.opt_float(total_flour_g, field="Total flour")
+        flour = f.opt_total_weight(
+            total_flour_g, ctx.weight_unit, field="Total flour"
+        )
     except ValueError as exc:
         errors.append(str(exc))
         flour = None

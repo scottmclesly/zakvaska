@@ -81,13 +81,22 @@
     <li>
       Weights are stored in <strong>grams</strong> and temperatures in
       <strong>°C</strong> — one set of numbers, no rounding drift. The two
-      chips in the header only change what you read: grams, then US cups and
-      spoons, then ounces and pounds.
+      chips in the header change what you read <em>and</em> what you type:
+      grams, then US cups and spoons, then ounces and pounds.
+    </li>
+    <li>
+      Every weight field takes whichever of those you are working in. A bare
+      number is read in the unit the chip is showing; write the unit out —
+      <em>250 g</em>, <em>8 oz</em>, <em>1 lb 2 oz</em>, <em>1 ½ cups</em> —
+      and that wins, whatever the chip says. A recipe typed as amounts keeps
+      the batch it was written at, so it reads back in cups.
     </li>
     <li>
       Cup readings come from a density per ingredient and are approximate by
       nature, so they are marked as such and nothing is ever stored that way.
-      Type weights in grams; that is what the scale says.
+      Grams are what reaches the database, whichever unit went in, and a
+      recipe re-saved in cups snaps to the nearest spoon — the scale is
+      still the authority.
     </li>
     <li>
       Times are stored in UTC and shown in <strong>{{ tz_name }}</strong>.

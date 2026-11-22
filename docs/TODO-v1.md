@@ -82,6 +82,11 @@ Work phase by phase. Each phase ends with its acceptance checks passing, tests g
 - [x] Rise-curve charts, homemade and control overlaid on the dashboard
       (pulled forward out of the v2 backlog, 2026-11-02)
 - [x] Programs and recipe stages drawn to scale as bars of elapsed time
+- [x] Weight *entry* in the unit on display, not only reading: every weight
+      field takes "250 g", "8 oz", "1 lb 2 oz" or "1 ½ cups", and a recipe
+      can be typed as the amounts it is written in — the baker's percentages
+      are worked out from them and the batch is kept on the version, so it
+      reads back in cups (2026-11-08)
 
 ## v2 backlog (do not build in v1)
 - Back-scheduling from a target "bread out" time through recipe stages

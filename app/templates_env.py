@@ -108,6 +108,34 @@ def weigh_total(value: float | None, unit: str = measures.METRIC) -> str:
     return shown.text if shown else "\u2014"
 
 
+def weigh_input(
+    value: object = None,
+    unit: str = measures.METRIC,
+    name: str | None = None,
+    role: object | None = None,
+) -> str:
+    """A stored weight as an editable field value. See measures.input_text.
+
+    A string comes straight back: after a failed submission the value is
+    still what the user typed, and showing them their own words — "1 cuup"
+    included — beats showing them a reformatted guess. Same bargain as `num`.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    return measures.input_text(value, unit, name=name, role=role)
+
+
+def weigh_total_input(value: object = None, unit: str = measures.METRIC) -> str:
+    """The editable form of a total — grams, or ounces and pounds."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    return measures.input_total_text(float(value), unit)
+
+
 def filesize(value: int | None) -> str:
     """Bytes in the units a person reads, not the ones a disk counts in."""
     if not value:
@@ -141,6 +169,8 @@ templates.env.filters.update(
     grams=grams,
     weigh=weigh,
     weigh_total=weigh_total,
+    weigh_input=weigh_input,
+    weigh_total_input=weigh_total_input,
     filesize=filesize,
     mm=mm,
     num=num,
@@ -174,6 +204,14 @@ templates.env.globals["unit_label"] = lambda unit: measures.UNIT_LABELS.get(
     unit, measures.UNIT_LABELS[measures.METRIC]
 )
 templates.env.globals["next_unit"] = measures.next_unit
+# What a weight field accepts, said once so every hint agrees.
+templates.env.globals["amount_examples"] = measures.EXAMPLES
+# A total's unit, which is never cups. See measures.measure_total.
+templates.env.globals["total_unit_label"] = lambda unit: (
+    measures.UNIT_LABELS[measures.METRIC]
+    if unit == measures.METRIC
+    else measures.UNIT_LABELS[measures.US_WEIGHT]
+)
 # The pages that draw these walk the cycles and stages themselves, so they
 # ask for the bar rather than having one threaded through every route.
 templates.env.globals["cycle_bar"] = recipe_service.cycle_bar

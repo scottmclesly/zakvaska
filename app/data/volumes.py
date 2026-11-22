@@ -67,6 +67,15 @@ def total_flour_g(items: list[Item]) -> float:
     return sum(i.weight() for i in items if i.role is IngredientRole.FLOUR)
 
 
+def batch_flour_g(items: list[Item]) -> float:
+    """The flour weight the percentages are against, rounded to a gram.
+
+    Kept on the seeded version so the recipe page can show the manual's own
+    amounts straight away rather than asking how much flour to scale to.
+    """
+    return round(total_flour_g(items), 1)
+
+
 def to_ingredients(items: list[Item]) -> list[dict]:
     """Baker's percentages, rounded to a tenth — finer is false precision."""
     flour = total_flour_g(items)

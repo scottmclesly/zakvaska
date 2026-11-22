@@ -15,6 +15,7 @@ Each entry is a dict:
     name, category, source, source_ref, notes,
     ingredients [{name, role, pct, notes}],
     stages [{name, min, temp_c, notes}],
+    flour_g                        # the batch it was written at, optional
     program, loaf_size, crust      # bread-maker defaults, all optional
 """
 

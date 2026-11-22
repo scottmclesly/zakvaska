@@ -62,23 +62,30 @@
   <form class="form scale-form" method="get" action="/recipes/{{ recipe.id }}/v/{{ version.version }}">
     <div class="field-row">
       <label>
-        <span>Total flour <em>grams</em></span>
-        <input name="flour" type="number" step="1" min="0" inputmode="decimal"
-               value="{{ flour_input | num }}" placeholder="500">
+        <span>Total flour <em>{{ total_unit_label(weight_unit) }}</em></span>
+        <input name="flour" type="text" autocomplete="off" spellcheck="false"
+               value="{{ flour_input }}" placeholder="{{ total_placeholder }}">
       </label>
       <label>
-        <span>…or target dough weight <em>grams</em></span>
-        <input name="dough" type="number" step="1" min="0" inputmode="decimal"
-               value="{{ dough_input | num }}" placeholder="1115">
+        <span>…or target dough weight <em>{{ total_unit_label(weight_unit) }}</em></span>
+        <input name="dough" type="text" autocomplete="off" spellcheck="false"
+               value="{{ dough_input }}" placeholder="{{ total_placeholder }}">
       </label>
     </div>
     <div class="row-actions">
-      <button class="btn" type="submit">Work out the grams</button>
-      {% if scaled %}
+      <button class="btn" type="submit">Work out the amounts</button>
+      {% if scaled and not scaled_from_batch %}
       <a class="btn btn-secondary" href="/recipes/{{ recipe.id }}/v/{{ version.version }}">Clear</a>
       {% endif %}
     </div>
-    <p class="muted small">Give either one. Flour wins if you fill in both.</p>
+    <p class="muted small">
+      Give either one. Flour wins if you fill in both. A total is read as a
+      weight — cups of mixed dough would be a made-up number — so grams,
+      ounces and pounds, written out or not.
+      {%- if scaled_from_batch %}
+      This is the batch the recipe was written at.
+      {%- endif %}
+    </p>
   </form>
 </section>
 

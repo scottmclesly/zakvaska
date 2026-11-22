@@ -9,7 +9,10 @@
     v{{ recipe.latest_version.version }} stays exactly as it is.
   </p>
   {% else %}
-  <p class="sub">Percentages are of total flour, so the flour lines add up to 100%.</p>
+  <p class="sub">
+    Type the amounts the way your recipe is written — the percentages are
+    worked out from them.
+  </p>
   {% endif %}
 </section>
 
@@ -50,7 +53,9 @@
   <h2 class="section-title">Ingredients</h2>
   <div class="card repeat" data-repeat>
     <div class="repeat-head repeat-row ingredient-row">
-      <span>Ingredient</span><span>Role</span><span>Baker's %</span><span>Notes</span>
+      <span>Ingredient</span><span>Role</span>
+      <span>Amount <em>{{ unit_label(weight_unit) }}</em></span>
+      <span>Baker's %</span><span>Notes</span>
     </div>
     <div data-repeat-rows>
       {% for row in ingredients %}
@@ -65,6 +70,12 @@
             </option>
             {% endfor %}
           </select></label>
+        {#- The amount, in whichever unit the switch is showing. A unit
+            written out wins over that, so "250 g" works in cups mode. -#}
+        <label><span class="sr-only">Amount</span>
+          <input name="ingredient_amount" type="text" autocomplete="off"
+                 spellcheck="false" placeholder="{{ amount_placeholder }}"
+                 value="{{ amounts[loop.index0] if loop.index0 < amounts | length else '' }}"></label>
         <label><span class="sr-only">Baker's percentage</span>
           <input name="ingredient_pct" type="number" step="0.1" min="0"
                  inputmode="decimal" value="{{ row.baker_pct | num }}"></label>
@@ -76,6 +87,12 @@
     <button class="btn btn-small btn-secondary" type="button" data-repeat-add>
       Add ingredient
     </button>
+    <p class="hint muted small">
+      Amounts are read in {{ unit_label(weight_unit) }} unless you write the
+      unit yourself — {{ amount_examples }} all work. Fill them in and the
+      percentages follow; leave them empty and the percentages are yours to
+      type. Either way grams are what gets stored.
+    </p>
   </div>
   <datalist id="ingredient-names">
     {% for option in ingredient_suggestions %}<option value="{{ option }}">{% endfor %}

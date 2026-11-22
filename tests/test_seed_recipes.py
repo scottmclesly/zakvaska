@@ -11,6 +11,8 @@ from __future__ import annotations
 import html
 import re
 
+import pytest
+
 from app.data import westbend
 from app.data.classic_recipes import SKIPPED
 from app.data.classic_recipes import RECIPES as CLASSICS
@@ -260,6 +262,33 @@ class TestWhatSeedingActuallyWrites:
         assert version.default_program.name == "Whole Wheat"
         assert version.default_program.device == "West Bend L5951"
         assert version.default_loaf_size == "2 lb"
+
+    def test_a_manual_recipe_keeps_the_batch_it_was_written_at(self, session):
+        """The manual writes cups, so the recipe can show cups unprompted."""
+        seeding.seed_all(session)
+        session.commit()
+        recipe = seeding.find_recipe(
+            session, "Classic Rye Bread", "West Bend L5951 manual"
+        )
+        version = recipe.latest_version
+        assert version.batch_flour_g is not None
+        # A 2 lb machine loaf: a few cups of flour, not a bakery's sack.
+        assert 300 < version.batch_flour_g < 800
+        # And the batch really is the 100% the percentages are against.
+        flour = sum(
+            i.baker_pct
+            for i in version.ingredients
+            if i.role.value == "flour"
+        )
+        assert flour == pytest.approx(100.0, abs=0.2)
+
+    def test_a_recipe_given_as_percentages_has_no_batch(self, session):
+        seeding.seed_all(session)
+        session.commit()
+        recipe = seeding.find_recipe(
+            session, "Latvian rupjmaize (coarse rye)", "Stanley Ginsberg, The Rye Baker"
+        )
+        assert recipe.latest_version.batch_flour_g is None
 
     def test_an_oven_recipe_has_no_program(self, session):
         seeding.seed_all(session)

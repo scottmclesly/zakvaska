@@ -16,6 +16,7 @@ from app.models.enums import (
 from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
 from app.services import bakes as bake_service
+from app.services import measures
 from app.services import recipes as recipe_service
 from app.services import scaling
 from app.services.recipe_diff import diff_versions
@@ -56,13 +57,20 @@ def _parse_rows(
     names: list[str],
     roles: list[str],
     percents: list[str],
+    amounts: list[str],
     ing_notes: list[str],
     stage_names: list[str],
     durations: list[str],
     temps: list[str],
     stage_notes: list[str],
-) -> tuple[list, list, list[str]]:
-    """Turn the parallel form arrays into specs. Blank rows are dropped."""
+) -> tuple[list, list, float | None, list[str]]:
+    """Turn the parallel form arrays into specs. Blank rows are dropped.
+
+    A row can be given as an amount ("3 cups", "12 oz") or as a baker's
+    percentage. Amounts win: when any are filled in, the percentages are
+    worked out from them and the flour weight they came from is kept on the
+    version, so the recipe reads back in the unit it was written in.
+    """
     errors: list[str] = []
     ingredients: list[recipe_service.IngredientSpec] = []
 
@@ -70,27 +78,55 @@ def _parse_rows(
         name = f.opt_str(raw_name)
         if name is None:
             continue  # an empty row is just an unused row
+
+        role_value = roles[index] if index < len(roles) else IngredientRole.OTHER.value
+        role = IngredientRole(role_value)
+
         try:
-            pct = f.req_float(
-                percents[index] if index < len(percents) else "",
-                field=f"Percentage for {name}",
+            grams = f.opt_weight(
+                amounts[index] if index < len(amounts) else "",
+                ctx.weight_unit,
+                field=f"Amount for {name}",
+                name=name,
+                role=role,
             )
         except ValueError as exc:
             errors.append(str(exc))
             continue
+
+        raw_pct = percents[index] if index < len(percents) else ""
+        if grams is None:
+            try:
+                pct = f.req_float(raw_pct, field=f"Percentage for {name}")
+            except ValueError as exc:
+                errors.append(str(exc))
+                continue
+        else:
+            # Worked out once every row is in, by percentages_from_amounts.
+            pct = f.opt_float(raw_pct, field=f"Percentage for {name}") or 0.0
+
         if pct < 0:
             errors.append(f"{name} cannot be a negative percentage.")
             continue
 
-        role_value = roles[index] if index < len(roles) else IngredientRole.OTHER.value
         ingredients.append(
             recipe_service.IngredientSpec(
                 name=name,
-                role=IngredientRole(role_value),
+                role=role,
                 baker_pct=pct,
                 notes=f.opt_str(ing_notes[index] if index < len(ing_notes) else ""),
+                grams=grams,
             )
         )
+
+    batch_flour_g: float | None = None
+    if any(spec.grams is not None for spec in ingredients):
+        batch_flour_g = recipe_service.percentages_from_amounts(ingredients)
+        if batch_flour_g is None:
+            errors.append(
+                "Amounts need a flour to be a percentage of: give an amount "
+                "on at least one ingredient whose role is flour."
+            )
 
     stages: list[recipe_service.StageSpec] = []
     for index, raw_name in enumerate(stage_names):
@@ -120,18 +156,40 @@ def _parse_rows(
             )
         )
 
-    return ingredients, stages, errors
+    return ingredients, stages, batch_flour_g, errors
+
+
+def _amount_inputs(ctx: ViewContext, specs) -> list[str]:
+    """Each row's amount, written in the unit the switch is showing.
+
+    A recipe typed in cups comes back in cups; one given as percentages has
+    no amount to show and gets an empty field.
+    """
+    return [
+        measures.input_text(
+            getattr(spec, "grams", None),
+            ctx.weight_unit,
+            name=spec.name,
+            role=spec.role,
+        )
+        for spec in specs
+    ]
 
 
 def _form_context(ctx: ViewContext, *, recipe=None, ingredients=None, stages=None,
                   errors=None, name="", category=RecipeCategory.OTHER.value,
-                  notes="") -> dict:
+                  notes="", amounts=None) -> dict:
+    rows = ingredients or [BLANK_INGREDIENT]
     return {
         "title": "Edit recipe" if recipe else "New recipe",
         "recipe": recipe,
         "categories": list(RecipeCategory),
         "roles": list(IngredientRole),
-        "ingredients": ingredients or [BLANK_INGREDIENT],
+        "ingredients": rows,
+        # Echoed back as typed after a failed submission; otherwise worked
+        # out from the stored amounts.
+        "amounts": amounts if amounts is not None else _amount_inputs(ctx, rows),
+        "amount_placeholder": measures.input_placeholder(ctx.weight_unit),
         "stages": stages or [BLANK_STAGE],
         "ingredient_suggestions": INGREDIENT_SUGGESTIONS,
         "stage_suggestions": STAGE_SUGGESTIONS,
@@ -178,14 +236,16 @@ def create_recipe(
     ingredient_name: Annotated[list[str], Form()] = [],
     ingredient_role: Annotated[list[str], Form()] = [],
     ingredient_pct: Annotated[list[str], Form()] = [],
+    ingredient_amount: Annotated[list[str], Form()] = [],
     ingredient_notes: Annotated[list[str], Form()] = [],
     stage_name: Annotated[list[str], Form()] = [],
     stage_duration: Annotated[list[str], Form()] = [],
     stage_temp: Annotated[list[str], Form()] = [],
     stage_notes: Annotated[list[str], Form()] = [],
 ):
-    ingredients, stages, errors = _parse_rows(
-        ctx, ingredient_name, ingredient_role, ingredient_pct, ingredient_notes,
+    ingredients, stages, batch_flour_g, errors = _parse_rows(
+        ctx, ingredient_name, ingredient_role, ingredient_pct,
+        ingredient_amount, ingredient_notes,
         stage_name, stage_duration, stage_temp, stage_notes,
     )
     if not f.opt_str(name):
@@ -197,6 +257,7 @@ def create_recipe(
             context=_form_context(
                 ctx, ingredients=ingredients or None, stages=stages or None,
                 errors=errors, name=name, category=category, notes=notes,
+                amounts=ingredient_amount or None,
             ),
             status_code=400,
         )
@@ -208,6 +269,7 @@ def create_recipe(
         ingredients=ingredients,
         stages=stages,
         notes=f.opt_str(notes),
+        batch_flour_g=batch_flour_g,
     )
     ctx.session.commit()
     return _see_other(f"/recipes/{recipe.id}")
@@ -228,24 +290,40 @@ def version_detail(
     ctx: Ctx,
     recipe_id: int,
     version: int,
-    flour: float | None = None,
-    dough: float | None = None,
+    flour: str | None = None,
+    dough: str | None = None,
 ) -> HTMLResponse:
     found = _load_version(ctx, recipe_id, version)
 
-    # Scale-to view. Flour wins if somehow both are given.
+    # Scale-to view. Flour wins if somehow both are given. The fields are
+    # read in whatever unit the switch is showing — "1 lb 2 oz" as readily
+    # as 500 — so a recipe can be scaled in the unit it is written in.
     scaled = None
     scale_error = None
-    if flour is not None:
-        try:
-            scaled = scaling.scale_to_flour(found.ingredients, flour)
-        except ValueError as exc:
-            scale_error = str(exc)
-    elif dough is not None:
-        try:
-            scaled = scaling.scale_to_dough_weight(found.ingredients, dough)
-        except ValueError as exc:
-            scale_error = str(exc)
+    asked_flour = f.opt_str(flour)
+    asked_dough = f.opt_str(dough)
+    # A recipe written as real amounts shows them without being asked: that
+    # batch is what the recipe *is*, and retyping it to read it would be
+    # silly. One given as percentages has no size of its own and waits.
+    from_batch = not asked_flour and not asked_dough and bool(found.batch_flour_g)
+
+    try:
+        if asked_flour:
+            scaled = scaling.scale_to_flour(
+                found.ingredients,
+                f.opt_total_weight(flour, ctx.weight_unit, field="Total flour"),
+            )
+        elif asked_dough:
+            scaled = scaling.scale_to_dough_weight(
+                found.ingredients,
+                f.opt_total_weight(dough, ctx.weight_unit, field="Dough weight"),
+            )
+        elif from_batch:
+            scaled = scaling.scale_to_flour(
+                found.ingredients, found.batch_flour_g
+            )
+    except ValueError as exc:
+        scale_error = str(exc)
 
     return render(
         request=request,
@@ -260,8 +338,17 @@ def version_detail(
             "total_pct": scaling.total_percentage(found.ingredients),
             "scaled": scaled,
             "scale_error": scale_error,
-            "flour_input": flour,
-            "dough_input": dough,
+            "scaled_from_batch": from_batch and scaled is not None,
+            # The scale field shows what was typed, or the batch the recipe
+            # was written at, in the unit on display.
+            "flour_input": asked_flour
+            or (
+                measures.input_total_text(found.batch_flour_g, ctx.weight_unit)
+                if from_batch
+                else ""
+            ),
+            "dough_input": asked_dough or "",
+            "total_placeholder": measures.input_total_placeholder(ctx.weight_unit),
             # Bakes from this exact version, newest first.
             "bakes": [b for b in found.bakes if not b.archived],
         },
@@ -296,6 +383,7 @@ def edit_recipe(
     ingredient_name: Annotated[list[str], Form()] = [],
     ingredient_role: Annotated[list[str], Form()] = [],
     ingredient_pct: Annotated[list[str], Form()] = [],
+    ingredient_amount: Annotated[list[str], Form()] = [],
     ingredient_notes: Annotated[list[str], Form()] = [],
     stage_name: Annotated[list[str], Form()] = [],
     stage_duration: Annotated[list[str], Form()] = [],
@@ -303,8 +391,9 @@ def edit_recipe(
     stage_notes: Annotated[list[str], Form()] = [],
 ):
     recipe = _load(ctx, recipe_id)
-    ingredients, stages, errors = _parse_rows(
-        ctx, ingredient_name, ingredient_role, ingredient_pct, ingredient_notes,
+    ingredients, stages, batch_flour_g, errors = _parse_rows(
+        ctx, ingredient_name, ingredient_role, ingredient_pct,
+        ingredient_amount, ingredient_notes,
         stage_name, stage_duration, stage_temp, stage_notes,
     )
     if not f.opt_str(name):
@@ -317,6 +406,7 @@ def edit_recipe(
                 ctx, recipe=recipe, ingredients=ingredients or None,
                 stages=stages or None, errors=errors, name=name,
                 category=category, notes=notes,
+                amounts=ingredient_amount or None,
             ),
             status_code=400,
         )
@@ -328,6 +418,7 @@ def edit_recipe(
     version = recipe_service.add_version(
         ctx.session, recipe,
         ingredients=ingredients, stages=stages, notes=f.opt_str(notes),
+        batch_flour_g=batch_flour_g,
     )
     ctx.session.commit()
     return _see_other(f"/recipes/{recipe.id}/v/{version.version}")

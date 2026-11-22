@@ -29,7 +29,14 @@ Comparing jars and iterating recipes is the point, so the data must be structure
   **default °F**, weight **default grams**, cycling grams → US cups/spoons → oz/lb. Volume
   readings use the per-ingredient densities in `app/services/measures.py` and are approximate
   by nature; never store or round-trip through them.
+- The display unit is also the **entry** unit: every weight field goes through
+  `measures.parse_quantity` (`forms.req_weight` / `opt_weight`), so a bare number is read in
+  the unit on display and a written-out unit ("250 g", "1 lb 2 oz", "1 ½ cups") wins over it.
+  Totals — flour, dough — use `parse_total` and are never cups.
 - Recipes are stored as **baker's percentages** relative to total flour; grams are derived.
+  A recipe may be *typed* as amounts instead: the percentages come from them and the flour
+  weight they came to is kept on the version as `batch_flour_g`, which is what lets a recipe
+  written in cups read back in cups. Null means it was given as percentages.
 - Recipes are **versioned**: editing a recipe creates a new version; bakes point at a version.
 - Never hard-delete jars, recipes or bakes — archive them. Lab-notebook history matters.
 - Every schema change ships with an Alembic migration.
