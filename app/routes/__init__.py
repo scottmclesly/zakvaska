@@ -9,11 +9,12 @@ from app.routes import (
     home,
     jars,
     photos,
+    plan,
     recipes,
     settings,
 )
 
 __all__ = [
     "alerts", "backup", "bakes", "equipment", "health", "home", "jars",
-    "photos", "recipes", "settings",
+    "photos", "plan", "recipes", "settings",
 ]

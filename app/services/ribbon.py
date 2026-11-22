@@ -501,3 +501,189 @@ def window(
     """
     back = min(look_back_h, span_h / 3)
     return now - timedelta(hours=back), now + timedelta(hours=span_h - back)
+
+
+# --- A bake day laid out ------------------------------------------------
+#
+# Same visual language as the feeding ribbon — one time axis, busy blocks
+# shaded behind, "now" over the top — but the rows are a bake's steps rather
+# than a jar's cycles, and each one is a bar with a start and an end rather
+# than a curve.
+
+
+@dataclass(frozen=True)
+class StepBar:
+    """One step of a bake, as a bar on the timeline."""
+
+    key: str
+    name: str
+    x1: float
+    x2: float
+    y: float
+    height: float
+    hands_on: bool
+    must_be_home: bool
+    clashes: bool
+    #: Which lane it was put in, so overlapping labels can be staggered.
+    lane: int
+    start: datetime
+    end: datetime
+    conflict_label: str | None = None
+
+    @property
+    def width(self) -> float:
+        return max(self.x2 - self.x1, 0.6)
+
+    @property
+    def mid(self) -> float:
+        return (self.x1 + self.x2) / 2
+
+
+@dataclass(frozen=True)
+class Timeline:
+    bars: tuple[StepBar, ...]
+    ticks: tuple[Tick, ...]
+    busy: tuple[BusyShade, ...]
+    start: datetime
+    end: datetime
+    now: datetime
+    now_x: float | None
+    plot: PlotBox
+    viewbox: str
+    axis_y: float
+    #: Where the jar's readiness curve is drawn, when there is a jar.
+    jar_curve: RiseCurve | None = None
+    jar_name: str | None = None
+    #: The levain build, marked on that curve.
+    levain_x: float | None = None
+
+    @property
+    def span_h(self) -> float:
+        return (self.end - self.start).total_seconds() / 3600
+
+
+#: One bar per step, each its own row: a bake day is ten steps at most and
+#: stacking them keeps every name readable without a tooltip.
+BAR_H = 13.0
+BAR_GAP = 2.0
+#: The strip above the bars holding the jar's readiness curve.
+JAR_BAND_H = 30.0
+
+
+def timeline(
+    steps: Sequence,
+    *,
+    start: datetime,
+    end: datetime,
+    now: datetime,
+    tz: tzinfo,
+    busy: Sequence[BusyMark] = (),
+    jar_feed: FeedMark | None = None,
+    jar_name: str | None = None,
+    levain_at: datetime | None = None,
+) -> Timeline | None:
+    """Lay a bake's steps out along a time axis.
+
+    `steps` are `services.bakeplan.Step`s. Taken as anything with the right
+    attributes rather than imported, so this module still knows nothing about
+    recipes or the ORM — it only draws.
+    """
+    if not steps:
+        return None
+    seconds = (end - start).total_seconds()
+    if seconds <= 0:
+        return None
+
+    jar_band = JAR_BAND_H if jar_feed is not None else 0.0
+    plot = PlotBox(
+        x=MARGIN_X,
+        y=HEADER_H,
+        w=WIDTH - MARGIN_X * 2,
+        h=jar_band + len(steps) * (BAR_H + BAR_GAP),
+    )
+
+    def x_for(at: datetime) -> float:
+        fraction = (at - start).total_seconds() / seconds
+        return plot.x + min(max(fraction, 0.0), 1.0) * plot.w
+
+    bars: list[StepBar] = []
+    top = plot.y + jar_band
+    for index, step in enumerate(steps):
+        y = top + index * (BAR_H + BAR_GAP)
+        bars.append(
+            StepBar(
+                key=step.key,
+                name=step.name,
+                x1=x_for(step.start),
+                x2=x_for(step.end),
+                y=y,
+                height=BAR_H,
+                hands_on=step.hands_on,
+                must_be_home=step.must_be_home,
+                clashes=step.clashes,
+                lane=index,
+                start=step.start,
+                end=step.end,
+                conflict_label=(
+                    step.conflict.label if step.conflict is not None else None
+                ),
+            )
+        )
+
+    jar_curve = None
+    if jar_feed is not None:
+        baseline = plot.y + jar_band - 4
+        sampled = _curve_points(
+            jar_feed, start=start, end=end, x_for=x_for,
+            baseline=baseline, height=jar_band - 8,
+        )
+        jar_curve = RiseCurve(
+            segments=_segment(sampled),
+            feed=jar_feed,
+            x=x_for(jar_feed.at),
+            peak_at=jar_feed.at + timedelta(hours=jar_feed.peak_h),
+            peak_x=(
+                x_for(jar_feed.at + timedelta(hours=jar_feed.peak_h))
+                if start
+                <= jar_feed.at + timedelta(hours=jar_feed.peak_h)
+                <= end
+                else None
+            ),
+            baseline=baseline,
+        )
+
+    shades = tuple(
+        BusyShade(x1=x_for(mark.start), x2=x_for(mark.end), label=mark.label)
+        for mark in busy
+        if mark.end > start and mark.start < end
+    )
+
+    height = HEADER_H + plot.h + AXIS_H
+    return Timeline(
+        bars=tuple(bars),
+        ticks=_ticks(start, end, tz, x_for),
+        busy=shades,
+        start=start,
+        end=end,
+        now=now,
+        now_x=x_for(now) if start <= now <= end else None,
+        plot=plot,
+        viewbox=f"0 0 {WIDTH:g} {height:g}",
+        axis_y=plot.bottom,
+        jar_curve=jar_curve,
+        jar_name=jar_name,
+        levain_x=(
+            x_for(levain_at)
+            if levain_at is not None and start <= levain_at <= end
+            else None
+        ),
+    )
+
+
+def timeline_window(
+    plan_start: datetime, plan_end: datetime, now: datetime
+) -> tuple[datetime, datetime]:
+    """A little air either side of the plan, and `now` kept on the picture."""
+    pad = max((plan_end - plan_start) * 0.04, timedelta(minutes=20))
+    start = min(plan_start, now) - pad
+    return start, plan_end + pad

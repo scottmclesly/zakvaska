@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block nav %}
+<a class="btn btn-small btn-secondary" href="/bakes">Bakes</a>
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Plan a bake</h1>
+  <p class="sub">
+    When does each step happen, and does it fit your day? Scrub the start and
+    watch the times move.
+  </p>
+</section>
+
+{% if notes %}
+<div class="card errors" role="alert">
+  <ul>{% for note in notes %}<li>{{ note }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+{# Everything that shapes the plan. A GET form, so a plan is a link you can
+   keep — and the slider below posts the same fields over HTMX. #}
+<form class="card form" method="get" action="/plan" id="plan-form">
+  <div class="field-row">
+    <label>
+      <span>Recipe</span>
+      <select name="version">
+        <option value="">— pick one —</option>
+        {% for one in versions %}
+        <option value="{{ one.id }}"
+                {% if version and one.id == version.id %}selected{% endif %}>
+          {{ one.recipe.name }} {{ one.label }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>Starter jar</span>
+      <select name="jar">
+        <option value="">— none —</option>
+        {% for one in jars %}
+        <option value="{{ one.id }}" {% if jar and one.id == jar.id %}selected{% endif %}>
+          {{ one.name }}{% if one.is_control %} (control){% endif %}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>Total flour <em>{{ total_unit_label(weight_unit) }}</em></span>
+      <input name="flour" type="text" autocomplete="off"
+             value="{{ inputs.total_flour_g | weigh_total_input(weight_unit) }}">
+    </label>
+  </div>
+
+  <div class="field-row">
+    <label>
+      <span>Work it out</span>
+      <select name="mode">
+        <option value="start" {% if mode == 'start' %}selected{% endif %}>
+          forwards from a start time
+        </option>
+        <option value="ready" {% if mode == 'ready' %}selected{% endif %}>
+          backwards from when bread is wanted
+        </option>
+      </select>
+    </label>
+    <label>
+      <span>{{ "Bread ready by" if mode == 'ready' else "Start at" }}</span>
+      <input name="at" type="datetime-local"
+             value="{{ (plan.end if mode == 'ready' else plan.start) | local_dt('%Y-%m-%dT%H:%M') }}">
+    </label>
+  </div>
+
+  <fieldset>
+    <legend>Levain</legend>
+    <div class="field-row">
+      <label>
+        <span>Ratio <em>flour per starter</em></span>
+        <input name="ratio" type="number" step="0.5" min="0.5" max="10"
+               value="{{ inputs.levain_ratio | num }}">
+        <em class="muted small">{{ inputs.levain_ratio | ratio_label }}</em>
+      </label>
+      <label>
+        <span>Temperature <em>°{{ temp_unit }}</em></span>
+        <input name="temp" type="number" step="1"
+               value="{{ temp_display | round | int if temp_display is not none else '' }}">
+      </label>
+      {% if inputs.levain_g %}
+      <label>
+        <span>Amount <em>from the recipe</em></span>
+        <input value="{{ inputs.levain_g | weigh(weight_unit, 'rye levain', 'levain') }}"
+               readonly>
+      </label>
+      {% endif %}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Kneading</legend>
+    <div class="field-row">
+      <label>
+        <span>Bread maker program</span>
+        <select name="program">
+          <option value="">— none, I knead it myself —</option>
+          {% for one in programs %}
+          <option value="{{ one.id }}"
+                  {% if inputs.program_id == one.id %}selected{% endif %}>
+            {{ one.name }}{% if one.menu_no %} (#{{ one.menu_no }}){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Loaf <em>lb</em></span>
+        <input name="loaf" type="number" step="0.5" min="1" max="4"
+               value="{{ inputs.loaf_lb | num }}">
+      </label>
+      <label>
+        <span>Or knead for <em>minutes</em></span>
+        <input name="knead" type="number" step="1" min="1"
+               value="{{ inputs.knead_min | num }}"
+               placeholder="{{ bakeplan_default_knead | int }}">
+      </label>
+    </div>
+    <label class="checkbox">
+      <input type="checkbox" name="whole" value="1"
+             {% if not inputs.knead_only %}checked{% endif %}>
+      <span>Let the machine run the whole program, not just the kneading</span>
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Rise, bake, cool</legend>
+    <div class="field-row">
+      <label>
+        <span>Final rise <em>minutes</em></span>
+        <input name="rise" type="number" step="15" min="15"
+               value="{{ inputs.final_rise_min | num }}"
+               placeholder="{{ plan.step('final_rise').duration_min | round | int if plan.step('final_rise') else '' }}">
+        <em class="muted small">until about 1.5× in the pan</em>
+      </label>
+      <label>
+        <span>Oven <em>°{{ temp_unit }}</em></span>
+        <input name="bake_temp" type="number" step="5"
+               value="{{ bake_temp_display | round | int if bake_temp_display is not none else '' }}">
+      </label>
+      <label>
+        <span>Bake <em>minutes</em></span>
+        <input name="bake_min" type="number" step="5" min="5"
+               value="{{ inputs.bake_min | num }}">
+      </label>
+      <label>
+        <span>Cool <em>minutes</em></span>
+        <input name="cool" type="number" step="15" min="0"
+               value="{{ inputs.cool_min | num }}">
+      </label>
+    </div>
+  </fieldset>
+
+  <div class="row-actions">
+    <button class="btn" type="submit">Work it out</button>
+  </div>
+</form>
+
+{# The slider. A plain range input over an offset in minutes from now, so
+   the browser does no date arithmetic and there is no JS build step: HTMX
+   sends the whole form and swaps the answer back in. #}
+<section class="card scrubber">
+  <form hx-get="/plan/steps" hx-target="#plan-result" hx-swap="outerHTML"
+        hx-include="#plan-form"
+        hx-trigger="input changed delay:200ms">
+    <label>
+      <span>
+        Move the {{ "finish" if mode == 'ready' else "start" }}
+        <em class="muted small">
+          {{ (plan.end if mode == 'ready' else plan.start) | local_dt('%a %H:%M') }}
+        </em>
+      </span>
+      <input type="range" name="offset" class="scrub"
+             min="{{ slider_min }}" max="{{ slider_max }}" step="{{ slider_step }}"
+             value="{{ slider_value }}">
+    </label>
+    <p class="muted small scrub-ends">
+      <span>{{ (now + timedelta_minutes(slider_min)) | local_dt('%a %H:%M') }}</span>
+      <span>now</span>
+      <span>{{ (now + timedelta_minutes(slider_max)) | local_dt('%a %H:%M') }}</span>
+    </p>
+    <noscript>
+      <button class="btn btn-small" type="submit">Move it</button>
+    </noscript>
+  </form>
+</section>
+
+{% include "plan/result.html" %}
+{% endblock %}

@@ -90,6 +90,22 @@ def list_recipes(session: Session, *, include_archived: bool = False) -> list[Re
     return list(session.scalars(stmt))
 
 
+def plannable_versions(session: Session) -> list[RecipeVersion]:
+    """The newest version of every live recipe, for the planner's picker.
+
+    One entry per recipe rather than every version ever: planning a bake is
+    something you do from the recipe as it stands now, and a list with v1
+    through v6 of each would be unreadable. An older version can still be
+    planned from — its page has its own "Plan a bake" link.
+    """
+    latest: list[RecipeVersion] = []
+    for recipe in list_recipes(session):
+        version = recipe.latest_version
+        if version is not None:
+            latest.append(version)
+    return latest
+
+
 def get_recipe(session: Session, recipe_id: int) -> Recipe | None:
     return session.scalars(
         select(Recipe)

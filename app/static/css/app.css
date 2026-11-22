@@ -1819,3 +1819,97 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
   background: color-mix(in srgb, var(--band-peak) 6%, transparent);
 }
 .advice p { margin: 4px 0; }
+
+/* --- The bake-day planner ------------------------------------------- */
+
+.baketimeline .step-bar rect {
+  fill: color-mix(in srgb, var(--muted) 28%, transparent);
+  stroke: color-mix(in srgb, var(--muted) 50%, transparent);
+  stroke-width: 0.6;
+}
+/* Hands-on steps are the ones that cost you something, so they are solid. */
+.baketimeline .step-bar.is-handson rect {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+.baketimeline .step-bar.is-clash rect {
+  fill: var(--band-hungry);
+  stroke: var(--band-hungry);
+}
+.baketimeline .step-label {
+  fill: var(--muted);
+  font-size: 8px;
+}
+.baketimeline .step-label.is-inside {
+  fill: var(--surface);
+  font-weight: 600;
+}
+.baketimeline .step-bar.is-handson .step-label.is-inside,
+.baketimeline .step-bar.is-clash .step-label.is-inside {
+  fill: var(--accent-ink);
+}
+.levain-mark {
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+.levain-label {
+  fill: var(--accent);
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.ribbon-swatch.is-handson { height: 9px; background: var(--accent); }
+.ribbon-swatch.is-passive {
+  height: 9px;
+  background: color-mix(in srgb, var(--muted) 28%, transparent);
+}
+.ribbon-swatch.is-clashing { height: 9px; background: var(--band-hungry); }
+
+.plan-verdict { margin: 6px 0 0; }
+.plan-verdict.works { color: var(--band-peak); }
+
+table.steps {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+table.steps th,
+table.steps td {
+  padding: 7px 6px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+table.steps th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+table.steps td.num {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+table.steps tr.is-clash td {
+  background: color-mix(in srgb, var(--band-hungry) 8%, transparent);
+}
+
+.scrubber .scrub {
+  width: 100%;
+  margin: 6px 0 2px;
+  accent-color: var(--accent);
+}
+.scrub-ends {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+}
+
+@media (max-width: 560px) {
+  /* The step table is the planner's real answer, so it keeps its columns
+     and loses its padding rather than scrolling sideways. */
+  table.steps { font-size: 13px; }
+  table.steps th, table.steps td { padding: 6px 3px; }
+  .baketimeline .step-label { font-size: 9px; }
+}

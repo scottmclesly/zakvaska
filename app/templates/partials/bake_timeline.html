@@ -1,0 +1,102 @@
+{# A bake day laid out. Expects `timeline` (services.ribbon.Timeline).
+
+   Same visual language as the feeding ribbon: one time axis, busy blocks
+   shaded behind everything, "now" over the top. The rows are the bake's
+   steps, one bar each, and above them — when a jar was chosen — that jar's
+   readiness curve with the levain build marked on it, so you can see
+   whether the levain is being built at the jar's best moment.
+#}
+{%- set plot = timeline.plot -%}
+<svg class="ribbon baketimeline" viewBox="{{ timeline.viewbox }}" role="img"
+     aria-label="Bake timeline: {{ timeline.bars | length }} steps from
+       {{ timeline.start | local_dt }} to {{ timeline.end | local_dt }}.">
+
+  <g class="ribbon-busy">
+    {%- for shade in timeline.busy %}
+    {%- if shade.width > 0.2 %}
+    <rect class="ribbon-busy-band" x="{{ shade.x1 | round(2) }}" y="{{ plot.y }}"
+          width="{{ shade.width | round(2) }}" height="{{ plot.h }}">
+      <title>{{ shade.label }}</title>
+    </rect>
+    {%- endif %}
+    {%- endfor %}
+  </g>
+
+  <g class="ribbon-ticks">
+    {%- for tick in timeline.ticks %}
+    <line class="ribbon-tick {% if tick.is_day_start %}is-day{% endif %}"
+          x1="{{ tick.x | round(2) }}" y1="{{ plot.y }}"
+          x2="{{ tick.x | round(2) }}" y2="{{ timeline.axis_y + 4 }}"/>
+    {%- if tick.is_day_start and tick.x < plot.right - 48 %}
+    <text class="ribbon-daylabel" x="{{ (tick.x + 3) | round(2) }}"
+          y="{{ plot.y - 4 }}" text-anchor="start">{{ tick.day_label }}</text>
+    {%- endif %}
+    {%- if tick.x > plot.x + 12 and tick.x < plot.right - 12 %}
+    <text class="ribbon-xlabel" x="{{ tick.x | round(2) }}"
+          y="{{ timeline.axis_y + 15 }}" text-anchor="middle">{{ tick.label }}</text>
+    {%- endif %}
+    {%- endfor %}
+  </g>
+
+  {#- The jar's own cycle, so the levain build can be seen landing on it. -#}
+  {%- if timeline.jar_curve %}
+  {%- set curve = timeline.jar_curve %}
+  <g class="ribbon-row slot-1">
+    {%- if curve.area %}
+    <polygon class="ribbon-area" points="{{ curve.area }}"/>
+    {%- endif %}
+    {%- for segment in curve.segments %}
+    {%- if segment.points | length > 1 %}
+    <polyline class="ribbon-path band-{{ segment.band_key }}"
+              points="{{ segment.polyline }}">
+      <title>{{ timeline.jar_name }} — {{ segment.band.label }}</title>
+    </polyline>
+    {%- endif %}
+    {%- endfor %}
+    {%- if curve.peak_x is not none %}
+    <circle class="ribbon-peak" cx="{{ curve.peak_x | round(2) }}"
+            cy="{{ curve.baseline - 22 }}" r="2.2">
+      <title>{{ timeline.jar_name }} peaks about {{ curve.peak_at | local_time }}</title>
+    </circle>
+    {%- endif %}
+    {#- Where the levain gets built, against that curve. -#}
+    {%- if timeline.levain_x is not none %}
+    <line class="levain-mark" x1="{{ timeline.levain_x | round(2) }}"
+          y1="{{ plot.y }}" x2="{{ timeline.levain_x | round(2) }}"
+          y2="{{ curve.baseline }}"/>
+    <text class="levain-label" x="{{ (timeline.levain_x + 3) | round(2) }}"
+          y="{{ plot.y + 8 }}">levain</text>
+    {%- endif %}
+  </g>
+  {%- endif %}
+
+  {%- for bar in timeline.bars %}
+  <g class="step-bar {% if bar.clashes %}is-clash{% endif %}
+            {% if bar.hands_on %}is-handson{% endif %}">
+    <rect x="{{ bar.x1 | round(2) }}" y="{{ bar.y | round(2) }}"
+          width="{{ bar.width | round(2) }}" height="{{ bar.height }}" rx="2.5">
+      <title>{{ bar.name }} — {{ bar.start | local_time }} to
+        {{ bar.end | local_time }}{% if bar.clashes %} (inside {{ bar.conflict_label }}){% endif %}</title>
+    </rect>
+    {#- The label sits after the bar, or inside it when it is wide enough. -#}
+    {%- if bar.width > 62 %}
+    <text class="step-label is-inside" x="{{ (bar.x1 + 4) | round(2) }}"
+          y="{{ (bar.y + bar.height - 3.5) | round(2) }}">{{ bar.name }}</text>
+    {%- elif bar.x2 < plot.right - 70 %}
+    <text class="step-label" x="{{ (bar.x2 + 4) | round(2) }}"
+          y="{{ (bar.y + bar.height - 3.5) | round(2) }}">{{ bar.name }}</text>
+    {%- else %}
+    <text class="step-label" x="{{ (bar.x1 - 4) | round(2) }}" text-anchor="end"
+          y="{{ (bar.y + bar.height - 3.5) | round(2) }}">{{ bar.name }}</text>
+    {%- endif %}
+  </g>
+  {%- endfor %}
+
+  {%- if timeline.now_x is not none %}
+  <g class="ribbon-now">
+    <line x1="{{ timeline.now_x | round(2) }}" y1="{{ plot.y - 2 }}"
+          x2="{{ timeline.now_x | round(2) }}" y2="{{ timeline.axis_y + 2 }}"/>
+    <circle cx="{{ timeline.now_x | round(2) }}" cy="{{ plot.y - 2 }}" r="2"/>
+  </g>
+  {%- endif %}
+</svg>

@@ -1,0 +1,133 @@
+{# The answer: the timeline, the conflicts, and the step table.
+
+   Swapped in on its own by the start-time slider, so everything that
+   changes when the start moves lives in here and nothing that changes
+   lives outside it.
+#}
+<div id="plan-result">
+  {% if plan.warnings %}
+  <div class="card clash-note" role="note">
+    <ul class="plain">
+      {% for warning in plan.warnings %}<li>{{ warning }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <section class="card">
+    <div class="chart-head">
+      <h2 class="section-title">
+        {% if mode == 'ready' %}
+          Bread out at {{ plan.end | local_time }}
+        {% else %}
+          Start at {{ plan.start | local_time }}
+        {% endif %}
+      </h2>
+      <span class="muted small">
+        {{ plan.start | local_day }} · {{ plan.total_label }} all told ·
+        {{ hours_label(plan.hands_on_min / 60) }} hands-on
+      </span>
+    </div>
+
+    {% if timeline %}
+    {% include "partials/bake_timeline.html" %}
+    {% endif %}
+
+    <ul class="ribbon-key plain">
+      <li><span class="ribbon-swatch is-handson"></span>hands-on</li>
+      <li><span class="ribbon-swatch is-passive"></span>waiting</li>
+      <li><span class="ribbon-swatch is-clashing"></span>clashes</li>
+      {% if timeline and timeline.busy %}
+      <li><span class="ribbon-swatch is-busy"></span>busy</li>
+      {% endif %}
+    </ul>
+
+    {% if plan.works %}
+    <p class="plan-verdict works">
+      Nothing lands anywhere you are busy. Bread out at
+      <strong>{{ plan.end | local_time }}</strong> on
+      {{ plan.end | local_day }}.
+    </p>
+    {% else %}
+    <div class="clash-note">
+      <strong>
+        {{ plan.conflicts | length }}
+        step{{ "" if plan.conflicts | length == 1 else "s" }}
+        land{{ "s" if plan.conflicts | length == 1 else "" }} where you are busy.
+      </strong>
+      <ul class="plain">
+        {% for step in plan.conflicts %}
+        <li class="muted small">
+          {{ step.name }} — {{ step.start | local_time }} to
+          {{ step.end | local_time }}, inside {{ step.conflict.label }}
+          {%- if step.hands_on %} (hands-on){% else %} (you need to be there at the end){% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% if workable %}
+      <form method="get" action="/plan">
+        {% for key, value in keep_params.items() %}
+        <input type="hidden" name="{{ key }}" value="{{ value }}">
+        {% endfor %}
+        <input type="hidden" name="mode" value="start">
+        <input type="hidden" name="at"
+               value="{{ workable.start | local_dt('%Y-%m-%dT%H:%M') }}">
+        <button class="btn btn-small" type="submit">
+          Find a time that works — {{ workable.start | local_time }}
+          {{ workable.start | local_day }}
+        </button>
+      </form>
+      {% else %}
+      <span class="muted small">
+        Nothing in the next two days clears everything. Shortening the final
+        rise, or a busy block that is less than it looks, would be the way in.
+      </span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">Step by step</h2>
+    <table class="steps">
+      <thead>
+        <tr>
+          <th>Step</th><th>Start</th><th>End</th><th>For</th><th>You</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for step in plan.steps %}
+        <tr class="{% if step.clashes %}is-clash{% endif %}">
+          <td>
+            {{ step.name }}
+            {%- if step.spec.note %}
+            <br><span class="muted small">{{ step.spec.note }}</span>
+            {%- endif %}
+            {%- if step.spec.from_recipe %}
+            <br><span class="muted small">from the recipe</span>
+            {%- endif %}
+          </td>
+          <td class="num">{{ step.start | local_time }}</td>
+          <td class="num">{{ step.end | local_time }}</td>
+          <td class="num">{{ step.duration_label }}</td>
+          <td>
+            {% if step.hands_on %}<span class="badge">hands-on</span>
+            {% elif step.must_be_home %}<span class="badge">be back for it</span>
+            {% else %}<span class="muted small">nothing to do</span>{% endif %}
+            {% if step.clashes %}
+            <br><span class="band-text band-hungry">{{ step.conflict.label }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if plan.levain_g %}
+    <p class="muted small">
+      The recipe wants {{ plan.levain_g | weigh(weight_unit, 'rye levain', 'levain') }}
+      of levain. At {{ inputs.levain_ratio | ratio_label }} that is about
+      {{ (plan.levain_g / (1 + 2 * inputs.levain_ratio)) | weigh(weight_unit, 'starter', 'levain') }}
+      of starter, with the flour and water to match.
+    </p>
+    {% endif %}
+  </section>
+</div>

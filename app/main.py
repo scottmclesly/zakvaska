@@ -22,6 +22,7 @@ from app.routes import (
     home,
     jars,
     photos,
+    plan,
     recipes,
     settings,
 )
@@ -60,6 +61,7 @@ def create_app() -> FastAPI:
     app.include_router(recipes.router)
     app.include_router(equipment.router)
     app.include_router(bakes.router)
+    app.include_router(plan.router)
     app.include_router(photos.router)
     app.include_router(backup.router)
     app.include_router(about.router)

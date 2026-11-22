@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +13,7 @@ from app import __version__
 from app.config import get_settings
 from app.services import alerts as alert_service
 from app.services import measures
+from app.services import bakeplan
 from app.services import plan as plan_service
 from app.services import timing
 from app.services import recipes as recipe_service
@@ -220,6 +221,13 @@ templates.env.globals["total_unit_label"] = lambda unit: (
 templates.env.globals["nudge_label"] = plan_service.nudge_label
 # "4.5 h", "2 d 2 h" — a span of hours as a person says it.
 templates.env.globals["hours_label"] = timing.hours_label
+# "1:4:4" — a feed ratio as a baker writes it.
+templates.env.filters["ratio_label"] = timing.ratio_label
+# The planner's slider labels its own ends, which needs arithmetic on `now`.
+templates.env.globals["timedelta_minutes"] = lambda minutes: timedelta(
+    minutes=minutes
+)
+templates.env.globals["bakeplan_default_knead"] = bakeplan.DEFAULT_KNEAD_MIN
 templates.env.globals["cycle_bar"] = recipe_service.cycle_bar
 templates.env.globals["stage_bar"] = recipe_service.stage_bar
 
