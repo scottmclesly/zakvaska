@@ -328,17 +328,22 @@ def plan_steps(request: Request, ctx: Ctx) -> HTMLResponse:
 def plan_recipe_fields(request: Request, ctx: Ctx) -> HTMLResponse:
     """What picking a recipe fills in: the loaf chips, and the flour.
 
-    Both are the recipe's to answer — the chips are its percentages worked
-    back from each tin, the flour is the batch it was written at — and
-    neither exists until one is chosen. That is the moment this swaps them
-    in, rather than making you submit the form before they appear.
+    All three are the recipe's to answer — the chips are its percentages
+    worked back from each tin, the flour is the batch it was written at,
+    the loaf size is the machine setting it records — and none of them
+    exists until one is chosen. That is the moment this swaps them in,
+    rather than making you submit the form before they appear.
     """
     version = _version(ctx, _int(request.query_params, "version"))
+    # Through `default_inputs`, so these are the very values a page load
+    # would have opened on rather than a second opinion about them.
+    defaults = bakeplan.default_inputs(ctx.session, version, now=ctx.now)
     return render(
         request=request, ctx=ctx, name="plan/recipe_fields.html",
         context={
             "loaf_presets": _loaf_presets(version),
-            "flour_g": version.batch_flour_g if version else None,
+            "flour_g": defaults.total_flour_g,
+            "loaf_lb": defaults.loaf_lb,
         },
     )
 

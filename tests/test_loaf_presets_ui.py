@@ -382,3 +382,78 @@ class TestPickingARecipeFillsTheFlour:
         assert 'id="loaf-row"' in part
         assert 'id="plan-flour"' in part
         assert _chips(_row(part)) == ["2 lb", "2.5 lb", "3 lb"]
+
+
+# --- And the loaf size it records -----------------------------------------
+
+
+class TestPickingARecipeFillsTheLoafSize:
+    """A seeded West Bend recipe knows which pan it was baked in.
+
+    That size is what times the machine's program, so it comes across with
+    the flour rather than being left for the chips to set.
+    """
+
+    def _loaf_input(self, markup: str) -> str:
+        return markup[markup.index('id="plan-loaf"') :].split(">")[0]
+
+    def test_it_comes_back_with_the_size_the_recipe_records(
+        self, client, session
+    ):
+        recipe = _recipe(session)
+        version = recipe.latest_version
+        version.default_loaf_size = "2.5 lb"
+        session.commit()
+
+        part = client.get(f"/plan/recipe?version={version.id}").text
+
+        assert 'value="2.5"' in self._loaf_input(part)
+
+    def test_it_is_the_same_size_the_link_opens_on(self, client, session):
+        recipe = _recipe(session)
+        version = recipe.latest_version
+        version.default_loaf_size = "3 lb"
+        session.commit()
+        version_id = version.id
+
+        page = self._loaf_input(client.get(f"/plan?version={version_id}").text)
+        swapped = self._loaf_input(
+            client.get(f"/plan/recipe?version={version_id}").text
+        )
+
+        assert 'value="3"' in page
+        assert 'value="3"' in swapped
+
+    def test_a_recipe_with_no_recorded_size_leaves_it_empty(
+        self, client, session
+    ):
+        """Nothing to say, so it says nothing — the chips still can."""
+        recipe = _recipe(session)
+
+        part = client.get(f"/plan/recipe?version={recipe.latest_version.id}").text
+
+        assert 'value=""' in self._loaf_input(part)
+
+    def test_it_is_swapped_out_of_band_too(self, client, session):
+        recipe = _recipe(session)
+
+        part = client.get(f"/plan/recipe?version={recipe.latest_version.id}").text
+
+        assert 'hx-swap-oob="true"' in self._loaf_input(part)
+
+    def test_the_box_on_the_page_is_not(self, client, session):
+        _recipe(session)
+
+        page = client.get("/plan").text
+
+        assert "hx-swap-oob" not in self._loaf_input(page)
+
+    def test_all_three_arrive_in_one_request(self, client, session):
+        """Chips, flour and loaf: they cannot disagree about the recipe."""
+        recipe = _recipe(session)
+
+        part = client.get(f"/plan/recipe?version={recipe.latest_version.id}").text
+
+        assert 'id="loaf-row"' in part
+        assert 'id="plan-flour"' in part
+        assert 'id="plan-loaf"' in part

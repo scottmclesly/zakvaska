@@ -1,0 +1,6 @@
+{# The machine's loaf size, in pounds. Written in two places like the
+   flour box beside it: on the page, and again out of band when picking a
+   recipe fills it in. `loaf_lb` is a number or none. #}
+<input id="plan-loaf" name="loaf" type="number" step="0.5" min="1" max="4"
+       {% if oob is defined and oob %}hx-swap-oob="true"{% endif %}
+       value="{{ loaf_lb | num }}">

@@ -126,8 +126,9 @@
       </label>
       <label>
         <span>Loaf <em>lb</em></span>
-        <input name="loaf" type="number" step="0.5" min="1" max="4"
-               value="{{ inputs.loaf_lb | num }}">
+        {% with loaf_lb = inputs.loaf_lb %}
+          {% include "plan/loaf_field.html" %}
+        {% endwith %}
       </label>
       <label>
         <span>Or knead for <em>minutes</em></span>

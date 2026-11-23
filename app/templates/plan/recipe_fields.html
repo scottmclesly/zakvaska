@@ -6,4 +6,7 @@
    The flour goes out of band: the select is inside the form, and one
    change should answer in two places without replacing the select. #}
 {% include "plan/tin.html" %}
-{% with oob = true %}{% include "plan/flour_field.html" %}{% endwith %}
+{% with oob = true %}
+  {% include "plan/flour_field.html" %}
+  {% include "plan/loaf_field.html" %}
+{% endwith %}
