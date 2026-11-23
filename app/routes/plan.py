@@ -324,18 +324,22 @@ def plan_steps(request: Request, ctx: Ctx) -> HTMLResponse:
     )
 
 
-@router.get("/tin", response_class=HTMLResponse)
-def plan_tin(request: Request, ctx: Ctx) -> HTMLResponse:
-    """Just the loaf-size chips, for when the recipe changes.
+@router.get("/recipe", response_class=HTMLResponse)
+def plan_recipe_fields(request: Request, ctx: Ctx) -> HTMLResponse:
+    """What picking a recipe fills in: the loaf chips, and the flour.
 
-    They are worked out from the recipe's percentages, so they do not
-    exist until one is chosen — and that is the moment this swaps them in,
-    rather than making you submit the form before they appear.
+    Both are the recipe's to answer — the chips are its percentages worked
+    back from each tin, the flour is the batch it was written at — and
+    neither exists until one is chosen. That is the moment this swaps them
+    in, rather than making you submit the form before they appear.
     """
     version = _version(ctx, _int(request.query_params, "version"))
     return render(
-        request=request, ctx=ctx, name="plan/tin.html",
-        context={"loaf_presets": _loaf_presets(version)},
+        request=request, ctx=ctx, name="plan/recipe_fields.html",
+        context={
+            "loaf_presets": _loaf_presets(version),
+            "flour_g": version.batch_flour_g if version else None,
+        },
     )
 
 

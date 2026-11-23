@@ -26,7 +26,7 @@
     <label>
       <span>Recipe</span>
       <select name="version"
-              hx-get="/plan/tin" hx-target="#loaf-row" hx-swap="outerHTML"
+              hx-get="/plan/recipe" hx-target="#loaf-row" hx-swap="outerHTML"
               hx-trigger="change">
         <option value="">— pick one —</option>
         {% for one in versions %}
@@ -55,8 +55,9 @@
     </label>
     <label>
       <span>Total flour <em>{{ total_unit_label(weight_unit) }}</em></span>
-      <input name="flour" type="text" autocomplete="off"
-             value="{{ inputs.total_flour_g | weigh_total_input(weight_unit) }}">
+      {% with flour_g = inputs.total_flour_g %}
+        {% include "plan/flour_field.html" %}
+      {% endwith %}
     </label>
   </div>
 

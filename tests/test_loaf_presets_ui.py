@@ -232,7 +232,7 @@ class TestItArrivesWhenTheRecipeDoes:
         select = page[page.index('<select name="version"'):]
         select = select[: select.index(">")]
 
-        assert 'hx-get="/plan/tin"' in select
+        assert 'hx-get="/plan/recipe"' in select
         assert 'hx-target="#loaf-row"' in select
         assert 'hx-swap="outerHTML"' in select
         assert 'hx-trigger="change"' in select
@@ -241,13 +241,13 @@ class TestItArrivesWhenTheRecipeDoes:
         """It is swapped by outerHTML, so it has to replace like for like."""
         recipe = _recipe(session)
 
-        part = client.get(f"/plan/tin?version={recipe.latest_version.id}").text
+        part = client.get(f"/plan/recipe?version={recipe.latest_version.id}").text
 
         assert part.strip().startswith('<div id="loaf-row">')
         assert _chips(_row(part)) == ["2 lb", "2.5 lb", "3 lb"]
 
     def test_the_row_on_its_own_is_empty_without_a_recipe(self, client):
-        part = client.get("/plan/tin").text
+        part = client.get("/plan/recipe").text
 
         assert 'id="loaf-row"' in part
         assert _row(part) == ""
@@ -258,7 +258,7 @@ class TestItArrivesWhenTheRecipeDoes:
         version_id = recipe.latest_version.id
 
         whole = _row(client.get(f"/plan?version={version_id}").text)
-        swapped = _row(client.get(f"/plan/tin?version={version_id}").text)
+        swapped = _row(client.get(f"/plan/recipe?version={version_id}").text)
 
         assert _chips(whole) == _chips(swapped)
         assert 'data-flour-field="flour"' in swapped
@@ -292,3 +292,93 @@ class TestClickingAChipRedrawsThePlan:
 
         assert _chips(_row(page)) == ["2 lb", "2.5 lb", "3 lb"]
         assert "loaf-chosen" not in page
+
+
+# --- And the flour it was written at --------------------------------------
+
+
+class TestPickingARecipeFillsTheFlour:
+    """A recipe is written at a batch size, so picking one has an answer.
+
+    Opening /plan?version=… as a link has always shown it. Picking the same
+    recipe from the select now shows the same number, instead of leaving an
+    empty box you came to the page to have filled.
+    """
+
+    def _flour_input(self, markup: str) -> str:
+        return markup[markup.index('id="plan-flour"') :].split(">")[0]
+
+    def test_it_comes_back_with_the_batch_it_was_written_at(
+        self, client, session
+    ):
+        recipe = _recipe(session)
+        version = recipe.latest_version
+        version.batch_flour_g = 500.0
+        session.commit()
+
+        part = client.get(f"/plan/recipe?version={version.id}").text
+
+        assert 'value="500"' in self._flour_input(part)
+
+    def _value(self, markup: str) -> str:
+        return re.search(r'value="([^"]*)"', self._flour_input(markup)).group(1)
+
+    def test_it_is_the_same_number_the_link_opens_on(self, client, session):
+        """Two ways to the same recipe, one answer."""
+        recipe = _recipe(session)
+        version = recipe.latest_version
+        version.batch_flour_g = 640.0
+        session.commit()
+        version_id = version.id
+
+        page = client.get(f"/plan?version={version_id}").text
+        swapped = client.get(f"/plan/recipe?version={version_id}").text
+
+        assert self._value(page) == self._value(swapped) == "640"
+
+    def test_it_is_swapped_out_of_band(self, client, session):
+        """The select sits in the form; replacing it mid-pick would be rude."""
+        recipe = _recipe(session)
+
+        part = client.get(f"/plan/recipe?version={recipe.latest_version.id}").text
+
+        assert 'hx-swap-oob="true"' in self._flour_input(part)
+
+    def test_the_box_on_the_page_is_not_marked_out_of_band(
+        self, client, session
+    ):
+        """It is where the swap lands, not a swap itself."""
+        _recipe(session)
+
+        page = client.get("/plan").text
+
+        assert "hx-swap-oob" not in self._flour_input(page)
+
+    def test_clearing_the_recipe_clears_the_flour(self, client, session):
+        """Back to "— pick one —" and there is no batch to show."""
+        _recipe(session)
+
+        part = client.get("/plan/recipe").text
+
+        assert 'value=""' in self._flour_input(part)
+
+    def test_it_reads_in_the_unit_on_display(self, client, session):
+        recipe = _recipe(session)
+        version = recipe.latest_version
+        version.batch_flour_g = 453.59237
+        session.commit()
+        client.post("/settings/units", data={"weight_unit": measures.US_WEIGHT})
+
+        part = client.get(f"/plan/recipe?version={version.id}").text
+
+        assert "lb" in self._flour_input(part)
+
+    def test_the_box_and_the_chips_arrive_together(self, client, session):
+        """One request, both answers: they cannot disagree about the recipe."""
+        recipe = _recipe(session)
+
+        part = client.get(f"/plan/recipe?version={recipe.latest_version.id}").text
+
+        assert 'id="loaf-row"' in part
+        assert 'id="plan-flour"' in part
+        assert _chips(_row(part)) == ["2 lb", "2.5 lb", "3 lb"]
