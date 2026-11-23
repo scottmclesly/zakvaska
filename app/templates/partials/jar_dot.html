@@ -1,0 +1,9 @@
+{# A jar's lid colour as a small dot. Expects `dot_color`: a "#rrggbb"
+   string, or none.
+
+   Draws nothing at all when the jar has no colour, so every caller can
+   include it unconditionally and a jar without one looks exactly as it
+   always did. #}
+{%- if dot_color -%}
+<span class="jar-dot" style="--cap: {{ dot_color }}" aria-hidden="true"></span>
+{%- endif -%}

@@ -24,6 +24,25 @@ if TYPE_CHECKING:
 DEFAULT_ROOM_INTERVAL_H = 12
 DEFAULT_FRIDGE_INTERVAL_H = 168
 
+#: The silicone lids Scott's real jars wear, so the drawn jar can match the
+#: one on the counter. Ten is a row of swatches on a phone without wrapping
+#: badly, and the form offers a colour picker for anything not here.
+#:
+#: Chosen to read on both themes: no pure white or pure black, because the
+#: lid is drawn against a surface that is one or the other.
+CAP_PRESETS: tuple[tuple[str, str], ...] = (
+    ("black", "#23252a"),
+    ("white", "#f2efe8"),
+    ("grey", "#8c8984"),
+    ("red", "#c0392b"),
+    ("orange", "#d2691e"),
+    ("yellow", "#e3b92f"),
+    ("green", "#4a8f5b"),
+    ("blue", "#2f6f9f"),
+    ("purple", "#7d5ba6"),
+    ("pink", "#d2719a"),
+)
+
 
 def _enum(python_enum: type) -> Enum:
     # native_enum=False keeps this a VARCHAR + CHECK, which SQLite and
@@ -76,6 +95,12 @@ class Jar(Base):
     is_control: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
     )
+
+    # The colour of this jar's real silicone lid, as "#rrggbb". Null means
+    # the jar is drawn with the muted grey lid it has always had — the
+    # colour is a way of telling two jars apart, not something every jar
+    # needs. See CAP_PRESETS and `routes.forms.opt_color`.
+    cap_color: Mapped[str | None] = mapped_column(String(7))
 
     notes: Mapped[str | None] = mapped_column(Text)
     archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

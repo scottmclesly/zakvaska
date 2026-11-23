@@ -46,7 +46,15 @@
 
   {%- for row in ribbon.rows %}
   <g class="ribbon-row slot-{{ row.slot }} {% if row.is_control %}is-control{% endif %}">
-    <text class="ribbon-name" x="{{ plot.x }}" y="{{ row.label_y }}">
+    {#- The jar's lid colour, so a row can be matched to the jar on the
+        shelf without reading the name. -#}
+    {%- if row.cap_color %}
+    <circle class="ribbon-cap" cx="{{ plot.x + 2.4 }}"
+            cy="{{ row.label_y - 2.4 }}" r="2.4"
+            style="--cap: {{ row.cap_color }}"/>
+    {%- endif %}
+    <text class="ribbon-name" x="{{ plot.x + (7 if row.cap_color else 0) }}"
+          y="{{ row.label_y }}">
       {{ row.name }}{% if row.is_control %} · control{% endif -%}
       {%- if row.is_estimate %} · estimate{% endif %}
       {%- if row.note %} <tspan class="ribbon-note">· {{ row.note }}</tspan>{% endif %}

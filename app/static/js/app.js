@@ -174,3 +174,25 @@ document.addEventListener("click", (event) => {
     other.classList.toggle("is-chosen", other === button);
   });
 });
+
+
+// --- Lid colour on the jar form -----------------------------------------
+// The swatches and the colour picker are two controls for one field, and the
+// "another colour" radio is what tells the server to read the picker. The
+// form is correct without this: it only saves you ticking that radio by hand
+// after choosing a colour.
+document.addEventListener("input", (event) => {
+  const picker = event.target.closest(".cap-picker");
+  if (!picker) return;
+
+  const row = picker.closest(".cap-row");
+  const radio = row && row.querySelector('.is-any input[type="radio"]');
+  if (radio) radio.checked = true;
+
+  // Show the chosen colour on its chip, so the row reads as one control.
+  const chip = row && row.querySelector(".is-any .cap-chip");
+  if (chip) {
+    chip.style.setProperty("--cap", picker.value);
+    chip.style.backgroundImage = "none";
+  }
+});

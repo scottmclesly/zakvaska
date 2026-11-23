@@ -105,6 +105,10 @@ class RibbonSeries:
     planned: Sequence[PlannedMark] = ()
     observations: Sequence[ObservationMark] = ()
     is_control: bool = False
+    #: The jar's lid colour, as "#rrggbb", drawn as a dot by its name so a
+    #: row can be matched to the jar on the shelf. None for a jar with no
+    #: colour set, which is most of them.
+    cap_color: str | None = None
     #: True while the jar's peak times are the model's guess about rye in
     #: general rather than a measurement of this jar. Drawn as one word by
     #: the row's label, because a curve that looks exact and is not is worse
@@ -196,6 +200,7 @@ class RibbonRow:
     top: float
     bottom: float
     label_y: float
+    cap_color: str | None = None
     is_estimate: bool = False
     note: str | None = None
 
@@ -461,6 +466,7 @@ def ribbon(
                 jar_id=one.jar_id,
                 slot=slot,
                 is_control=one.is_control,
+                cap_color=one.cap_color,
                 curves=tuple(curves),
                 planned=tuple(
                     PlannedPoint(mark=mark, x=x_for(mark.at))

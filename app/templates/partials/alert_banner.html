@@ -24,6 +24,11 @@
       {% for alert in alerts %}
       <li class="alert-item {% if alert.is_about_a_bake %}is-stage{% endif %}">
         <div class="alert-what">
+          {#- A feed alert is about a jar, so it gets the jar's dot. A bake
+              step's subject is a step, which has no colour of its own. -#}
+          {%- if not alert.is_about_a_bake and alert.jar %}
+          {%- with dot_color = alert.jar.cap_color %}{% include "partials/jar_dot.html" %}{% endwith %}
+          {%- endif %}
           <a class="alert-jar" href="{{ alert.url }}">{{ alert.subject }}</a>
           <span class="muted">
             {%- if alert.is_about_a_bake %}

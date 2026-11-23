@@ -679,6 +679,7 @@ def jar_series(
             _observation_marks(session, jar, since=start, until=end)
         ),
         is_control=jar.is_control,
+        cap_color=jar.cap_color,
         is_estimate=bool(cycles) and made.is_estimate,
         note=note,
     )
@@ -912,6 +913,7 @@ def feed_preview(
             if one.at > fed_at and start <= one.at <= end
         ),
         is_control=jar.is_control,
+        cap_color=jar.cap_color,
         is_estimate=ratio is not None and made.is_estimate,
         note=None if ratio is not None else "No starter — no ratio to take",
     )

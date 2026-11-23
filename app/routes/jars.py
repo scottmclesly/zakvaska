@@ -17,6 +17,7 @@ from fastapi import (
 )
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from app.models.jar import CAP_PRESETS
 from app.models.setting import FEEDS_PER_DAY_CHOICES
 from app.models.enums import (
     PhotoOwner,
@@ -92,9 +93,30 @@ def _feeds_per_day(raw: str) -> int | None:
     return value
 
 
+#: The value the "another colour" radio carries. It is not a colour: it says
+#: "use the picker beside me", which is how one field is offered as a row of
+#: presets and a colour picker at once without JavaScript.
+CUSTOM_CAP = "custom"
+
+
+def _cap_color(chosen: str, custom: str) -> str | None:
+    """The lid colour a submission settles on.
+
+    The radio row and the picker are two controls for one column, so the
+    radio decides and the picker only answers when the radio points at it.
+    Raises ValueError for anything that is not a colour, like any other
+    field.
+    """
+    if f.opt_str(chosen) == CUSTOM_CAP:
+        return f.opt_color(custom, field="Lid colour")
+    return f.opt_color(chosen, field="Lid colour")
+
+
 def _jar_form_context(ctx: ViewContext, jar=None, errors=None, values=None) -> dict:
     return {
         "jar": jar,
+        "cap_presets": CAP_PRESETS,
+        "custom_cap": CUSTOM_CAP,
         "feeds_per_day_choices": FEEDS_PER_DAY_CHOICES,
         "app_feeds_per_day": settings_store.feeds_per_day(ctx.session),
         "errors": errors or [],
@@ -132,6 +154,8 @@ def create_jar(
     feed_interval_fridge_h: Annotated[str, Form()] = "168",
     parent_jar_id: Annotated[str, Form()] = "",
     is_control: Annotated[str | None, Form()] = None,
+    cap_color: Annotated[str, Form()] = "",
+    cap_color_custom: Annotated[str, Form()] = "",
     notes: Annotated[str, Form()] = "",
 ):
     values = {
@@ -142,11 +166,17 @@ def create_jar(
         "feed_interval_fridge_h": feed_interval_fridge_h,
         "parent_jar_id": parent_jar_id,
         "is_control": f.checkbox(is_control), "notes": notes,
+        "cap_color": cap_color, "cap_color_custom": cap_color_custom,
     }
     errors: list[str] = []
 
     if not f.opt_str(name):
         errors.append("A jar needs a name.")
+    try:
+        cap = _cap_color(cap_color, cap_color_custom)
+    except ValueError as exc:
+        errors.append(str(exc))
+        cap = None
     try:
         room_h = f.opt_int(feed_interval_room_h, field="Room interval") or 12
         fridge_h = f.opt_int(feed_interval_fridge_h, field="Fridge interval") or 168
@@ -170,6 +200,7 @@ def create_jar(
 
     jar = jar_service.create_jar(
         ctx.session,
+        cap_color=cap,
         name=f.opt_str(name),
         origin=JarOrigin(origin),
         culture_name=f.opt_str(culture_name),
@@ -279,6 +310,8 @@ def edit_jar(
     feed_interval_fridge_h: Annotated[str, Form()] = "168",
     parent_jar_id: Annotated[str, Form()] = "",
     is_control: Annotated[str | None, Form()] = None,
+    cap_color: Annotated[str, Form()] = "",
+    cap_color_custom: Annotated[str, Form()] = "",
     notes: Annotated[str, Form()] = "",
 ):
     jar = _load(ctx, jar_id)
@@ -286,6 +319,11 @@ def edit_jar(
 
     if not f.opt_str(name):
         errors.append("A jar needs a name.")
+    try:
+        cap = _cap_color(cap_color, cap_color_custom)
+    except ValueError as exc:
+        errors.append(str(exc))
+        cap = jar.cap_color
     try:
         per_day = _feeds_per_day(feeds_per_day)
     except ValueError as exc:
@@ -304,6 +342,7 @@ def edit_jar(
     jar_service.update_jar(
         ctx.session,
         jar,
+        cap_color=cap,
         name=f.opt_str(name),
         origin=JarOrigin(origin),
         culture_name=f.opt_str(culture_name),

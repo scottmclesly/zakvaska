@@ -939,6 +939,35 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .jar-lid { fill: var(--muted); opacity: 0.55; }
 .jar-band { fill: var(--muted); opacity: 0.42; }
 .jar-neck { fill: var(--muted); opacity: 0.3; }
+
+/* A jar whose real lid has a colour wears it here too: lid, screw band and
+   a matching silicone base. `--cap` comes in on the <svg> element, so the
+   colour is data and everything done with it is here.
+
+   The edge is the cap mixed towards `--text`, which is dark on a light page
+   and light on a dark one. That is what keeps a white or yellow cap from
+   dissolving into the surface in the day and a black one from disappearing
+   at night — one declaration that is right in both themes. */
+.jar-art.has-cap .jar-lid {
+  fill: var(--cap);
+  opacity: 1;
+  stroke: color-mix(in srgb, var(--cap) 68%, var(--text));
+  stroke-width: 0.9;
+}
+.jar-art.has-cap .jar-band {
+  fill: color-mix(in srgb, var(--cap) 88%, var(--text));
+  opacity: 1;
+}
+/* Opaque, because silicone is: a translucent base would take the colour of
+   whatever starter happened to be behind it. */
+.jar-art.has-cap .jar-base { fill: var(--cap); }
+
+/* A seam where the glass sits into the base. It does the work a white cap
+   needs most — the tape above it is pale too, and without this the two run
+   together on a light page. */
+.jar-art.has-cap .jar-base-edge {
+  fill: color-mix(in srgb, var(--cap) 55%, var(--text));
+}
 .jar-glass { fill: var(--glass); }
 .jar-outline { fill: none; stroke: var(--border); stroke-width: 1.5; }
 .jar-contents { fill: var(--contents); }
@@ -2086,3 +2115,116 @@ table.steps tr.is-clash td {
 .preview-verdict { font-weight: 600; }
 .preview-verdict.is-good { color: var(--ok); }
 .preview-verdict.is-off { color: var(--warn); }
+
+/* --- Jar cap colours --------------------------------------------------- */
+
+/* The same colour as a dot, wherever a jar is named or picked. Small on
+   purpose: it is there to be recognised out of the corner of the eye, not
+   read. The ring is the cap mixed towards `--text` for the same reason the
+   lid's edge is — a white dot needs an outline on a light page. */
+.jar-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  margin-right: 6px;
+  background: var(--cap);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cap) 62%, var(--text));
+  vertical-align: middle;
+}
+
+/* --- Picking one on the jar form --------------------------------------- */
+
+.caps .cap-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The radio itself does the work — it stays in the page for the keyboard
+   and for screen readers, and the chip beside it is what you see. */
+.cap-swatch {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+  line-height: 0;
+}
+.cap-swatch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.cap-chip {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--cap, var(--muted));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 25%, transparent);
+  transition: transform 100ms ease-out, box-shadow 100ms ease-out;
+}
+
+/* No colour: the plain grey lid, drawn as a struck-through chip so it reads
+   as an option rather than as a grey cap. */
+.cap-swatch.is-none .cap-chip {
+  background: var(--bg);
+  background-image: linear-gradient(
+    135deg,
+    transparent calc(50% - 1px),
+    color-mix(in srgb, var(--text) 35%, transparent) calc(50% - 1px),
+    color-mix(in srgb, var(--text) 35%, transparent) calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+
+/* Anything else: a slice of the spectrum, until one is picked. */
+.cap-chip-any {
+  background-image: conic-gradient(
+    from 90deg,
+    #c0392b, #d2691e, #e3b92f, #4a8f5b, #2f6f9f, #7d5ba6, #d2719a, #c0392b
+  );
+}
+.cap-swatch.is-any .cap-chip[style] { background-image: none; }
+
+.cap-swatch input:checked + .cap-chip {
+  transform: scale(1.1);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--text) 30%, transparent),
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--accent);
+}
+.cap-swatch input:focus-visible + .cap-chip {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* The native picker, sized to sit in the row like another swatch. */
+.form .cap-picker {
+  width: 40px;
+  height: 28px;
+  min-height: 0;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--bg);
+  cursor: pointer;
+}
+
+@media (max-width: 560px) {
+  .caps .cap-row { gap: 8px; }
+  .cap-chip { width: 26px; height: 26px; }
+}
+
+/* The same dot on a ribbon row, drawn rather than styled because the row
+   label lives inside the SVG. */
+.ribbon-cap {
+  fill: var(--cap);
+  stroke: color-mix(in srgb, var(--cap) 62%, var(--text));
+  stroke-width: 0.5;
+}

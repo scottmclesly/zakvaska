@@ -39,8 +39,13 @@
       <span>Starter jar</span>
       <select name="jar">
         <option value="">— none —</option>
+        {#- The jar's lid colour on the option's text: an <option> cannot
+            hold a dot, and a browser that declines to colour one shows the
+            list as it always was. -#}
         {% for one in jars %}
-        <option value="{{ one.id }}" {% if jar and one.id == jar.id %}selected{% endif %}>
+        <option value="{{ one.id }}"
+                {% if one.cap_color %}style="color: {{ one.cap_color }}"{% endif %}
+                {% if jar and one.id == jar.id %}selected{% endif %}>
           {{ one.name }}{% if one.is_control %} (control){% endif %}
         </option>
         {% endfor %}

@@ -7,6 +7,7 @@ than in every route.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -113,3 +114,28 @@ def utc_to_local_input(moment: datetime, tz: ZoneInfo) -> str:
 def checkbox(value: str | None) -> bool:
     # Unchecked boxes are simply absent from the submission.
     return value is not None
+
+
+#: `#rrggbb`, which is what both a preset swatch and `<input type="color">`
+#: submit. The short `#rgb` form is accepted and expanded, because someone
+#: typing a colour by hand writes `#fff`.
+_COLOR = re.compile(r"^#?(?P<hex>[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+
+
+def opt_color(value: str | None, *, field: str) -> str | None:
+    """A colour field as `#rrggbb`, or None when it was left alone.
+
+    Lenient about the hash and the case on the way in, strict about what
+    comes out: one spelling is stored, so two jars the same colour compare
+    equal and the value can go straight into a style attribute.
+    """
+    cleaned = opt_str(value)
+    if cleaned is None:
+        return None
+    found = _COLOR.match(cleaned)
+    if found is None:
+        raise ValueError(f"{field} must be a colour like #c0392b.")
+    digits = found.group("hex").lower()
+    if len(digits) == 3:
+        digits = "".join(one * 2 for one in digits)
+    return f"#{digits}"

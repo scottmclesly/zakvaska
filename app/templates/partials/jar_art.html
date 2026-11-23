@@ -39,7 +39,13 @@
     characters it is cut rather than shrunk any further. -#}
 {%- set name_size = [6.2, [8.4, 62 / ([label_name | length, 1] | max)] | min] | max -%}
 {%- set sub_size = [5.2, [6.2, 52 / ([label_sub | length, 1] | max)] | min] | max -%}
-<svg class="jar-art {{ art_class or '' }} state-{{ state }}" viewBox="0 0 72 103"
+{#- The lid colour travels as a custom property rather than as a fill
+    attribute, so the lid, the screw band, the base and the darker edge that
+    keeps a white cap readable are all worked out in app.css, and all of them
+    theme with the page. -#}
+<svg class="jar-art {{ art_class or '' }} state-{{ state }}{% if jar.cap_color %} has-cap{% endif %}"
+     viewBox="0 0 72 103"
+     {%- if jar.cap_color %} style="--cap: {{ jar.cap_color }}"{% endif %}
      data-fill="{{ fill_top }}" role="img"
      aria-label="{{ jar.name }} — {{ jar.state.label.lower() }}">
   <defs>
@@ -156,6 +162,16 @@
             x="36" y="89.4" text-anchor="middle"
             font-size="{{ sub_size | round(2) }}">{{ label_sub }}</text>
     </g>
+  </g>
+  {%- endif %}
+
+  {%- if jar.cap_color %}
+  <!-- the silicone base, in the lid's colour. Clipped to the body so it
+       takes the glass's own rounded corners, and drawn last because on the
+       real jar the cup goes on over the tape. -->
+  <g clip-path="url(#jarbody-{{ jar.id }})">
+    <rect class="jar-base" x="14" y="90" width="44" height="12"/>
+    <rect class="jar-base-edge" x="14" y="90" width="44" height="1.2"/>
   </g>
   {%- endif %}
 </svg>

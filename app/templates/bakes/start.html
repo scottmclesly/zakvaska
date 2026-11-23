@@ -37,8 +37,12 @@
         <span>Jar <em>which starter raised it</em></span>
         <select name="jar_id">
           <option value="">None / commercial yeast</option>
+          {#- An <option> cannot hold a dot, so the jar's lid colour goes on
+              the option's own text. Browsers that decline to colour an
+              option simply show the list as it always was. -#}
           {% for jar in jars %}
           <option value="{{ jar.id }}"
+                  {% if jar.cap_color %}style="color: {{ jar.cap_color }}"{% endif %}
                   {% if values.get('jar_id') == jar.id | string %}selected{% endif %}>
             {{ jar.name }}{% if jar.is_control %} (control){% endif %}
           </option>

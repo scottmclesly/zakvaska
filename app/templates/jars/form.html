@@ -67,6 +67,54 @@
     </label>
   </div>
 
+  {#- The lid colour. One column, offered as a row of presets and a colour
+      picker: they share the radio name, and the "another colour" radio is
+      what says to read the picker instead. That is what keeps it working
+      with no JavaScript — app.js only ticks that radio for you when you
+      touch the picker. -#}
+  {%- set cap_now = v.get('cap_color') if v.get('cap_color') is not none
+                    else (jar.cap_color if jar else none) -%}
+  {%- set cap_hexes = cap_presets | map(attribute=1) | list -%}
+  {%- set cap_is_custom = cap_now and cap_now != custom_cap
+                          and cap_now not in cap_hexes -%}
+  <fieldset class="caps">
+    <legend>Lid colour <em>optional</em></legend>
+    <div class="cap-row">
+      <label class="cap-swatch is-none" title="No colour">
+        <input type="radio" name="cap_color" value=""
+               {% if not cap_now %}checked{% endif %}>
+        <span class="cap-chip" aria-hidden="true"></span>
+        <span class="sr-only">No colour</span>
+      </label>
+
+      {% for cap_name, cap_hex in cap_presets %}
+      <label class="cap-swatch" title="{{ cap_name }}">
+        <input type="radio" name="cap_color" value="{{ cap_hex }}"
+               {% if cap_now == cap_hex %}checked{% endif %}>
+        <span class="cap-chip" style="--cap: {{ cap_hex }}" aria-hidden="true"></span>
+        <span class="sr-only">{{ cap_name }}</span>
+      </label>
+      {% endfor %}
+
+      <label class="cap-swatch is-any" title="Another colour">
+        <input type="radio" name="cap_color" value="{{ custom_cap }}"
+               {% if cap_is_custom or v.get('cap_color') == custom_cap %}checked{% endif %}>
+        <span class="cap-chip cap-chip-any"
+              {% if cap_is_custom %}style="--cap: {{ cap_now }}"{% endif %}
+              aria-hidden="true"></span>
+        <span class="sr-only">Another colour</span>
+      </label>
+
+      <input class="cap-picker" type="color" name="cap_color_custom"
+             aria-label="Pick another lid colour"
+             value="{{ cap_now if cap_is_custom else (v.get('cap_color_custom') or '#c0392b') }}">
+    </div>
+    <em class="muted small">
+      Match the real jar's lid, so the drawn jars tell each other apart at a
+      glance. Left off, a jar keeps its plain grey lid.
+    </em>
+  </fieldset>
+
   <div class="field-row">
     {# Feeds a day is what the ribbon plans from; the room interval below is
        the fallback for a jar with no plan yet. #}

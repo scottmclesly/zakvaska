@@ -25,7 +25,10 @@
   {% set jar = card.jar %}
   <li class="card jar-card {% if card.status.is_overdue %}is-overdue{% endif %}">
     <div class="jar-card-head">
-      <h2><a href="/jars/{{ jar.id }}">{{ jar.name }}</a></h2>
+      <h2>
+        {%- with dot_color = jar.cap_color %}{% include "partials/jar_dot.html" %}{% endwith -%}
+        <a href="/jars/{{ jar.id }}">{{ jar.name }}</a>
+      </h2>
       {% if jar.is_control %}<span class="badge badge-control">control</span>{% endif %}
     </div>
 
