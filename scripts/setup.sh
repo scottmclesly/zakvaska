@@ -52,7 +52,7 @@ if [ ! -f "$ROOT/.env" ]; then
 fi
 
 echo "==> Running migrations"
-"$ROOT/.venv/bin/alembic" upgrade head
+"$ROOT/.venv/bin/python" "$ROOT/scripts/migrate.py"
 
 echo
 echo "Done. Start it with:  ./scripts/run.sh"

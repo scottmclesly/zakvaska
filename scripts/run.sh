@@ -42,6 +42,16 @@ load_env_file() {
 
 load_env_file "$ROOT/.env"
 
+# Every schema change ships with a migration (CLAUDE.md), and until now only
+# setup.sh ran them — so a pull that added a column met the next run.sh as a
+# startup crash ending in "no such column". This is silent when there is
+# nothing to do, and copies the notebook first when there is.
+if ! "$ROOT/.venv/bin/python" "$ROOT/scripts/migrate.py"; then
+  echo "error: could not bring the database up to date, so not starting." >&2
+  echo "       the notebook is untouched; the output above says why." >&2
+  exit 1
+fi
+
 HOST="${ZAKVASKA_HOST:-127.0.0.1}"
 PORT="${ZAKVASKA_PORT:-8420}"
 

@@ -46,8 +46,13 @@ Comparing jars and iterating recipes is the point, so the data must be structure
 ## Run
 ```
 ./scripts/setup.sh   # create .venv, install requirements, run migrations
-./scripts/run.sh     # start on ZAKVASKA_HOST:ZAKVASKA_PORT (default 127.0.0.1:8420)
+./scripts/run.sh     # migrate if needed, then start on ZAKVASKA_HOST:ZAKVASKA_PORT
 ```
+Both go through `scripts/migrate.py`, so a pull that adds a column just works:
+it is silent when the schema is already at head, and copies the notebook to
+`data/zakvaska.db.before-<stamp>` before it changes anything. `--check` reports
+without touching anything. Never leave the live `data/` behind the code — the
+app does not degrade, it fails to start.
 
 ## Out of scope for v1 (planned v2 — don't build yet, but don't block them)
 Back-scheduling a bake from a target time, sensor ingest API

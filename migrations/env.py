@@ -16,7 +16,13 @@ from app.models import Base  # noqa: F401 — registers every model's metadata
 
 config = context.config
 
-if config.config_file_name is not None:
+# `scripts/migrate.py` sets configure_logger False: it prints its own two
+# lines and alembic's INFO chatter underneath them reads as a fault. The
+# alembic CLI never sets the attribute, so `alembic upgrade head` by hand is
+# as loud as it always was.
+if config.config_file_name is not None and config.attributes.get(
+    "configure_logger", True
+):
     fileConfig(config.config_file_name)
 
 settings = get_settings()
