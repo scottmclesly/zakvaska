@@ -43,12 +43,15 @@
     Stored in grams and °C whatever these say; they set how amounts are shown
     — and how a bare number you type is read.
   </p>
-  <div class="field-row">
-    <form method="post" action="/settings/weight-unit">
-      <input type="hidden" name="next" value="/settings">
+  {#- One form, built like every other section on this page: two labelled
+      selects in a field-row and a Save under them. The header's two buttons
+      still step through the units a tap at a time, which is what you want
+      mid-task; here you pick them. -#}
+  <form class="form" method="post" action="/settings/units">
+    <div class="field-row">
       <label>
         <span>Weights</span>
-        <select name="unit" onchange="this.form.submit()">
+        <select name="weight_unit">
           {% for unit in unit_cycle %}
           <option value="{{ unit }}" {% if unit == weight_unit %}selected{% endif %}>
             {{ unit_label(unit) }}
@@ -56,19 +59,22 @@
           {% endfor %}
         </select>
       </label>
-      <noscript><button class="btn btn-small" type="submit">Set</button></noscript>
-    </form>
 
-    <form method="post" action="/settings/temp-unit">
-      <input type="hidden" name="next" value="/settings">
       <label>
         <span>Temperatures</span>
-        <div><button class="btn btn-small btn-secondary" type="submit">
-          Showing °{{ temp_unit }} — switch to °{{ 'C' if temp_unit == 'F' else 'F' }}
-        </button></div>
+        <select name="temp_unit">
+          {% for unit in temp_units %}
+          <option value="{{ unit }}" {% if unit == temp_unit %}selected{% endif %}>
+            °{{ unit }}
+          </option>
+          {% endfor %}
+        </select>
       </label>
-    </form>
-  </div>
+    </div>
+    <div class="row-actions">
+      <button class="btn" type="submit">Save units</button>
+    </div>
+  </form>
 </section>
 
 {# --- Feeding rhythm ------------------------------------------------ #}

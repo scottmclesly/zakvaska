@@ -76,6 +76,7 @@ def _page_context(ctx: ViewContext, errors: list[str] | None = None) -> dict:
         "weekday_names": WEEKDAY_NAMES,
         "every_day": EVERY_DAY,
         "unit_cycle": measures.UNIT_CYCLE,
+        "temp_units": TEMP_UNITS,
     }
 
 
@@ -105,6 +106,47 @@ def cycle_weight_unit(
     settings_store.set_setting(ctx.session, "weight_unit", chosen)
     ctx.session.commit()
     return RedirectResponse(_safe_next(next), status_code=303)
+
+
+#: The two a temperature can be shown in. Held here rather than inferred
+#: from a toggle, because the settings page picks one by name.
+TEMP_UNITS = ("F", "C")
+
+
+@router.post("/units")
+def save_units(
+    request: Request,
+    ctx: Ctx,
+    weight_unit: Annotated[str, Form()] = "",
+    temp_unit: Annotated[str, Form()] = "",
+):
+    """Both display units at once, named rather than cycled.
+
+    The header's two buttons step through the units a tap at a time, which
+    is right when you are mid-task; the settings page picks them, which is
+    right when you are setting up. Same two settings either way.
+    """
+    errors: list[str] = []
+
+    if weight_unit and weight_unit not in measures.UNIT_CYCLE:
+        errors.append("That is not a unit amounts can be shown in.")
+    if temp_unit and temp_unit.upper() not in TEMP_UNITS:
+        errors.append("Temperatures are shown in °C or °F.")
+
+    if errors:
+        return render(
+            request=request, ctx=ctx, name="settings/index.html",
+            context=_page_context(ctx, errors), status_code=400,
+        )
+
+    if weight_unit:
+        settings_store.set_setting(ctx.session, "weight_unit", weight_unit)
+    if temp_unit:
+        settings_store.set_setting(
+            ctx.session, "temp_unit", temp_unit.upper()
+        )
+    ctx.session.commit()
+    return _see_other()
 
 
 @router.post("/temp-unit")
