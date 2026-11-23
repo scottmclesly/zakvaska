@@ -212,10 +212,13 @@ class TestTheShelf:
         assert "feed me" in body
 
     def test_an_empty_shelf_stands_there_before_the_first_jar(self, client):
+        """The plank is drawn with nothing on it but the slot that adds a
+        jar, which is then the only way in."""
         body = client.get("/").text
 
-        assert "shelf-bare" in body
-        assert "jar-ghost" in body
+        assert "shelf-plank" in body
+        assert "shelf-is-empty" in body
+        assert "shelf-ghost" in body
 
     def test_the_jar_on_its_own_page_stands_on_a_plank_too(
         self, client, session

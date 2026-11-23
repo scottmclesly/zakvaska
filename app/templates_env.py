@@ -227,6 +227,13 @@ templates.env.filters["ratio_label"] = timing.ratio_label
 templates.env.globals["timedelta_minutes"] = lambda minutes: timedelta(
     minutes=minutes
 )
+# The silhouette of a jar, said once. Three templates draw it — the jar
+# itself, the outline on an empty shelf, and the ghost slot that adds one —
+# and they have to be the same shape or the ghost stops reading as a jar.
+templates.env.globals["jar_body_path"] = (
+    "M24 18 h24 v4 q0 3 5 6 q5 3 5 10 v52 q0 8 -8 8 h-28 "
+    "q-8 0 -8 -8 v-52 q0 -7 5 -10 q5 -3 5 -6 z"
+)
 templates.env.globals["bakeplan_default_knead"] = bakeplan.DEFAULT_KNEAD_MIN
 templates.env.globals["cycle_bar"] = recipe_service.cycle_bar
 templates.env.globals["stage_bar"] = recipe_service.stage_bar

@@ -1,9 +1,5 @@
 {% extends "base.html" %}
 
-{% block nav %}
-<a class="btn btn-small" href="/jars/new">New jar</a>
-{% endblock %}
-
 {% block content %}
 <section class="hero">
   <h1>Starter jars</h1>
@@ -11,7 +7,9 @@
 </section>
 
 {% if cards %}
-{% with shelf_cards = cards %}{% include "partials/shelf.html" %}{% endwith %}
+{% with shelf_cards = cards, shelf_ghost = true %}
+  {% include "partials/shelf.html" %}
+{% endwith %}
 
 {% if ribbon %}
 {% with ribbon_title = "The next while" %}
@@ -96,20 +94,11 @@
 {% endwith %}
 {% endif %}
 {% else %}
-<section class="shelf shelf-bare" aria-hidden="true">
-  <div class="shelf-inner">
-    <ul class="shelf-jars">
-      <li class="shelf-slot">
-        <svg class="jar-ghost" viewBox="0 0 72 103" aria-hidden="true" focusable="false">
-          <rect x="20" y="4" width="32" height="10" rx="3"/>
-          <path d="M24 18 h24 v4 q0 3 5 6 q5 3 5 10 v52 q0 8 -8 8 h-28 q-8 0 -8 -8 v-52 q0 -7 5 -10 q5 -3 5 -6 z"/>
-        </svg>
-      </li>
-      <li class="shelf-prop">{% include "partials/sprig.html" %}</li>
-    </ul>
-    <div class="shelf-plank"></div>
-  </div>
-</section>
+{#- An empty shelf is still the shelf: the ghost slot is on it, and with no
+    jars to hide behind it is simply there, which is the way in. -#}
+{% with shelf_ghost = true, shelf_label = "The shelf, with no jars on it yet" %}
+  {% include "partials/shelf.html" %}
+{% endwith %}
 
 <section class="empty card">
   <h2>No jars yet</h2>

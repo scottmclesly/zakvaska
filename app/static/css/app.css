@@ -1022,16 +1022,6 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
   letter-spacing: 0.3px;
 }
 
-/* The empty shelf's outline of a jar, for when there are none yet. */
-.jar-ghost {
-  width: 140px;
-  height: auto;
-  fill: none;
-  stroke: var(--border);
-  stroke-width: 1.8;
-  stroke-dasharray: 5 4;
-}
-
 .sprig { width: 40px; height: auto; flex: 0 0 auto; opacity: 0.85; }
 .sprig-stem {
   fill: none;
@@ -1160,8 +1150,6 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 .shelf-plank-sm { height: 9px; width: 120px; margin: -3px 0 0; }
 .shelf-plank-sm::before,
 .shelf-plank-sm::after { display: none; }
-
-.shelf-bare { opacity: 0.7; }
 
 /* The shelf below: jars that have been put away. Smaller and dustier, but
    still on show — jars are archived here, never deleted. */
@@ -2227,4 +2215,64 @@ table.steps tr.is-clash td {
   fill: var(--cap);
   stroke: color-mix(in srgb, var(--cap) 62%, var(--text));
   stroke-width: 0.5;
+}
+
+/* --- The ghost jar: the empty slot that adds one ----------------------- */
+
+/* A jar-shaped gap at the end of the shelf. Same silhouette and same size
+   as a real jar — the path comes from one place (`jar_body_path`) so the
+   two cannot drift — drawn as a dashed outline with a plus in it. */
+.ghost-art { width: 140px; height: auto; }
+
+.ghost-body {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1.8;
+  stroke-dasharray: 5 4;
+}
+
+.ghost-plus {
+  stroke: var(--muted);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+/* It fades rather than appears, and the whole thing hangs off the link so
+   that :focus-visible can bring it back on its own. */
+.ghost-jar {
+  opacity: 1;
+  transition: opacity 150ms ease;
+}
+
+.ghost-jar:hover .ghost-body { stroke: var(--accent); }
+.ghost-jar:hover .ghost-plus { stroke: var(--accent); }
+
+/* With a pointer, it keeps out of the way until you go looking for it: the
+   real jars are what the shelf is for. Hovering anywhere on the shelf —
+   including its empty space — brings it in. */
+@media (hover: hover) {
+  .ghost-jar { opacity: 0; }
+
+  .shelf:hover .ghost-jar,
+  .shelf:focus-within .ghost-jar,
+  .ghost-jar:focus-visible,
+  /* Nothing to hide behind, so it stays: it is the only way in. */
+  .shelf-is-empty .ghost-jar {
+    opacity: 1;
+  }
+}
+
+/* A phone cannot hover, so it is always there — quietly, so it still reads
+   as a gap rather than as a jar. */
+@media (hover: none) {
+  .ghost-jar { opacity: 0.45; }
+  .shelf-is-empty .ghost-jar { opacity: 1; }
+}
+
+/* Visible when tabbed to, on every device: a link you cannot see is a link
+   you cannot use. */
+.ghost-jar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 8px;
 }

@@ -4,9 +4,15 @@
    measured levels) or `shelf_jars` (bare jars for the put-away shelf
    below it). Optionally `shelf_class`, `shelf_label` and `dusty`.
 
+   `shelf_ghost` adds the empty slot that makes a new jar. It belongs on the
+   live shelf only — a jar is never added to the put-away shelf.
+
    One shared plank is the point: Scott runs two rye jars against each
    other, and the shelf is where you read them off side by side. #}
-<section class="{{ ('shelf ' ~ (shelf_class or '')) | trim }}"
+{%- set ghost = shelf_ghost is defined and shelf_ghost -%}
+{%- set shelf_empty = ghost and not shelf_cards -%}
+<section class="{{ ('shelf ' ~ (shelf_class or '')
+                    ~ (' shelf-is-empty' if shelf_empty else '')) | trim }}"
          aria-label="{{ shelf_label or 'The jars on the shelf' }}">
   <div class="shelf-inner">
     <ul class="shelf-jars">
@@ -34,7 +40,28 @@
       </li>
       {% endfor %}
 
-      {% if shelf_cards %}<li class="shelf-prop">{% include "partials/sprig.html" %}</li>{% endif %}
+      {#- The last slot: a jar that is not there yet. Hidden until the
+          pointer is on the shelf, so it does not compete with the real
+          jars, but always there for the keyboard and always there when the
+          shelf is empty — then it is the only way in. -#}
+      {% if ghost %}
+      <li class="shelf-slot shelf-ghost">
+        <a class="shelf-jar ghost-jar" href="/jars/new" aria-label="New jar">
+          <svg class="jar-art jar-art-shelf ghost-art" viewBox="0 0 72 103"
+               aria-hidden="true" focusable="false">
+            {#- The same silhouette as a real jar, so the gap on the shelf
+                reads as a jar-shaped one. -#}
+            <path class="ghost-body" d="{{ jar_body_path }}"/>
+            <g class="ghost-plus">
+              <line x1="28" y1="58" x2="44" y2="58"/>
+              <line x1="36" y1="50" x2="36" y2="66"/>
+            </g>
+          </svg>
+        </a>
+      </li>
+      {% endif %}
+
+      {% if shelf_cards or ghost %}<li class="shelf-prop">{% include "partials/sprig.html" %}</li>{% endif %}
     </ul>
     <div class="shelf-plank" aria-hidden="true"></div>
   </div>
