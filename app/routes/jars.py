@@ -345,27 +345,46 @@ def archive_jar(ctx: Ctx, jar_id: int, archived: Annotated[str, Form()] = "1"):
 # --- Feeding ---------------------------------------------------------------
 
 
-def _feed_context(ctx: ViewContext, jar, *, fed_at=None) -> dict:
-    """The advice that goes with the Fed-it form.
+def _feed_context(
+    ctx: ViewContext,
+    jar,
+    *,
+    fed_at=None,
+    starter_g: float | None = None,
+    flour_g: float | None = None,
+    ambient_temp_c: float | None = None,
+) -> dict:
+    """The advice and the picture that go with the Fed-it form.
 
-    `advice` is what to feed it so the peak lands on the next planned feed —
-    the whole payoff of the cycle being controllable. `late` is how far off
+    `advice` is what to feed it so the peak lands on the feed after the slot
+    this one fills — the whole payoff of the cycle being controllable, and
+    see `plan.peak_target_from` for why it is that feed and not the next one
+    on the plan. `late` is how far off
     the plan this feed is, which decides whether the two schedule choices
-    are offered.
+    are offered. `preview` is the same thing drawn: the amounts as they
+    stand, the rise they would set off, and the planned feed to land on.
+
+    The preview is built here as well as on the HTMX route so the form
+    arrives with its chart already on it, rather than blank until the first
+    keystroke.
     """
+    moment = fed_at or ctx.now
     made = plan_service.jar_plan(
-        ctx.session, jar, now=ctx.now, until=ctx.now + timedelta(days=14)
+        ctx.session, jar, now=moment, until=moment + timedelta(days=14)
     )
     temp_c = (
         made.last_cycle.temp_c
         if made.last_cycle
         else settings_store.default_ferment_temp_c(ctx.session)
     )
+    # Aimed at the feed after the slot this one fills, not at that slot: the
+    # feed going in now should be at its peak when it is next fed.
+    target_at = plan_service.peak_target_from(made)
     advice = None
-    if made.next_feed_at is not None:
+    if target_at is not None:
         advice = plan_service.ratio_advice(
-            from_moment=ctx.now,
-            target_at=made.next_feed_at,
+            from_moment=moment,
+            target_at=target_at,
             temp_c=temp_c,
             factor=made.factor,
         )
@@ -373,7 +392,17 @@ def _feed_context(ctx: ViewContext, jar, *, fed_at=None) -> dict:
         "plan": made,
         "advice": advice,
         "late": plan_service.feed_against_plan(
-            ctx.session, jar, fed_at=fed_at or ctx.now, now=ctx.now
+            ctx.session, jar, fed_at=moment, now=ctx.now
+        ),
+        "preview": plan_service.feed_preview(
+            ctx.session,
+            jar,
+            starter_g=starter_g,
+            flour_g=flour_g,
+            fed_at=moment,
+            now=ctx.now,
+            tz=ctx.tz,
+            ambient_temp_c=ambient_temp_c,
         ),
     }
 
@@ -392,7 +421,77 @@ def feed_form(request: Request, ctx: Ctx, jar_id: int) -> HTMLResponse:
             "defaults": defaults,
             "now_local": f.utc_to_local_input(ctx.now, ctx.tz),
             "errors": [],
-            **_feed_context(ctx, jar),
+            **_feed_context(
+                ctx,
+                jar,
+                starter_g=defaults["starter_g"],
+                flour_g=defaults["flour_g"],
+                ambient_temp_c=defaults["ambient_temp_c"],
+            ),
+        },
+    )
+
+
+@router.get("/{jar_id}/feed/preview", response_class=HTMLResponse)
+def feed_preview(
+    request: Request,
+    ctx: Ctx,
+    jar_id: int,
+    starter_g: str = "",
+    flour_g: str = "",
+    ambient_temp: str = "",
+    fed_at: str = "",
+) -> HTMLResponse:
+    """The live picture under the Fed-it form's amounts.
+
+    Swapped in by HTMX on every change to the amounts, which is what makes
+    the peak slide as the ratio is adjusted. Everything is read leniently and
+    nothing here can fail: a half-typed "1" or a cleared field should leave a
+    picture standing, so an unreadable value falls back rather than erroring.
+
+    Water is not a parameter because the model does not use hydration: the
+    ratio that moves the peak is flour per gram of starter.
+    """
+    jar = _load(ctx, jar_id)
+
+    def grams(raw: str, name: str, role) -> float | None:
+        try:
+            return f.opt_weight(
+                raw, ctx.weight_unit, field="Amount", name=name, role=role
+            )
+        except ValueError:
+            return None
+
+    try:
+        when = f.local_to_utc(fed_at, ctx.tz, default=ctx.now)
+    except ValueError:
+        when = ctx.now
+
+    try:
+        room = temp_to_celsius(
+            f.opt_float(ambient_temp, field="Room temperature"), ctx.temp_unit
+        )
+    except ValueError:
+        room = None
+
+    return render(
+        request=request,
+        ctx=ctx,
+        name="partials/feed_preview.html",
+        context={
+            "jar": jar,
+            "preview": plan_service.feed_preview(
+                ctx.session,
+                jar,
+                starter_g=grams(starter_g, "starter", IngredientRole.LEVAIN),
+                flour_g=grams(
+                    flour_g, jar.flour_type or "flour", IngredientRole.FLOUR
+                ),
+                fed_at=when,
+                now=ctx.now,
+                tz=ctx.tz,
+                ambient_temp_c=room,
+            ),
         },
     )
 
@@ -481,7 +580,14 @@ async def log_feeding(
                 },
                 "now_local": fed_at or f.utc_to_local_input(ctx.now, ctx.tz),
                 "errors": errors,
-                **_feed_context(ctx, jar, fed_at=when),
+                **_feed_context(
+                    ctx,
+                    jar,
+                    fed_at=when,
+                    starter_g=starter or None,
+                    flour_g=flour or None,
+                    ambient_temp_c=ambient_temp_c,
+                ),
             },
             status_code=400,
         )

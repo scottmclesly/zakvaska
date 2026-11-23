@@ -1,0 +1,64 @@
+{# The feed being typed, drawn. Expects `jar` and `preview`
+   (services.plan.FeedPreview).
+
+   This is the whole inside of the #feed-preview container, which is what
+   HTMX swaps on every change to the amounts — so nothing here may hold state
+   of its own. Everything comes from the preview the service worked out.
+
+   It lives inside the Fed-it form, next to the numbers it is about, which is
+   why it is a panel like the fieldset above it rather than a card.
+#}
+<figure class="feed-preview">
+  <figcaption class="chart-head">
+    <h2 class="section-title">If you feed it this</h2>
+    {%- if preview.ratio_label %}
+    <span class="muted small">
+      {{ preview.ratio_label }} at {{ preview.temp_c | temp(temp_unit) }}
+      {%- if preview.temp_assumed %} (assumed){% endif %}
+    </span>
+    {%- endif %}
+  </figcaption>
+
+  {%- if preview.drawn %}
+  {% with ribbon = preview.drawn %}{% include "partials/ribbon_svg.html" %}{% endwith %}
+  {%- endif %}
+
+  {%- if not preview.has_ratio %}
+  <p class="muted small">
+    A build with no starter carried over has no ratio to take, so there is no
+    peak to predict. Put a starter weight in and the curve appears.
+  </p>
+  {%- elif preview.peak_at %}
+  <p class="preview-verdict {% if preview.lands_well %}is-good{% else %}is-off{% endif %}">
+    Peaks about <strong>{{ preview.peak_at | local_time }}</strong>
+    {{ preview.peak_at | local_day }}
+    {%- if preview.busy_label %}, inside {{ preview.busy_label }}{% endif -%}
+    {%- if preview.target_at %} —
+      {%- if preview.lands_well %}
+      about when the next feed is planned.
+      {%- else %}
+      {{ hours_label(preview.gap_h | abs) }}
+      {{ "after" if preview.is_late else "before" }}
+      the feed planned for {{ preview.target_at | local_time }}.
+      {%- endif %}
+    {%- else %}, with no feed planned after it to land on.
+    {%- endif %}
+  </p>
+
+  {%- if preview.better_ratio_label %}
+  <p class="muted small">
+    Feeding <strong>{{ preview.better_ratio_label }}</strong> instead would
+    land the peak closer to it.
+  </p>
+  {%- endif %}
+
+  {%- if preview.clamped_note %}
+  <p class="muted small">{{ preview.clamped_note }}</p>
+  {%- endif %}
+  {%- endif %}
+
+  <p class="chart-caption muted small">
+    More flour per gram of starter, and the peak comes later; warmer, and it
+    comes sooner. Change the amounts above and this redraws.
+  </p>
+</figure>

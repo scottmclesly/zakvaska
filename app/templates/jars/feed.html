@@ -89,6 +89,24 @@
     </p>
   </fieldset>
 
+  {#- The amounts drawn, right under the amounts. HTMX re-fetches the panel
+      on every change to the four fields the peak depends on, so adjusting
+      the ratio moves the curve while you watch. It renders server-side on
+      the way in too, so the chart is there before any key is pressed and
+      the form still works with no JavaScript at all. -#}
+  <div id="feed-preview"
+       hx-get="/jars/{{ jar.id }}/feed/preview"
+       hx-trigger="input from:#feed-form delay:350ms,
+                   change from:#feed-form delay:350ms"
+       hx-include="#feed-form [name='starter_g'],
+                   #feed-form [name='flour_g'],
+                   #feed-form [name='ambient_temp'],
+                   #feed-form [name='fed_at']"
+       hx-swap="innerHTML"
+       hx-sync="this:replace">
+    {% include "partials/feed_preview.html" %}
+  </div>
+
   <label>
     <span>Flour <em>optional</em></span>
     <input name="flour_type" value="{{ defaults.flour_type or '' }}"

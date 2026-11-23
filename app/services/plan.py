@@ -494,6 +494,35 @@ class RatioAdvice:
         return timing.ratio_label(self.ratio)
 
 
+def peak_target_from(plan_for: JarPlan) -> datetime | None:
+    """The planned feed that a feed being logged should peak *at*.
+
+    Not the next planned feed: that is the feed being logged. A starter wants
+    to be at its peak when it is next fed — that is what the peak band means
+    — so the feed going in now is aimed at the slot *after* the one it fills.
+    Aiming it at its own slot asks for a peak an hour away, which no feedable
+    ratio reaches, and the advice comes out as a caveat instead of a ratio.
+
+    `plan_for` must be the plan as it stands at the moment of the feed, so
+    that the slot being filled is the one `feed_against_plan` judged the feed
+    against. The two readings of "which feed is this" have to be the same or
+    the form contradicts itself.
+    """
+    answering = plan_for.next_feed_at
+    if answering is None:
+        return None
+    return next((one.at for one in plan_for.planned if one.at > answering), None)
+
+
+def peak_target(
+    session: Session, jar: Jar, *, fed_at: datetime
+) -> datetime | None:
+    """`peak_target_from` for callers that have a jar rather than a plan."""
+    return peak_target_from(
+        jar_plan(session, jar, now=fed_at, until=fed_at + timedelta(days=14))
+    )
+
+
 def ratio_advice(
     *,
     from_moment: datetime,
@@ -695,3 +724,225 @@ def build_ribbon(
         ),
     )
     return drawn, plans
+
+
+# --- Trying a feed on before you log it ---------------------------------
+#
+# The reason `timing` exists at all is that the cycle length is controllable:
+# more flour per gram of starter and the peak moves later. That is hard to
+# believe from a sentence and obvious from a picture, so the Fed-it form
+# draws the feed being typed — the rise it would set off, and the feed
+# already planned sitting there as the thing to land on. Change the amounts
+# and the peak slides; the planned feed does not, because it is the target.
+
+#: The spans a preview frames itself at. A ladder rather than a snug fit, so
+#: that nudging a ratio slides the peak along a steady axis instead of
+#: rescaling the picture underneath it on every keystroke.
+PREVIEW_SPANS_H = (8, 12, 18, 24, 36, 48)
+
+#: How close to the planned feed counts as landing on it, as a fraction of
+#: the cycle. Taken from the peak band rather than picked: inside this the
+#: jar is still at its peak when the feed is due, which is as fine a target
+#: as the model can honestly mean.
+PREVIEW_TOLERANCE = timing.PEAK_TO - 1.0
+
+
+def _preview_span_h(needed_h: float) -> int:
+    for span in PREVIEW_SPANS_H:
+        if needed_h <= span:
+            return span
+    return PREVIEW_SPANS_H[-1]
+
+
+@dataclass(frozen=True)
+class FeedPreview:
+    """The feed being typed into the form, worked out before it exists."""
+
+    jar: Jar
+    fed_at: datetime
+    temp_c: float
+    #: True when no room temperature was typed and one had to be assumed.
+    temp_assumed: bool
+    #: Flour ÷ starter. None for a build with no starter carried over, which
+    #: has no ratio to take and so no peak to predict.
+    ratio: float | None
+    peak_h: float | None
+    peak_at: datetime | None
+    #: The next planned feed after this one: what the peak is aimed at.
+    target_at: datetime | None
+    #: The busy block the peak lands in, if it lands in one.
+    busy_label: str | None
+    clamped_note: str | None
+    #: What to feed instead so the peak lands on `target_at`.
+    advice: RatioAdvice | None
+    drawn: ribbon.Ribbon | None
+
+    @property
+    def has_ratio(self) -> bool:
+        return self.ratio is not None
+
+    @property
+    def ratio_label(self) -> str | None:
+        return None if self.ratio is None else timing.ratio_label(self.ratio)
+
+    @property
+    def gap_h(self) -> float | None:
+        """Planned feed to peak, in hours. Negative means the peak is early."""
+        if self.peak_at is None or self.target_at is None:
+            return None
+        return (self.peak_at - self.target_at).total_seconds() / 3600
+
+    @property
+    def tolerance_h(self) -> float | None:
+        return None if self.peak_h is None else PREVIEW_TOLERANCE * self.peak_h
+
+    @property
+    def lands_well(self) -> bool:
+        """Whether the jar would still be at its peak when the feed is due."""
+        gap, tolerance = self.gap_h, self.tolerance_h
+        if gap is None or tolerance is None:
+            return False
+        return abs(gap) <= tolerance
+
+    @property
+    def is_late(self) -> bool:
+        gap = self.gap_h
+        return not self.lands_well and gap is not None and gap > 0
+
+    @property
+    def is_early(self) -> bool:
+        gap = self.gap_h
+        return not self.lands_well and gap is not None and gap < 0
+
+    @property
+    def better_ratio_label(self) -> str | None:
+        """A ratio that would land it closer, when a different one would.
+
+        None when this feed already lands well, when the advice is the ratio
+        already typed, and when no feedable ratio reaches the target — the
+        advice card above the form has the room to explain that case, and a
+        bare "feed 1:10:10" under the chart would only mislead.
+        """
+        if self.lands_well or self.advice is None:
+            return None
+        if self.advice.clamped_note is not None:
+            return None
+        if (
+            self.ratio is not None
+            and abs(self.advice.ratio - self.ratio) < timing.RATIO_STEP / 2
+        ):
+            return None
+        return self.advice.label
+
+
+def feed_preview(
+    session: Session,
+    jar: Jar,
+    *,
+    starter_g: float | None,
+    flour_g: float | None,
+    fed_at: datetime,
+    now: datetime,
+    tz,
+    ambient_temp_c: float | None = None,
+) -> FeedPreview:
+    """Draw the feed being typed, against the feed already planned.
+
+    Takes grams and a temperature rather than form strings: the route reads
+    the form leniently, because this runs on every keystroke and a half-typed
+    number should leave a picture standing rather than raise.
+    """
+    # As of the feed, not as of now: which planned slot this feed fills is
+    # the same question `feed_against_plan` answers, and the form would
+    # contradict itself if the two were worked out from different moments.
+    made = jar_plan(session, jar, now=fed_at, until=fed_at + timedelta(days=14))
+
+    temp_assumed = ambient_temp_c is None
+    temp_c = ambient_temp_c
+    if temp_c is None:
+        temp_c = (
+            made.last_cycle.temp_c
+            if made.last_cycle
+            else settings_store.default_ferment_temp_c(session)
+        )
+
+    ratio = timing.feed_ratio(starter_g, flour_g)
+    peak_h = peak_at = clamped_note = None
+    if ratio is not None:
+        peak_h = timing.predict_peak_h(ratio, temp_c, made.factor)
+        peak_at = fed_at + timedelta(hours=peak_h)
+        clamped_note = timing.clamp_inputs(ratio, temp_c).note
+
+    target_at = peak_target_from(made)
+    advice = None
+    if target_at is not None:
+        advice = ratio_advice(
+            from_moment=fed_at,
+            target_at=target_at,
+            temp_c=temp_c,
+            factor=made.factor,
+        )
+
+    start = min(fed_at, now) - timedelta(hours=1)
+    furthest = max(
+        one for one in (fed_at, now, peak_at, target_at) if one is not None
+    )
+    span = _preview_span_h((furthest - start).total_seconds() / 3600 + 1.0)
+    end = start + timedelta(hours=span)
+
+    intervals = busy_service.busy_intervals(session, start, end, tz)
+    feeds: tuple[ribbon.FeedMark, ...] = ()
+    if ratio is not None and peak_h is not None:
+        feeds = (
+            ribbon.FeedMark(
+                at=fed_at,
+                peak_h=peak_h,
+                ratio_label=timing.ratio_label(ratio),
+                temp_assumed=temp_assumed,
+            ),
+        )
+
+    series = ribbon.RibbonSeries(
+        name=jar.name,
+        jar_id=jar.id,
+        feeds=feeds,
+        planned=tuple(
+            one
+            for one in planned_marks(session, jar, made, now=now, busy=intervals)
+            if one.at > fed_at and start <= one.at <= end
+        ),
+        is_control=jar.is_control,
+        is_estimate=ratio is not None and made.is_estimate,
+        note=None if ratio is not None else "No starter — no ratio to take",
+    )
+    drawn = ribbon.ribbon(
+        [series],
+        start=start,
+        end=end,
+        now=now,
+        tz=tz,
+        busy=tuple(
+            ribbon.BusyMark(start=one.start, end=one.end, label=one.label)
+            for one in intervals
+        ),
+    )
+
+    busy_label = None
+    if peak_at is not None:
+        clash = busy_service.covering(list(intervals), peak_at)
+        busy_label = clash.label if clash is not None else None
+
+    return FeedPreview(
+        jar=jar,
+        fed_at=fed_at,
+        temp_c=temp_c,
+        temp_assumed=temp_assumed,
+        ratio=ratio,
+        peak_h=peak_h,
+        peak_at=peak_at,
+        target_at=target_at,
+        busy_label=busy_label,
+        clamped_note=clamped_note,
+        advice=advice,
+        drawn=drawn,
+    )

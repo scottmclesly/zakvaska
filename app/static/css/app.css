@@ -11,6 +11,10 @@
   --radius: 12px;
   --gutter: 16px;
 
+  /* One column width for the whole app, named so the page and the alert
+     banner above it cannot drift apart. */
+  --page-max: 1188px;
+
   /* A bakery wants a little warmth: a serif for the headings and a shelf
      made of pine. System fonts only — no web font to download. */
   --display: ui-serif, Georgia, "Iowan Old Style", Palatino, serif;
@@ -35,6 +39,11 @@
 }
 
 * { box-sizing: border-box; }
+
+/* A figure's browser default is `margin: 1em 40px`, which quietly insets any
+   full-width card built on one — it reads 80px narrower than the plain
+   `section` and `ul` blocks beside it. Blocks here set their own rhythm. */
+figure { margin: 0; }
 
 html { -webkit-text-size-adjust: 100%; }
 
@@ -109,7 +118,7 @@ h2:not(.section-title),
 .wrap {
   flex: 1;
   width: 100%;
-  max-width: 1080px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding: var(--gutter);
 }
@@ -425,7 +434,7 @@ code {
 }
 
 .alert-banner-inner {
-  max-width: 1080px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding: 14px var(--gutter);
 }
@@ -1680,7 +1689,7 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
   }
 }
 
-.ribbon-card { display: grid; gap: 8px; }
+.ribbon-card { display: grid; gap: 8px; margin: 16px 0; }
 .ribbon {
   display: block;
   width: 100%;
@@ -2047,3 +2056,33 @@ table.steps tr.is-clash td {
   background: color-mix(in srgb, var(--muted) 18%, transparent);
   color: var(--muted);
 }
+
+/* --- The feed being typed, drawn --------------------------------------- */
+
+/* Sits inside the Fed-it form, between the amounts and everything else, and
+   is built like the fieldset above it rather than as a card of its own: it
+   is a readout on those numbers, not another panel on the page. */
+.feed-preview {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+  /* HTMX swaps the inside of this on a delay, so the picture is briefly a
+     frame behind the numbers. Fading it is how that reads as "catching up"
+     rather than as a flicker. */
+  transition: opacity 140ms ease;
+}
+
+.feed-preview .ribbon { margin: 2px 0 0; }
+.feed-preview p { margin: 0; }
+
+#feed-preview.htmx-request .feed-preview { opacity: 0.5; }
+
+/* Green when the peak would land on the feed it is aimed at, amber when it
+   would miss. Never red: a feed that peaks at the wrong hour is a thing to
+   adjust, not a mistake. */
+.preview-verdict { font-weight: 600; }
+.preview-verdict.is-good { color: var(--ok); }
+.preview-verdict.is-off { color: var(--warn); }
