@@ -206,7 +206,6 @@ templates.env.globals["asset_version"] = _asset_version()
 templates.env.globals["unit_label"] = lambda unit: measures.UNIT_LABELS.get(
     unit, measures.UNIT_LABELS[measures.METRIC]
 )
-templates.env.globals["next_unit"] = measures.next_unit
 # What a weight field accepts, said once so every hint agrees.
 templates.env.globals["amount_examples"] = measures.EXAMPLES
 # A total's unit, which is never cups. See measures.measure_total.

@@ -30,25 +30,6 @@
       <a class="navlink" href="/bakes">Bakes</a>
       <a class="navlink" href="/plan">Plan</a>
       <a class="navlink" href="/equipment">Equipment</a>
-
-      {# Recipes come in grams, cups and pounds; read them in whichever. #}
-      {% set here = request.url.path ~ ('?' ~ request.url.query if request.url.query else '') %}
-      <div class="unitswitch">
-        <form method="post" action="/settings/weight-unit">
-          <input type="hidden" name="next" value="{{ here }}">
-          <button class="unitbtn" type="submit"
-                  title="Showing {{ unit_label(weight_unit) }} — tap for {{ unit_label(next_unit(weight_unit)) }}">
-            {{ unit_label(weight_unit) }}
-          </button>
-        </form>
-        <form method="post" action="/settings/temp-unit">
-          <input type="hidden" name="next" value="{{ here }}">
-          <button class="unitbtn" type="submit"
-                  title="Showing °{{ temp_unit }} — tap for °{{ 'C' if temp_unit == 'F' else 'F' }}">
-            °{{ temp_unit }}
-          </button>
-        </form>
-      </div>
     </nav>
   </header>
 

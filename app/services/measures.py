@@ -313,14 +313,6 @@ def measure_total(grams: float | None, unit: str = METRIC) -> Measure | None:
     return in_grams(grams)
 
 
-def next_unit(unit: str) -> str:
-    """What the cycle button switches to."""
-    try:
-        return UNIT_CYCLE[(UNIT_CYCLE.index(unit) + 1) % len(UNIT_CYCLE)]
-    except ValueError:
-        return UNIT_CYCLE[0]
-
-
 # --- Reading what the baker typed ------------------------------------------
 #
 # The other direction. Most of Scott's recipes are written in cups or in

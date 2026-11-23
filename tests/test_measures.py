@@ -127,19 +127,8 @@ class TestTotals:
         assert measures.measure_total(None, measures.METRIC) is None
 
 
-class TestCycling:
-    def test_it_goes_round(self):
-        unit = measures.METRIC
-        seen = [unit]
-        for _ in range(len(measures.UNIT_CYCLE)):
-            unit = measures.next_unit(unit)
-            seen.append(unit)
-
-        assert seen[:-1] == list(measures.UNIT_CYCLE)
-        assert seen[-1] == measures.METRIC
-
-    def test_an_unknown_unit_lands_back_on_grams(self):
-        assert measures.next_unit("furlongs") == measures.METRIC
+class TestTheUnitsOnOffer:
+    """What the settings page lists, and what it calls each one."""
 
     def test_every_unit_has_a_label(self):
         assert set(measures.UNIT_LABELS) == set(measures.UNIT_CYCLE)

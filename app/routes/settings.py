@@ -1,13 +1,13 @@
 """Settings: display units, the feeding rhythm, and when the baker is busy.
 
-The unit switches live in the top bar on every page, so they stay as bare
-POSTs. The rest needs somewhere to be, which is what `/settings` is for.
+Everything here is set on the page itself. The two display units used to be
+chips in the top bar that stepped to the next value on each tap; they are
+picked by name on this page now, so there is one way to set them.
 """
 
 from __future__ import annotations
 
 from typing import Annotated
-from urllib.parse import urlsplit
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -31,20 +31,6 @@ from app.templates_env import render
 router = APIRouter(prefix="/settings")
 
 Ctx = Annotated[ViewContext, Depends(get_view_context)]
-
-
-def _safe_next(value: str | None) -> str:
-    """Only ever redirect back inside this app.
-
-    The target comes from a form field, so an absolute URL in it would be an
-    open redirect. A path is all we ever need.
-    """
-    if not value:
-        return "/"
-    parts = urlsplit(value)
-    if parts.scheme or parts.netloc or not value.startswith("/"):
-        return "/"
-    return value
 
 
 def _see_other(url: str = "/settings") -> RedirectResponse:
@@ -91,23 +77,6 @@ def settings_page(request: Request, ctx: Ctx) -> HTMLResponse:
 # --- Display units ------------------------------------------------------
 
 
-@router.post("/weight-unit")
-def cycle_weight_unit(
-    ctx: Ctx,
-    next: Annotated[str, Form()] = "/",
-    unit: Annotated[str, Form()] = "",
-):
-    """Step to the next unit, or jump straight to a named one."""
-    chosen = (
-        unit
-        if unit in measures.UNIT_CYCLE
-        else measures.next_unit(ctx.weight_unit)
-    )
-    settings_store.set_setting(ctx.session, "weight_unit", chosen)
-    ctx.session.commit()
-    return RedirectResponse(_safe_next(next), status_code=303)
-
-
 #: The two a temperature can be shown in. Held here rather than inferred
 #: from a toggle, because the settings page picks one by name.
 TEMP_UNITS = ("F", "C")
@@ -120,11 +89,11 @@ def save_units(
     weight_unit: Annotated[str, Form()] = "",
     temp_unit: Annotated[str, Form()] = "",
 ):
-    """Both display units at once, named rather than cycled.
+    """Both display units at once, each named rather than stepped to.
 
-    The header's two buttons step through the units a tap at a time, which
-    is right when you are mid-task; the settings page picks them, which is
-    right when you are setting up. Same two settings either way.
+    These are the only two settings that reach every page: a weight is
+    typed and read in whichever unit is chosen here (CLAUDE.md), so one
+    place to pick them, naming what you get.
     """
     errors: list[str] = []
 
@@ -147,15 +116,6 @@ def save_units(
         )
     ctx.session.commit()
     return _see_other()
-
-
-@router.post("/temp-unit")
-def toggle_temp_unit(ctx: Ctx, next: Annotated[str, Form()] = "/"):
-    settings_store.set_setting(
-        ctx.session, "temp_unit", "C" if ctx.temp_unit == "F" else "F"
-    )
-    ctx.session.commit()
-    return RedirectResponse(_safe_next(next), status_code=303)
 
 
 # --- The feeding rhythm -------------------------------------------------

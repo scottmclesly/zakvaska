@@ -6,8 +6,8 @@ on one of them and a button wrapped in a <label> on the other — so it missed
 ones in every other section. It is now one form built like the rest of the
 page, posting to one route.
 
-The header's two buttons are a different thing and stay as they were: they
-step through the units a tap at a time, which is what you want mid-task.
+The two chips that used to sit in the header are gone: they set the same
+two settings a tap at a time, and one way to set them is enough.
 """
 
 from __future__ import annotations
@@ -142,35 +142,29 @@ class TestItSetsTheUnits:
         assert settings_store.weight_unit(session) == measures.METRIC
 
 
-# --- The header is untouched --------------------------------------------
+# --- And the header no longer does ---------------------------------------
 
 
-class TestTheHeaderSwitchStillWorks:
-    def test_the_step_through_buttons_are_still_there(self, client):
-        page = client.get("/settings").text
+class TestTheHeaderHasNoSwitch:
+    """The two chips in the top bar stepped to the next unit on each tap.
 
-        assert "/settings/weight-unit" in page
-        assert "/settings/temp-unit" in page
+    With a named picker on this page they were a second way to set the same
+    two settings, so they are gone and the routes behind them with them.
+    """
 
-    def test_they_still_cycle(self, client, session):
-        client.post("/settings/weight-unit", data={"next": "/"})
-        _release(session)
+    def test_no_page_carries_the_old_chips(self, client):
+        for path in ("/", "/recipes", "/bakes", "/equipment", "/settings"):
+            page = client.get(path).text
+            assert "unitswitch" not in page, path
+            assert "/settings/weight-unit" not in page, path
+            assert "/settings/temp-unit" not in page, path
 
-        assert settings_store.weight_unit(session) != measures.METRIC
+    def test_the_old_routes_are_gone(self, client):
+        for path in ("/settings/weight-unit", "/settings/temp-unit"):
+            assert client.post(path, data={"next": "/"}).status_code == 404
 
-    def test_the_settings_form_and_the_header_set_the_same_thing(
-        self, client, session
-    ):
-        client.post(
-            "/settings/units",
-            data={"weight_unit": measures.US_VOLUME, "temp_unit": "F"},
-        )
-        _release(session)
-        assert settings_store.weight_unit(session) == measures.US_VOLUME
+    def test_the_stylesheet_does_not_still_dress_them(self, client):
+        css = client.get("/static/css/app.css").text
 
-        client.post("/settings/weight-unit", data={"next": "/"})
-        _release(session)
-
-        assert settings_store.weight_unit(session) == measures.next_unit(
-            measures.US_VOLUME
-        )
+        assert ".unitbtn" not in css
+        assert ".unitswitch" not in css

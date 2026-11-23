@@ -856,32 +856,11 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
 
 .footer-link { color: inherit; }
 
-/* --- Unit switch -------------------------------------------------------- */
-
-.unitswitch { display: flex; gap: 6px; margin-left: auto; flex: 0 0 auto; }
-
-/* On a phone the section links already fill the row, so the unit chips
-   take a line of their own rather than being squeezed off the edge. */
+/* The section links used to share this row with two unit chips, which is
+   why it is allowed to wrap. The units are picked on /settings now. */
 @media (max-width: 520px) {
   .sectionnav { gap: 14px 16px; }
-  .unitswitch { flex: 1 0 100%; margin-left: 0; }
 }
-.unitswitch form { display: contents; }
-
-.unitbtn {
-  min-height: 30px;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.unitbtn:hover { color: var(--text); border-color: var(--accent); }
 
 /* An approximate reading gets a quiet mark, so grams stay the source. */
 .approx { border-bottom: 1px dotted var(--muted); cursor: help; }

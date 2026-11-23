@@ -25,10 +25,11 @@ Comparing jars and iterating recipes is the point, so the data must be structure
   `ZAKVASKA_PORT`, `ZAKVASKA_TZ` (default `America/New_York`). The old `JARLOG_*` keys are
   still read as a fallback, and a `jarlog.db` is renamed to `zakvaska.db` on first open.
 - Store timestamps in **UTC**; display in `ZAKVASKA_TZ`.
-- Store weights in **grams**, temperatures in **°C**. Both have a display setting: temperature
-  **default °F**, weight **default grams**, cycling grams → US cups/spoons → oz/lb. Volume
-  readings use the per-ingredient densities in `app/services/measures.py` and are approximate
-  by nature; never store or round-trip through them.
+- Store weights in **grams**, temperatures in **°C**. Both have a display setting, picked by
+  name on `/settings` (`POST /settings/units`): temperature **default °F**, weight **default
+  grams**, the others US cups/spoons and oz/lb. Volume readings use the per-ingredient
+  densities in `app/services/measures.py` and are approximate by nature; never store or
+  round-trip through them.
 - The display unit is also the **entry** unit: every weight field goes through
   `measures.parse_quantity` (`forms.req_weight` / `opt_weight`), so a bare number is read in
   the unit on display and a written-out unit ("250 g", "1 lb 2 oz", "1 ½ cups") wins over it.

@@ -1,4 +1,4 @@
-"""The unit switch, and the pages reading in whichever unit is chosen."""
+"""Choosing the display units, and the pages reading in whichever is chosen."""
 
 from __future__ import annotations
 
@@ -43,105 +43,44 @@ def seed_recipe(session):
     return recipe
 
 
-class TestTheSwitch:
+class TestChoosingTheUnit:
     def test_grams_to_start_with(self, client, session):
         assert settings_store.weight_unit(session) == measures.METRIC
-        assert "grams" in client.get("/").text
 
-    def test_it_appears_on_every_page(self, client, session):
-        seed_recipe(session)
-        for path in ("/", "/recipes", "/bakes", "/equipment", "/backup"):
-            assert "/settings/weight-unit" in client.get(path).text, path
-
-    def test_cycling_steps_through_all_three(self, client, session):
-        seen = []
-        for _ in range(4):
-            client.post("/settings/weight-unit", data={"next": "/"})
+    def test_every_unit_can_be_chosen(self, client, session):
+        for unit in measures.UNIT_CYCLE:
+            client.post("/settings/units", data={"weight_unit": unit})
             session.expire_all()
-            seen.append(settings_store.weight_unit(session))
+            assert settings_store.weight_unit(session) == unit
 
-        assert seen == [
-            measures.US_VOLUME, measures.US_WEIGHT, measures.METRIC,
-            measures.US_VOLUME,
-        ]
-
-    def test_it_comes_back_to_the_page_you_were_on(self, client, session):
-        seed_recipe(session)
-
+    def test_a_nonsense_unit_is_refused(self, client, session):
         response = client.post(
-            "/settings/weight-unit",
-            data={"next": "/recipes/1/v/1?flour=500"},
-            follow_redirects=False,
+            "/settings/units", data={"weight_unit": "furlongs"}
         )
 
-        assert response.status_code == 303
-        assert response.headers["location"] == "/recipes/1/v/1?flour=500"
-
-    def test_a_unit_can_be_asked_for_directly(self, client, session):
-        client.post(
-            "/settings/weight-unit",
-            data={"next": "/", "unit": measures.US_WEIGHT},
-        )
+        assert response.status_code == 400
         session.expire_all()
-
-        assert settings_store.weight_unit(session) == measures.US_WEIGHT
-
-    def test_a_nonsense_unit_just_cycles(self, client, session):
-        client.post("/settings/weight-unit", data={"next": "/", "unit": "furlongs"})
-        session.expire_all()
-
-        assert settings_store.weight_unit(session) == measures.US_VOLUME
+        assert settings_store.weight_unit(session) == measures.METRIC
 
     def test_the_setting_survives_the_next_request(self, client, session):
-        client.post("/settings/weight-unit", data={"next": "/", "unit": "us_weight"})
+        switch_to(client, "us_weight")
 
-        assert "oz / lb" in client.get("/").text
+        assert "oz" in client.get("/settings").text
 
-    def test_the_temperature_switch_toggles(self, client, session):
-        client.post("/settings/temp-unit", data={"next": "/"})
+    def test_the_temperature_can_be_chosen_too(self, client, session):
+        client.post("/settings/units", data={"temp_unit": "C"})
         session.expire_all()
         assert settings_store.temp_unit(session) == "C"
 
-        client.post("/settings/temp-unit", data={"next": "/"})
+        client.post("/settings/units", data={"temp_unit": "F"})
         session.expire_all()
         assert settings_store.temp_unit(session) == "F"
-
-
-class TestItOnlyRedirectsInsideTheApp:
-    """`next` comes from a form field, so it is not to be trusted."""
-
-    def test_an_absolute_url_is_refused(self, client):
-        response = client.post(
-            "/settings/weight-unit",
-            data={"next": "https://example.com/phish"},
-            follow_redirects=False,
-        )
-
-        assert response.headers["location"] == "/"
-
-    def test_a_protocol_relative_url_is_refused(self, client):
-        response = client.post(
-            "/settings/weight-unit",
-            data={"next": "//example.com/phish"},
-            follow_redirects=False,
-        )
-
-        assert response.headers["location"] == "/"
-
-    def test_a_bare_path_is_fine(self, client):
-        response = client.post(
-            "/settings/weight-unit",
-            data={"next": "/bakes"},
-            follow_redirects=False,
-        )
-
-        assert response.headers["location"] == "/bakes"
 
 
 class TestThePagesFollow:
     def test_a_feeding_reads_in_cups(self, client, session):
         jar = seed_jar_with_a_feeding(session)
-        client.post("/settings/weight-unit", data={"next": "/", "unit": "us_volume"})
+        switch_to(client, "us_volume")
 
         body = client.get(f"/jars/{jar.id}").text
 
@@ -153,7 +92,7 @@ class TestThePagesFollow:
 
     def test_a_feeding_reads_in_ounces(self, client, session):
         jar = seed_jar_with_a_feeding(session)
-        client.post("/settings/weight-unit", data={"next": "/", "unit": "us_weight"})
+        switch_to(client, "us_weight")
 
         body = client.get(f"/jars/{jar.id}").text
 
@@ -162,7 +101,7 @@ class TestThePagesFollow:
 
     def test_a_scaled_recipe_reads_in_cups(self, client, session):
         recipe = seed_recipe(session)
-        client.post("/settings/weight-unit", data={"next": "/", "unit": "us_volume"})
+        switch_to(client, "us_volume")
 
         # The unit is written out, because a bare total is read as ounces
         # once the switch has left grams — see test_a_total_is_a_weight.
@@ -175,7 +114,7 @@ class TestThePagesFollow:
 
     def test_a_total_stays_a_weight_even_in_cups(self, client, session):
         recipe = seed_recipe(session)
-        client.post("/settings/weight-unit", data={"next": "/", "unit": "us_volume"})
+        switch_to(client, "us_volume")
 
         body = client.get(
             f"/recipes/{recipe.id}/v/1", params={"flour": "500 g"}
@@ -216,7 +155,7 @@ def last_feeding(session) -> Feeding:
 
 
 def switch_to(client, unit: str) -> None:
-    client.post("/settings/weight-unit", data={"next": "/", "unit": unit})
+    client.post("/settings/units", data={"weight_unit": unit})
 
 
 def recipe_form(amounts: list[str], percents: list[str] | None = None) -> dict:

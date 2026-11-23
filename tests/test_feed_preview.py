@@ -423,14 +423,14 @@ class TestOnThePage:
     def test_the_panel_reads_amounts_the_way_the_form_does(
         self, client, session
     ):
-        """Through parse_quantity, so a written-out unit beats the switch."""
+        """Through parse_quantity, so a written-out unit beats the setting."""
         jar = _jar(session, feeds_per_day=2)
         _feed(session, jar, at=NOON - timedelta(hours=4))
         jar_id = jar.id
         _release(session)
 
         # Off grams, so a bare number would be read as something else.
-        client.post("/settings/weight-unit", data={"next": "/"})
+        client.post("/settings/units", data={"weight_unit": "us_volume"})
 
         page = client.get(
             f"/jars/{jar_id}/feed/preview",
