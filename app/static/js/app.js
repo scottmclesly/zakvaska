@@ -183,6 +183,13 @@ document.addEventListener("click", (event) => {
   row.querySelectorAll("[data-loaf]").forEach((other) => {
     other.classList.toggle("is-chosen", other === button);
   });
+
+  // Say what happened, now that the fields hold the new numbers. The
+  // planner listens for this and redraws the plan; the bake form has
+  // nothing listening, and nothing goes wrong there.
+  document.body.dispatchEvent(
+    new CustomEvent("loaf-chosen", { bubbles: true })
+  );
 });
 
 

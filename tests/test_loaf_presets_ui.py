@@ -8,8 +8,9 @@ the flour it needs.
 Both forms draw the row from `partials/loaf_presets.html`, and each tells it
 which fields a chip fills — the bake form records the machine setting as the
 text the machine prints, the planner times the program from a number in
-pounds. These check that the row only appears when it has an answer, and
-that it is pointed at the right fields on each page.
+pounds. These check that the row only appears when it has an answer, that
+it is pointed at the right fields on each page, and that on the planner it
+arrives and acts without a trip through "Work it out".
 """
 
 from __future__ import annotations
@@ -204,3 +205,90 @@ class TestItFollowsTheUnitOnDisplay:
         )
 
         assert before == after
+
+
+# --- Live on the planner --------------------------------------------------
+
+
+class TestItArrivesWhenTheRecipeDoes:
+    """The chips come from the recipe, so picking one should bring them.
+
+    Before this they only appeared after submitting the form, which is the
+    one moment you do not have: you are looking for the flour to put in it.
+    """
+
+    def test_the_box_is_there_before_the_chips_are(self, client, session):
+        """HTMX needs something to swap, even with no recipe chosen."""
+        _recipe(session)
+
+        page = client.get("/plan").text
+
+        assert 'id="loaf-row"' in page
+        assert _row(page) == ""
+
+    def test_the_recipe_select_fetches_the_row(self, client, session):
+        _recipe(session)
+        page = client.get("/plan").text
+        select = page[page.index('<select name="version"'):]
+        select = select[: select.index(">")]
+
+        assert 'hx-get="/plan/tin"' in select
+        assert 'hx-target="#loaf-row"' in select
+        assert 'hx-swap="outerHTML"' in select
+        assert 'hx-trigger="change"' in select
+
+    def test_the_row_on_its_own_carries_its_own_box(self, client, session):
+        """It is swapped by outerHTML, so it has to replace like for like."""
+        recipe = _recipe(session)
+
+        part = client.get(f"/plan/tin?version={recipe.latest_version.id}").text
+
+        assert part.strip().startswith('<div id="loaf-row">')
+        assert _chips(_row(part)) == ["2 lb", "2.5 lb", "3 lb"]
+
+    def test_the_row_on_its_own_is_empty_without_a_recipe(self, client):
+        part = client.get("/plan/tin").text
+
+        assert 'id="loaf-row"' in part
+        assert _row(part) == ""
+
+    def test_the_swapped_row_matches_the_one_on_the_page(self, client, session):
+        """Same partial either way, so picking a recipe cannot change them."""
+        recipe = _recipe(session)
+        version_id = recipe.latest_version.id
+
+        whole = _row(client.get(f"/plan?version={version_id}").text)
+        swapped = _row(client.get(f"/plan/tin?version={version_id}").text)
+
+        assert _chips(whole) == _chips(swapped)
+        assert 'data-flour-field="flour"' in swapped
+        assert 'data-pounds-field="loaf"' in swapped
+
+
+class TestClickingAChipRedrawsThePlan:
+    def test_the_plan_listens_for_a_chosen_loaf(self, client, session):
+        _recipe(session)
+        page = client.get("/plan").text
+        form = page[page.index('hx-get="/plan/steps"'):]
+        form = form[: form.index(">")]
+
+        assert "loaf-chosen from:body" in form
+
+    def test_and_the_script_says_so_after_filling_the_fields(self, client):
+        """In that order: the swap sends the form, so it must be filled."""
+        script = client.get("/static/js/app.js").text
+        handler = script[script.index("[data-loaf]"):]
+
+        assert "loaf-chosen" in handler
+        assert handler.index("field.value = value") < handler.index("loaf-chosen")
+
+    def test_the_bake_form_has_nothing_listening_and_does_not_mind(
+        self, client, session
+    ):
+        """The same chips are on both forms; only one redraws anything."""
+        recipe = _recipe(session)
+
+        page = client.get(_bake_form(recipe)).text
+
+        assert _chips(_row(page)) == ["2 lb", "2.5 lb", "3 lb"]
+        assert "loaf-chosen" not in page

@@ -186,6 +186,15 @@ def _int(params, name: str) -> int | None:
         return None
 
 
+def _loaf_presets(version: RecipeVersion | None) -> list:
+    """What flour each machine loaf size needs, for this recipe.
+
+    Worked back through the percentages, so there is no answer — and no
+    row — until a recipe is chosen.
+    """
+    return scaling.loaf_presets(version.ingredients) if version else []
+
+
 def _context(request: Request, ctx: ViewContext) -> dict:
     params = request.query_params
     version = _version(ctx, _int(params, "version"))
@@ -271,12 +280,7 @@ def _context(request: Request, ctx: ViewContext) -> dict:
         ),
         "program": program,
         "versions": recipe_service.plannable_versions(ctx.session),
-        # What flour each machine loaf size needs, worked back through this
-        # recipe's percentages. Empty until a recipe is picked, which is
-        # also when the question first has an answer.
-        "loaf_presets": (
-            scaling.loaf_presets(version.ingredients) if version else []
-        ),
+        "loaf_presets": _loaf_presets(version),
         "jars": jar_service.list_jars(ctx.session),
         "programs": recipe_service.list_programs(ctx.session),
         "mode": "ready" if inputs.is_backward else "start",
@@ -317,6 +321,21 @@ def plan_steps(request: Request, ctx: Ctx) -> HTMLResponse:
     return render(
         request=request, ctx=ctx, name="plan/result.html",
         context=_context(request, ctx),
+    )
+
+
+@router.get("/tin", response_class=HTMLResponse)
+def plan_tin(request: Request, ctx: Ctx) -> HTMLResponse:
+    """Just the loaf-size chips, for when the recipe changes.
+
+    They are worked out from the recipe's percentages, so they do not
+    exist until one is chosen — and that is the moment this swaps them in,
+    rather than making you submit the form before they appear.
+    """
+    version = _version(ctx, _int(request.query_params, "version"))
+    return render(
+        request=request, ctx=ctx, name="plan/tin.html",
+        context={"loaf_presets": _loaf_presets(version)},
     )
 
 

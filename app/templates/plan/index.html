@@ -25,7 +25,9 @@
   <div class="field-row">
     <label>
       <span>Recipe</span>
-      <select name="version">
+      <select name="version"
+              hx-get="/plan/tin" hx-target="#loaf-row" hx-swap="outerHTML"
+              hx-trigger="change">
         <option value="">— pick one —</option>
         {% for one in versions %}
         <option value="{{ one.id }}"
@@ -61,9 +63,7 @@
   {#- You rarely know the flour at this point; you know which tin you are
       filling. A chip fills both the flour and the loaf size below, which
       is what times the machine's program. -#}
-  {% with flour_field = "flour", pounds_field = "loaf" %}
-    {% include "partials/loaf_presets.html" %}
-  {% endwith %}
+  {% include "plan/tin.html" %}
 
   <div class="field-row">
     <label>
@@ -181,7 +181,7 @@
 <section class="card scrubber">
   <form hx-get="/plan/steps" hx-target="#plan-result" hx-swap="outerHTML"
         hx-include="#plan-form"
-        hx-trigger="input changed delay:200ms">
+        hx-trigger="input changed delay:200ms, loaf-chosen from:body">
     <label>
       <span>
         Move the {{ "finish" if mode == 'ready' else "start" }}

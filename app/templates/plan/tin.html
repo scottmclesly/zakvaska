@@ -1,0 +1,10 @@
+{# The loaf-size chips, in a box HTMX can swap on its own.
+
+   They are worked back through the chosen recipe's percentages, so they
+   do not exist until there is a recipe — and the box is still here when
+   they don't, because it is what the recipe select swaps. #}
+<div id="loaf-row">
+  {% with flour_field = "flour", pounds_field = "loaf" %}
+    {% include "partials/loaf_presets.html" %}
+  {% endwith %}
+</div>
