@@ -75,7 +75,7 @@
       {{ bake.at | local_day }} ·
       {{ bake.method.label }}
       {%- if bake.jar %} · <a href="/jars/{{ bake.jar.id }}">{{ bake.jar.name }}</a>{% endif -%}
-      {%- if bake.total_flour_g %} · {{ bake.total_flour_g | weigh_total(weight_unit) }} flour{% endif -%}
+      {%- if bake.total_flour_g %} · {{ bake.total_flour_g | weigh_total(weight_unit, flour=true) }} flour{% endif -%}
     </p>
     {% if bake.result %}
     <p class="bake-verdict">

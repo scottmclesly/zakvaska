@@ -23,14 +23,14 @@
       display as well as the grams behind it. -#}
   <button type="button" class="chip chip-action" data-loaf
           data-flour="{{ preset.flour_g | round(1) }}"
-          data-flour-text="{{ preset.flour_g | weigh_total_input(weight_unit) }}"
+          data-flour-text="{{ preset.flour_g | weigh_total_input(weight_unit, flour=true) }}"
           data-size="{{ preset.label }}"
           {#- "%g" so the number field lands on 2.5 and 3, not 3.0: this
               value rides in the planner's query string, which is the link
               a plan is kept as. -#}
           data-pounds="{{ "%g" % preset.pounds }}">
     <strong>{{ preset.label }}</strong>
-    <span class="muted small">{{ preset.flour_g | weigh_total(weight_unit) }} flour</span>
+    <span class="muted small">{{ preset.flour_g | weigh_total(weight_unit, flour=true) }} flour</span>
   </button>
   {% endfor %}
 </div>

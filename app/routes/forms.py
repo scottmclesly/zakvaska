@@ -74,11 +74,15 @@ def req_weight(
 
 
 def opt_total_weight(
-    value: str | None, unit: str = measures.METRIC, *, field: str
+    value: str | None,
+    unit: str = measures.METRIC,
+    *,
+    field: str,
+    flour: bool = False,
 ) -> float | None:
-    """A total flour or dough weight — never read as cups. See parse_total."""
+    """A total flour or dough weight, read as its label says. parse_total."""
     try:
-        return measures.parse_total(value, unit)
+        return measures.parse_total(value, unit, flour=flour)
     except ValueError as exc:
         raise ValueError(f"{field}: {exc}") from None
 

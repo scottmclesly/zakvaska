@@ -103,11 +103,13 @@ def weigh(
     return shown.text if shown else "\u2014"
 
 
-def weigh_total(value: float | None, unit: str = measures.METRIC) -> str:
-    """A total, which never makes sense in cups. See measures.measure_total."""
+def weigh_total(
+    value: float | None, unit: str = measures.METRIC, flour: bool = False
+) -> str:
+    """A total. Flour reads in cups, dough never does. See measure_total."""
     if value is None:
         return "\u2014"
-    shown = measures.measure_total(value, unit)
+    shown = measures.measure_total(value, unit, flour=flour)
     return shown.text if shown else "\u2014"
 
 
@@ -130,13 +132,15 @@ def weigh_input(
     return measures.input_text(value, unit, name=name, role=role)
 
 
-def weigh_total_input(value: object = None, unit: str = measures.METRIC) -> str:
-    """The editable form of a total — grams, or ounces and pounds."""
+def weigh_total_input(
+    value: object = None, unit: str = measures.METRIC, flour: bool = False
+) -> str:
+    """The editable form of a total, in the unit its label claims."""
     if value is None:
         return ""
     if isinstance(value, str):
         return value
-    return measures.input_total_text(float(value), unit)
+    return measures.input_total_text(float(value), unit, flour=flour)
 
 
 def filesize(value: int | None) -> str:
@@ -208,12 +212,8 @@ templates.env.globals["unit_label"] = lambda unit: measures.UNIT_LABELS.get(
 )
 # What a weight field accepts, said once so every hint agrees.
 templates.env.globals["amount_examples"] = measures.EXAMPLES
-# A total's unit, which is never cups. See measures.measure_total.
-templates.env.globals["total_unit_label"] = lambda unit: (
-    measures.UNIT_LABELS[measures.METRIC]
-    if unit == measures.METRIC
-    else measures.UNIT_LABELS[measures.US_WEIGHT]
-)
+# A total's unit: cups for flour, never for dough. See measure_total.
+templates.env.globals["total_unit_label"] = measures.total_unit_label
 # The pages that draw these walk the cycles and stages themselves, so they
 # ask for the bar rather than having one threaded through every route.
 # The nudge buttons beside a planned feed name themselves.

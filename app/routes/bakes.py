@@ -136,7 +136,9 @@ def _start_context(ctx: ViewContext, version, *, values=None, errors=None) -> di
         "values": values
         if values is not None
         else _defaults_for(version, ctx.weight_unit),
-        "total_placeholder": measures.input_total_placeholder(ctx.weight_unit),
+        "flour_placeholder": measures.input_total_placeholder(
+            ctx.weight_unit, flour=True
+        ),
         "errors": errors or [],
         "now_local": f.utc_to_local_input(ctx.now, ctx.tz),
     }
@@ -190,7 +192,7 @@ def create_bake(
 
     try:
         flour = f.opt_total_weight(
-            total_flour_g, ctx.weight_unit, field="Total flour"
+            total_flour_g, ctx.weight_unit, field="Total flour", flour=True
         )
     except ValueError as exc:
         errors.append(str(exc))

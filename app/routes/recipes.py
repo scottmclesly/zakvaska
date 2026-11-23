@@ -311,7 +311,9 @@ def version_detail(
         if asked_flour:
             scaled = scaling.scale_to_flour(
                 found.ingredients,
-                f.opt_total_weight(flour, ctx.weight_unit, field="Total flour"),
+                f.opt_total_weight(
+                    flour, ctx.weight_unit, field="Total flour", flour=True
+                ),
             )
         elif asked_dough:
             scaled = scaling.scale_to_dough_weight(
@@ -343,12 +345,17 @@ def version_detail(
             # was written at, in the unit on display.
             "flour_input": asked_flour
             or (
-                measures.input_total_text(found.batch_flour_g, ctx.weight_unit)
+                measures.input_total_text(
+                    found.batch_flour_g, ctx.weight_unit, flour=True
+                )
                 if from_batch
                 else ""
             ),
             "dough_input": asked_dough or "",
             "total_placeholder": measures.input_total_placeholder(ctx.weight_unit),
+            "flour_placeholder": measures.input_total_placeholder(
+                ctx.weight_unit, flour=True
+            ),
             # Bakes from this exact version, newest first.
             "bakes": [b for b in found.bakes if not b.archived],
         },

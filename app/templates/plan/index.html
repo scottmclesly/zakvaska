@@ -54,7 +54,7 @@
       </select>
     </label>
     <label>
-      <span>Total flour <em>{{ total_unit_label(weight_unit) }}</em></span>
+      <span>Total flour <em>{{ total_unit_label(weight_unit, flour=true) }}</em></span>
       {% with flour_g = inputs.total_flour_g %}
         {% include "plan/flour_field.html" %}
       {% endwith %}

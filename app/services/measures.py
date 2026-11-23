@@ -300,14 +300,30 @@ def measure(
     return in_grams(grams)
 
 
-def measure_total(grams: float | None, unit: str = METRIC) -> Measure | None:
-    """A total dough or flour weight, which has no sensible volume.
+def _total_is_flour(unit: str, flour: bool) -> bool:
+    """Whether a total reads in cups: only a flour one, only in cups mode.
 
-    Cups of mixed dough would be a made-up number, so volume mode falls back
-    to ounces and pounds — still the unit the reader asked for.
+    A total *flour* weight is flour, so it has a density and a cup of it
+    means something — the generic flour one, since a blend's exact density
+    is nobody's measurement. A total *dough* weight is a mixture whose
+    density nobody measures at all, so it stays a weight.
+    """
+    return flour and unit == US_VOLUME
+
+
+def measure_total(
+    grams: float | None, unit: str = METRIC, *, flour: bool = False
+) -> Measure | None:
+    """A total dough or flour weight, as the baker is reading amounts.
+
+    Cups of mixed dough would be a made-up number, so a dough total falls
+    back to ounces and pounds in volume mode — still the unit the reader
+    asked for. A flour total reads in cups. See `_total_is_flour`.
     """
     if grams is None:
         return None
+    if _total_is_flour(unit, flour):
+        return in_us_volume(grams, role=IngredientRole.FLOUR)
     if unit in (US_VOLUME, US_WEIGHT):
         return in_us_weight(grams)
     return in_grams(grams)
@@ -583,12 +599,18 @@ def parse_quantity(
     return grams
 
 
-def parse_total(text: str | None, unit: str = METRIC) -> float | None:
-    """A total flour or dough weight, which is never read as cups.
+def parse_total(
+    text: str | None, unit: str = METRIC, *, flour: bool = False
+) -> float | None:
+    """A total flour or dough weight, read the way it is shown.
 
-    See measure_total: cups of mixed dough would be a made-up number, so in
-    either US mode a bare number here is ounces. Writing the unit still wins.
+    See measure_total: a bare number in a dough total is ounces in either
+    US mode, because cups of dough would be a made-up number; a bare number
+    in a flour total is cups while cups are on display. Writing the unit
+    out still wins over both.
     """
+    if _total_is_flour(unit, flour):
+        return parse_quantity(text, US_VOLUME, role=IngredientRole.FLOUR)
     mode = US_WEIGHT if unit in (US_VOLUME, US_WEIGHT) else METRIC
     return parse_quantity(text, mode)
 
@@ -639,8 +661,12 @@ def input_text(
     return _trim(grams, 1)
 
 
-def input_total_text(grams: float | None, unit: str = METRIC) -> str:
-    """The editable form of a total — grams, or ounces and pounds."""
+def input_total_text(
+    grams: float | None, unit: str = METRIC, *, flour: bool = False
+) -> str:
+    """The editable form of a total, in the unit its label claims."""
+    if _total_is_flour(unit, flour):
+        return input_text(grams, US_VOLUME, role=IngredientRole.FLOUR)
     mode = US_WEIGHT if unit in (US_VOLUME, US_WEIGHT) else METRIC
     return input_text(grams, mode)
 
@@ -652,7 +678,18 @@ def input_placeholder(unit: str = METRIC) -> str:
     )
 
 
-def input_total_placeholder(unit: str = METRIC) -> str:
-    """The same for a total, which is a weight in either US mode."""
+def input_total_placeholder(unit: str = METRIC, *, flour: bool = False) -> str:
+    """The same for a total: a weight, unless it is flour read in cups."""
+    if _total_is_flour(unit, flour):
+        return input_placeholder(US_VOLUME)
     mode = US_WEIGHT if unit in (US_VOLUME, US_WEIGHT) else METRIC
     return input_placeholder(mode)
+
+
+def total_unit_label(unit: str = METRIC, *, flour: bool = False) -> str:
+    """What to print above a total, so the field says how it is read."""
+    if _total_is_flour(unit, flour):
+        return UNIT_LABELS[US_VOLUME]
+    if unit == METRIC:
+        return UNIT_LABELS[METRIC]
+    return UNIT_LABELS[US_WEIGHT]

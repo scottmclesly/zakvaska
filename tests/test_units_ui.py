@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 from sqlalchemy import select
 
@@ -41,6 +43,13 @@ def seed_recipe(session):
     )
     session.commit()
     return recipe
+
+def _footer_row(body: str, heading: str) -> str:
+    """The scaled total beside its name, in the table's foot."""
+    start = body.index(f'<th scope="row">{heading}</th>')
+    return re.sub(
+        r"\s+", " ", re.sub("<[^>]+>", " ", body[start : body.index("</tr>", start)])
+    ).strip()
 
 
 class TestChoosingTheUnit:
@@ -112,7 +121,8 @@ class TestThePagesFollow:
         assert "4 ⅞ cups" in body  # 500 g rye flour
         assert "Cups" in body  # the column header follows too
 
-    def test_a_total_stays_a_weight_even_in_cups(self, client, session):
+    def test_a_dough_total_stays_a_weight_even_in_cups(self, client, session):
+        """A mixture has no density anyone measures. See measure_total."""
         recipe = seed_recipe(session)
         switch_to(client, "us_volume")
 
@@ -122,6 +132,59 @@ class TestThePagesFollow:
 
         # Total dough is 910 g, which is pounds, never cups.
         assert "2 lb" in body
+
+    def test_a_flour_total_does_read_in_cups(self, client, session):
+        """Flour is flour: 500 g of it at 120 g to the cup."""
+        recipe = seed_recipe(session)
+        switch_to(client, "us_volume")
+
+        body = client.get(
+            f"/recipes/{recipe.id}/v/1", params={"flour": "500 g"}
+        ).text
+
+        assert _footer_row(body, "Flour") == "Flour 100.0% 4 ⅛ cups"
+        assert _footer_row(body, "Total dough") == "Total dough 182.0% 2 lb 0.1 oz"
+
+    def test_the_flour_box_says_cups_over_it(self, client, session):
+        """The label has to agree with how a bare number will be read."""
+        recipe = seed_recipe(session)
+        switch_to(client, "us_volume")
+
+        body = client.get(f"/recipes/{recipe.id}/v/1").text
+        flour_label = body[: body.index('name="flour"')]
+        flour_label = flour_label[flour_label.rindex("Total flour") :]
+        dough_label = body[: body.index('name="dough"')]
+        dough_label = dough_label[dough_label.rindex("dough weight") :]
+
+        assert measures.UNIT_LABELS[measures.US_VOLUME] in flour_label
+        assert measures.UNIT_LABELS[measures.US_WEIGHT] in dough_label
+
+    def test_a_flour_total_typed_as_a_bare_number_is_cups(
+        self, client, session
+    ):
+        """4 of them at 120 g to the cup — 480 g, not 4 ounces."""
+        recipe = seed_recipe(session)
+        switch_to(client, "us_volume")
+
+        body = client.get(
+            f"/recipes/{recipe.id}/v/1", params={"flour": "4"}
+        ).text
+
+        assert _footer_row(body, "Flour") == "Flour 100.0% 4 cups"
+        # 4 oz would have come to 113 g, and a 206 g dough.
+        assert _footer_row(body, "Total dough") == "Total dough 182.0% 1 lb 14.8 oz"
+
+    def test_writing_the_unit_still_wins_in_a_flour_total(
+        self, client, session
+    ):
+        recipe = seed_recipe(session)
+        switch_to(client, "us_volume")
+
+        body = client.get(
+            f"/recipes/{recipe.id}/v/1", params={"flour": "500 g"}
+        ).text
+
+        assert _footer_row(body, "Flour") == "Flour 100.0% 4 ⅛ cups"
 
     def test_grams_are_what_you_get_without_touching_anything(
         self, client, session

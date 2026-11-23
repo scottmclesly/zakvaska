@@ -93,7 +93,10 @@ def _read_inputs(
     if params.get("flour") not in (None, ""):
         try:
             total_flour = f.opt_total_weight(
-                params.get("flour"), ctx.weight_unit, field="Total flour"
+                params.get("flour"),
+                ctx.weight_unit,
+                field="Total flour",
+                flour=True,
             )
         except ValueError as exc:
             notes.append(str(exc))

@@ -50,10 +50,10 @@
         </select>
       </label>
       <label>
-        <span>Total flour <em>{{ total_unit_label(weight_unit) }}</em></span>
+        <span>Total flour <em>{{ total_unit_label(weight_unit, flour=true) }}</em></span>
         <input name="total_flour_g" type="text" autocomplete="off"
                spellcheck="false" value="{{ values.get('total_flour_g') }}"
-               placeholder="{{ total_placeholder }}">
+               placeholder="{{ flour_placeholder }}">
       </label>
     </div>
 

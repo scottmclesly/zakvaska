@@ -114,17 +114,71 @@ class TestUsVolume:
 
 
 class TestTotals:
-    def test_a_total_never_goes_to_cups(self):
-        """Cups of mixed dough would be a made-up number."""
+    """A flour total is flour and has a density; a dough total has none.
+
+    So in cups mode the flour box reads in cups and the dough box stays a
+    weight — a mixture's density is nobody's measurement.
+    """
+
+    def test_a_dough_total_never_goes_to_cups(self):
         assert measures.measure_total(
             1115, measures.US_VOLUME
         ).text == measures.measure_total(1115, measures.US_WEIGHT).text
 
+    def test_a_flour_total_does(self):
+        shown = measures.measure_total(600, measures.US_VOLUME, flour=True)
+
+        assert "cup" in shown.text
+        assert shown.text == measures.in_us_volume(
+            600, role=IngredientRole.FLOUR
+        ).text
+
+    def test_a_flour_total_uses_the_generic_flour_density(self):
+        """120 g to the cup, so 600 g is five of them."""
+        assert measures.measure_total(
+            600, measures.US_VOLUME, flour=True
+        ).text.startswith("5 cup")
+
+    def test_a_flour_total_in_ounces_mode_is_still_ounces(self):
+        """Only cups mode asks for cups. See _total_is_flour."""
+        assert measures.measure_total(
+            600, measures.US_WEIGHT, flour=True
+        ).text == measures.measure_total(600, measures.US_WEIGHT).text
+
     def test_a_total_in_grams_is_still_grams(self):
         assert measures.measure_total(1115, measures.METRIC).text == "1115 g"
+        assert (
+            measures.measure_total(1115, measures.METRIC, flour=True).text
+            == "1115 g"
+        )
 
     def test_none(self):
         assert measures.measure_total(None, measures.METRIC) is None
+        assert measures.measure_total(None, measures.US_VOLUME, flour=True) is None
+
+
+class TestWhatATotalSaysItIs:
+    """The label over the box, which has to match how the box is read."""
+
+    def test_grams(self):
+        assert measures.total_unit_label(measures.METRIC) == "grams"
+        assert measures.total_unit_label(measures.METRIC, flour=True) == "grams"
+
+    def test_a_dough_total_in_cups_mode_says_weight(self):
+        assert measures.total_unit_label(
+            measures.US_VOLUME
+        ) == measures.UNIT_LABELS[measures.US_WEIGHT]
+
+    def test_a_flour_total_in_cups_mode_says_cups(self):
+        assert measures.total_unit_label(
+            measures.US_VOLUME, flour=True
+        ) == measures.UNIT_LABELS[measures.US_VOLUME]
+
+    def test_in_ounces_mode_both_say_weight(self):
+        for flour in (True, False):
+            assert measures.total_unit_label(
+                measures.US_WEIGHT, flour=flour
+            ) == measures.UNIT_LABELS[measures.US_WEIGHT]
 
 
 class TestTheUnitsOnOffer:
@@ -209,7 +263,7 @@ class TestParsingWhatWasTyped:
             354.0
         )
 
-    def test_a_total_is_never_read_as_cups(self):
+    def test_a_dough_total_is_never_read_as_cups(self):
         """Cups of mixed dough would be a made-up number. See parse_total."""
         assert measures.parse_total("8", measures.US_VOLUME) == pytest.approx(
             226.796, abs=0.01
@@ -217,6 +271,33 @@ class TestParsingWhatWasTyped:
         assert measures.parse_total("500", measures.METRIC) == 500.0
         # Writing the unit still wins.
         assert measures.parse_total("500 g", measures.US_WEIGHT) == 500.0
+
+    def test_a_flour_total_is(self):
+        """A bare number goes in as the cups the label says it is."""
+        assert measures.parse_total(
+            "4", measures.US_VOLUME, flour=True
+        ) == pytest.approx(480.0)
+
+    def test_a_flour_total_still_takes_a_written_unit(self):
+        assert (
+            measures.parse_total("500 g", measures.US_VOLUME, flour=True) == 500.0
+        )
+        assert measures.parse_total(
+            "1 lb", measures.US_VOLUME, flour=True
+        ) == pytest.approx(453.592, abs=0.01)
+
+    def test_a_flour_total_in_grams_mode_is_still_grams(self):
+        assert measures.parse_total("500", measures.METRIC, flour=True) == 500.0
+
+    def test_a_flour_total_goes_back_in_as_it_came_out(self):
+        """What the field shows has to be typeable back without drift."""
+        for grams in (240.0, 480.0, 600.0):
+            shown = measures.input_total_text(
+                grams, measures.US_VOLUME, flour=True
+            )
+            assert measures.parse_total(
+                shown, measures.US_VOLUME, flour=True
+            ) == pytest.approx(grams, rel=0.02)
 
 
 class TestFillingAFieldIn:

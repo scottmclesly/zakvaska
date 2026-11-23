@@ -55,7 +55,7 @@
     {% if bake.total_flour_g %}
     <div>
       <dt>Flour</dt>
-      <dd>{{ bake.total_flour_g | weigh_total(weight_unit) }}</dd>
+      <dd>{{ bake.total_flour_g | weigh_total(weight_unit, flour=true) }}</dd>
     </div>
     {% endif %}
     {% if bake.oven_temp_c is not none %}
