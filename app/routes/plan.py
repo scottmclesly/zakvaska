@@ -32,6 +32,7 @@ from app.services import jars as jar_service
 from app.services import plan as plan_service
 from app.services import recipes as recipe_service
 from app.services import ribbon as ribbon_service
+from app.services import scaling
 from app.services import settings_store
 from app.services.bakeplan import PlanInputs
 from app.services.units import temp_in, temp_to_celsius
@@ -270,6 +271,12 @@ def _context(request: Request, ctx: ViewContext) -> dict:
         ),
         "program": program,
         "versions": recipe_service.plannable_versions(ctx.session),
+        # What flour each machine loaf size needs, worked back through this
+        # recipe's percentages. Empty until a recipe is picked, which is
+        # also when the question first has an answer.
+        "loaf_presets": (
+            scaling.loaf_presets(version.ingredients) if version else []
+        ),
         "jars": jar_service.list_jars(ctx.session),
         "programs": recipe_service.list_programs(ctx.session),
         "mode": "ready" if inputs.is_backward else "start",

@@ -58,6 +58,13 @@
     </label>
   </div>
 
+  {#- You rarely know the flour at this point; you know which tin you are
+      filling. A chip fills both the flour and the loaf size below, which
+      is what times the machine's program. -#}
+  {% with flour_field = "flour", pounds_field = "loaf" %}
+    {% include "partials/loaf_presets.html" %}
+  {% endwith %}
+
   <div class="field-row">
     <label>
       <span>Work it out</span>

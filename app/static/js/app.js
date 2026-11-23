@@ -149,28 +149,38 @@ if ("serviceWorker" in navigator) {
 })();
 
 
-// Loaf-size hot buttons on the start-a-bake form: a bread maker is sold by
-// the pound its pan takes, so fill in the flour that gets you there.
+// Loaf-size hot buttons: a bread maker is sold by the pound its pan takes,
+// so fill in the flour that gets you there. Two forms ask for it — the bake
+// form records the machine setting as text, the planner times the program
+// from a number in pounds — so the row names the fields it fills and this
+// only moves the values across. See partials/loaf_presets.html.
 document.addEventListener("click", (event) => {
   const button = event.target.closest("[data-loaf]");
   if (!button) return;
 
+  const row = button.closest("[data-loaf-row]");
   const form = button.closest("form");
-  if (!form) return;
+  if (!row || !form) return;
 
-  const flour = form.querySelector('[name="total_flour_g"]');
-  const size = form.querySelector('[name="loaf_size"]');
-  if (flour) {
-    // The field reads in whichever unit the switch is showing, so the
-    // button carries that text; the grams are the fallback.
-    flour.value =
-      button.dataset.flourText ||
-      String(Math.round(parseFloat(button.dataset.flour)));
-    flour.dispatchEvent(new Event("input", { bubbles: true }));
-  }
-  if (size) size.value = button.dataset.size;
+  const fill = (fieldName, value) => {
+    if (!fieldName || value === undefined) return;
+    const field = form.querySelector(`[name="${fieldName}"]`);
+    if (!field) return;
+    field.value = value;
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  };
 
-  form.querySelectorAll("[data-loaf]").forEach((other) => {
+  // The flour box reads in whichever unit is on display, so the button
+  // carries that text; the grams are the fallback.
+  fill(
+    row.dataset.flourField,
+    button.dataset.flourText ||
+      String(Math.round(parseFloat(button.dataset.flour)))
+  );
+  fill(row.dataset.sizeField, button.dataset.size);
+  fill(row.dataset.poundsField, button.dataset.pounds);
+
+  row.querySelectorAll("[data-loaf]").forEach((other) => {
     other.classList.toggle("is-chosen", other === button);
   });
 });
