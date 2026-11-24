@@ -738,8 +738,11 @@ def build_ribbon(
 
 #: The spans a preview frames itself at. A ladder rather than a snug fit, so
 #: that nudging a ratio slides the peak along a steady axis instead of
-#: rescaling the picture underneath it on every keystroke.
-PREVIEW_SPANS_H = (8, 12, 18, 24, 36, 48)
+#: rescaling the picture underneath it on every keystroke. It runs out to
+#: several days because a thick feed in a cool room genuinely takes that
+#: long to come back down, and the rungs are never a ceiling: see
+#: `_preview_span_h`.
+PREVIEW_SPANS_H = (8, 12, 18, 24, 36, 48, 72, 96, 120)
 
 #: How close to the planned feed counts as landing on it, as a fraction of
 #: the cycle. Taken from the peak band rather than picked: inside this the
@@ -749,10 +752,16 @@ PREVIEW_TOLERANCE = timing.PEAK_TO - 1.0
 
 
 def _preview_span_h(needed_h: float) -> int:
+    """The rung of the ladder that holds `needed_h`.
+
+    Past the last rung it keeps going in whole days rather than settling for
+    the longest one: a span that stopped there would start cutting the
+    picture off again, which is the one thing the window may not do.
+    """
     for span in PREVIEW_SPANS_H:
         if needed_h <= span:
             return span
-    return PREVIEW_SPANS_H[-1]
+    return int(math.ceil(needed_h / 24.0) * 24)
 
 
 @dataclass(frozen=True)
@@ -884,9 +893,25 @@ def feed_preview(
             factor=made.factor,
         )
 
+    # What the window has to hold, whatever the amounts are swung to: the
+    # curve all the way back down to the baseline, and the feeds planned
+    # around it. Framing it on the peak alone cut the fall off at the right
+    # edge, and the fall is half of what the picture is for — it is where
+    # "feed it again by then" is read off.
+    curve_end = (
+        fed_at + timedelta(hours=peak_h * timing.PAST_TO)
+        if peak_h is not None
+        else None
+    )
+    # The slot this feed fills, as well as the one it is aimed at: both are
+    # drawn, so both have to fit.
+    next_planned = next((one.at for one in made.planned if one.at > fed_at), None)
+
     start = min(fed_at, now) - timedelta(hours=1)
     furthest = max(
-        one for one in (fed_at, now, peak_at, target_at) if one is not None
+        one
+        for one in (fed_at, now, peak_at, curve_end, target_at, next_planned)
+        if one is not None
     )
     span = _preview_span_h((furthest - start).total_seconds() / 3600 + 1.0)
     end = start + timedelta(hours=span)

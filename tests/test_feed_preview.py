@@ -344,6 +344,105 @@ class TestThePicture:
         )
 
 
+# --- Nothing falls off the edge -----------------------------------------
+#
+# The panel is there to be swung: the amounts get nudged until the peak
+# lands where it is wanted. So whatever they are swung to, the window has
+# to hold the whole of what it is being asked about — the curve down to the
+# baseline, and the feeds it is being read against. A curve cut off at the
+# right edge is the picture failing at the one job it has.
+
+
+#: A sweep wide enough to reach both clamps of the model, and both ends of
+#: the temperature range with them: the window must hold every one of them.
+_SWINGS = [
+    (starter, flour, temp_c)
+    for starter, flour in ((20, 10), (20, 20), (20, 60), (20, 120), (20, 400))
+    for temp_c in (16.0, 24.0, 34.0)
+]
+
+
+class TestNothingFallsOffTheEdge:
+    def test_the_window_holds_the_whole_curve_whatever_is_fed(self, session):
+        jar = _jar(session, feeds_per_day=2)
+        _feed(session, jar, at=NOON - timedelta(hours=12))
+
+        for starter, flour, temp_c in _SWINGS:
+            made = _preview(
+                session, jar, starter=starter, flour=flour, now=NOON,
+                temp_c=temp_c,
+            )
+
+            assert made.peak_h is not None
+            ends = NOON + timedelta(hours=made.peak_h * timing.PAST_TO)
+            assert made.drawn is not None
+            assert made.drawn.end >= ends, (starter, flour, temp_c)
+
+    def test_the_curve_stops_short_of_the_frame_whatever_is_fed(self, session):
+        """Drawn, not merely in the window: the ribbon clamps anything past
+        the edge onto it, so a clipped curve ends exactly at plot.right."""
+        jar = _jar(session, feeds_per_day=2)
+        _feed(session, jar, at=NOON - timedelta(hours=12))
+
+        for starter, flour, temp_c in _SWINGS:
+            made = _preview(
+                session, jar, starter=starter, flour=flour, now=NOON,
+                temp_c=temp_c,
+            )
+
+            curve = made.drawn.rows[0].curves[0]
+            last_x = curve.segments[-1].points[-1][0]
+            assert last_x < made.drawn.plot.right - 1.0, (
+                starter, flour, temp_c, last_x,
+            )
+
+    def test_the_window_holds_the_next_planned_feed_whatever_is_fed(self, session):
+        """Even a feed so thin that the curve is over before the next slot:
+        the planned feed is what the peak is being aimed at, so it is on the
+        picture even when nothing else reaches it."""
+        jar = _jar(session, feeds_per_day=1)  # a slot a whole day out
+        _feed(session, jar, at=NOON - timedelta(hours=24))
+
+        for starter, flour, temp_c in _SWINGS:
+            made = _preview(
+                session, jar, starter=starter, flour=flour, now=NOON,
+                temp_c=temp_c,
+            )
+
+            assert made.drawn is not None
+            assert made.drawn.rows[0].planned, (starter, flour, temp_c)
+            if made.target_at is not None:
+                assert made.drawn.end >= made.target_at, (starter, flour, temp_c)
+
+    def test_a_long_cycle_lengthens_the_axis(self, session):
+        """1:10:10 in a cold room takes days to come back down, and the days
+        are drawn rather than the curve being cut at two of them."""
+        jar = _jar(session, feeds_per_day=2)
+        _feed(session, jar, at=NOON - timedelta(hours=12))
+
+        made = _preview(
+            session, jar, starter=20, flour=400, now=NOON, temp_c=15.0
+        )
+
+        assert made.drawn is not None
+        assert made.peak_h is not None
+        assert made.drawn.span_h > 48
+        assert made.drawn.end >= NOON + timedelta(
+            hours=made.peak_h * timing.PAST_TO
+        )
+
+    def test_the_ladder_is_not_a_ceiling(self):
+        """Past the last rung it steps in whole days. A jar measured slow
+        enough can want more than the longest rung, and a span that stopped
+        there would go back to clipping."""
+        longest = max(plan_service.PREVIEW_SPANS_H)
+
+        assert plan_service._preview_span_h(longest) == longest
+        assert plan_service._preview_span_h(longest + 0.5) >= longest + 0.5
+        assert plan_service._preview_span_h(200.0) >= 200.0
+        assert plan_service._preview_span_h(200.0) % 24 == 0
+
+
 # --- On the page --------------------------------------------------------
 
 
