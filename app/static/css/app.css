@@ -722,6 +722,8 @@ input[type="file"]::file-selector-button {
 }
 .stats dd { margin: var(--s-0) 0 0; font-weight: 600; }
 .stats-wide { gap: var(--s-4) var(--s-6); }
+.card > .stats:first-child { margin-top: 0; }
+.card > .stats:last-child { margin-bottom: 0; }
 
 /* The jar's page: charts beside history. The history is the narrower. */
 @media (min-width: 1024px) {
@@ -1098,6 +1100,48 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .drift.under { color: var(--ok); }
 
 .stage-note { margin-top: var(--s-3); }
+
+/* The bake's page: where it has got to on the left, the sheet you tap on
+   the right. */
+@media (min-width: 1024px) {
+  .split.bake-page { grid-template-columns: minmax(0, 1.35fr) minmax(360px, 1fr); column-gap: var(--s-5); }
+}
+.bake-page .section-title { margin: 0; }
+.bake-page .ribbon-card,
+.bake-page .gallery-block { margin: 0; }
+.bake-page #bake-live { display: flex; flex-direction: column; gap: var(--s-4); }
+.bake-sheet { display: flex; flex-direction: column; gap: var(--s-3); }
+
+.stage-run { display: flex; flex-direction: column; gap: var(--s-2); }
+.stage-step { padding: var(--s-3) var(--s-4); }
+.stage-step.is-running,
+.stage-step.is-next { padding: var(--s-4); }
+.stage-step.is-next { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.stage-step .stage-head h3 { font-size: var(--text-md); }
+.stage-step.is-done .stage-head h3,
+.stage-step.is-later .stage-head h3 { font-size: var(--text-sm); }
+.stage-step .stage-facts { font-size: var(--text-sm); white-space: normal; text-align: right; }
+
+/* A folded step: its head is the thing you click. */
+.stage-fold > summary { list-style: none; cursor: pointer; }
+.stage-fold > summary::-webkit-details-marker { display: none; }
+.stage-fold > summary .stage-head { flex-wrap: nowrap; }
+.stage-fold[open] > summary { margin-bottom: var(--s-2); }
+.stage-fold .row-actions { margin-top: var(--s-2); }
+/* Two lines of what the step asks for; the rest is inside. */
+.stage-brief {
+  margin: var(--s-1) 0 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.stage-step.is-done .stage-brief { -webkit-line-clamp: 1; line-clamp: 1; }
+.stage-fold[open] + .stage-brief { display: none; }
+
+.stage-note { align-items: flex-end; margin-bottom: 0; }
+.stage-note textarea { flex: 1; min-width: 0; min-height: var(--tap); resize: vertical; field-sizing: content; }
 
 /* Result */
 .rating-field legend { padding: 0 var(--s-1); }
