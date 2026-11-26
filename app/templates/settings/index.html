@@ -37,6 +37,7 @@
 {% endif %}
 
 {# --- Display units ------------------------------------------------- #}
+<div class="settings-grid">
 <section class="card">
   <h2 class="section-title">Units</h2>
   <p class="muted small">
@@ -164,7 +165,7 @@
 </section>
 
 {# --- Busy blocks --------------------------------------------------- #}
-<section class="card">
+<section class="card settings-wide">
   <h2 class="section-title">When you are busy</h2>
   <p class="muted small">
     Shaded on the ribbon and the bake-day planner, so a feed or a hands-on
@@ -220,7 +221,7 @@
   </p>
   {% endif %}
 
-  <details class="busy-add"{% if not blocks %} open{% endif %}>
+  <details class="busy-add disclosure"{% if not blocks %} open{% endif %}>
     <summary>Add a busy block</summary>
 
     <form class="form" method="post" action="/settings/busy">
@@ -271,7 +272,7 @@
   </details>
 
   {% if archived_blocks %}
-  <details class="busy-archived">
+  <details class="busy-archived disclosure">
     <summary class="muted small">{{ archived_blocks | length }} archived</summary>
     <ul class="plain">
       {% for block in archived_blocks %}
@@ -287,4 +288,5 @@
   </details>
   {% endif %}
 </section>
+</div>
 {% endblock %}

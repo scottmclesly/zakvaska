@@ -1055,10 +1055,56 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .diff-fields .was { text-decoration: line-through; }
 .diff-fields .now { color: var(--ink); font-weight: 600; }
 
-.program-list { display: flex; flex-direction: column; gap: var(--s-4); margin-bottom: var(--s-5); }
-.program-list li { border-bottom: 0; padding: var(--s-4); }
-/* Archiving is a separate form, so it gets its own line under the edits. */
-.program-list li > form + form { margin-top: var(--s-3); padding-top: var(--s-3); border-top: 1px solid var(--line); }
+/* Equipment: the programs as cards you read, two across when there is
+   room for the cycle bars to stay legible. */
+.program-list { display: grid; gap: var(--s-4); grid-template-columns: minmax(0, 1fr); margin-bottom: var(--s-4); }
+.program-list > li { border-bottom: 0; padding: var(--s-4); min-width: 0; display: flex; flex-direction: column; gap: var(--s-2); }
+.program-list h2 { margin: 0; font-size: var(--text-lg); }
+.program-notes { margin: 0; }
+.program .program-bars { margin: var(--s-1) 0 0; }
+.program .cycles { margin-top: 0; }
+.program-edit { margin-top: auto; }
+.program-edit .form + form { margin-top: var(--s-3); padding-top: var(--s-3); border-top: 1px solid var(--line); }
+@media (min-width: 1024px) {
+  .program-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Recipes: as many across as fit. */
+.recipe-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+.recipe-card {
+  position: relative;
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-start;
+  padding: var(--s-3) var(--s-4);
+  min-width: 0;
+}
+.recipe-card:hover { border-color: var(--accent); }
+.recipe-card h2 { margin: 0; font-size: var(--text-md); line-height: var(--leading-tight); }
+.recipe-card p { margin: var(--s-1) 0 0; }
+.recipe-link { color: var(--ink); text-decoration: none; }
+/* The name's link, stretched over the card. */
+.recipe-link::after { content: ""; position: absolute; inset: 0; border-radius: var(--r-lg); }
+.recipe-facts .badge { margin-right: var(--s-1); }
+.recipe-card .source { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Above the stretched link, so it can still be clicked on its own. */
+.recipe-more { position: relative; z-index: 1; }
+.recipe-card .loaf-art { width: 56px; }
+
+/* Settings: independent cards side by side; the busy list takes the row. */
+.settings-grid { display: grid; gap: var(--s-4); grid-template-columns: minmax(0, 1fr); }
+.settings-grid > * { min-width: 0; }
+@media (min-width: 1024px) {
+  .settings-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+  .settings-wide { grid-column: 1 / -1; }
+}
 
 /* --- Bakes ------------------------------------------------------------- */
 
