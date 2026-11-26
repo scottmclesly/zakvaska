@@ -727,6 +727,58 @@ def build_ribbon(
     return drawn, plans
 
 
+def rivals(jars: Sequence[Jar]) -> list[Jar]:
+    """The jars worth setting against each other, or none.
+
+    The notebook exists to run starters side by side on the same flour — a
+    homemade one against a bought control. So: the largest group of jars
+    being fed that share a flour, when there are at least two of them. Jars
+    on different flours are not a fair race and are left to the ribbon.
+    """
+    groups: dict[str, list[Jar]] = {}
+    for jar in jars:
+        flour = (jar.flour_type or "").strip().lower()
+        if flour and jar.state.wants_feeding and not jar.archived:
+            groups.setdefault(flour, []).append(jar)
+    best = max(groups.values(), key=len, default=[])
+    return best if len(best) >= 2 else []
+
+
+def build_head_to_head(
+    session: Session,
+    jars: Sequence[Jar],
+    *,
+    now: datetime,
+    tz,
+    span_h: int | None = None,
+):
+    """`ribbon.head_to_head` for these jars, over the ribbon's own window.
+
+    None unless there are two or more. Drawing only: it reads the same
+    series the ribbon does and decides nothing.
+    """
+    if len(jars) < 2:
+        return None
+    span = span_h if span_h is not None else settings_store.ribbon_span_h(session)
+    start, end = ribbon.window(now, span)
+    intervals = busy_service.busy_intervals(session, start, end, tz)
+    series = [
+        jar_series(session, jar, now=now, start=start, end=end, busy=intervals)[0]
+        for jar in jars
+    ]
+    return ribbon.head_to_head(
+        series,
+        start=start,
+        end=end,
+        now=now,
+        tz=tz,
+        busy=tuple(
+            ribbon.BusyMark(start=one.start, end=one.end, label=one.label)
+            for one in intervals
+        ),
+    )
+
+
 # --- Trying a feed on before you log it ---------------------------------
 #
 # The reason `timing` exists at all is that the cycle length is controllable:

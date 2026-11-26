@@ -481,6 +481,12 @@ code {
 .dash-charts { grid-area: charts; display: flex; flex-direction: column; gap: var(--s-4); }
 .dash-charts .ribbon-card,
 .dash-charts .chart-card { margin: 0; }
+.dash-pair { display: grid; gap: var(--s-4); grid-template-columns: minmax(0, 1fr); }
+.dash-pair > * { min-width: 0; }
+.dash-pair:empty { display: none; }
+@media (min-width: 1600px) {
+  .dash-pair:has(> :nth-child(2)) { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
 
 @media (min-width: 1024px) {
   .dash {
@@ -2483,6 +2489,43 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   border-radius: var(--r-xs);
   background: color-mix(in srgb, var(--busy-shade) 20%, transparent);
 }
+
+/* --- Head to head --------------------------------------------------------
+   Jars on one flour, overlaid. A curve is its jar's colour all the way
+   along — which jar it is matters here, not which band it is in. */
+.duel-row, .duel-key li { --series: var(--series-0); }
+.duel-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-5);
+  margin: 0;
+}
+.duel-key li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-1) var(--s-2); padding: 0; border: 0; }
+.duel-swatch {
+  align-self: center;
+  width: 18px;
+  height: 4px;
+  border-radius: var(--r-xs);
+  background: var(--series);
+}
+.duel-key .is-control .duel-swatch {
+  background: repeating-linear-gradient(90deg, var(--series) 0 5px, transparent 5px 8px);
+}
+.duel-name { color: var(--ink); font-weight: 600; text-decoration: none; }
+.duel-name:hover { text-decoration: underline; }
+
+.duel-path {
+  fill: none;
+  stroke: var(--series);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.duel-row.is-control .duel-path { stroke-dasharray: 7 4; }
+.duel-feed { fill: var(--series); }
+.duel-peak { fill: var(--series); stroke: var(--card); stroke-width: 1.5; }
+.duel-peak-line { stroke: var(--series); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0.7; }
+.duel-obs, .duel-planned { fill: var(--card); stroke: var(--series); stroke-width: 1.6; }
 
 /* --- Moving a planned feed ------------------------------------------ */
 

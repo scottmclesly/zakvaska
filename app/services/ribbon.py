@@ -56,6 +56,12 @@ AXIS_H = 22.0
 
 ROW_H = ROW_LABEL_H + ROW_CURVE_H + ROW_GAP_H
 
+#: Head to head: every jar on the one baseline, so the curve band is taller —
+#: the gap between two peaks is the thing being read — and there is no name
+#: line, because the names are in the key above it.
+DUEL_TOP_H = 8.0
+DUEL_CURVE_H = 96.0
+
 #: How often the curve is sampled. Fine enough that the peak reads as round.
 SAMPLE_MIN = 10.0
 #: At most this many clock labels across the narrowest picture, or they
@@ -451,6 +457,36 @@ def ribbon(
     return replace(drawn[0], sizes=drawn)
 
 
+def head_to_head(
+    series: Sequence[RibbonSeries],
+    *,
+    start: datetime,
+    end: datetime,
+    now: datetime,
+    tz: tzinfo,
+    busy: Sequence[BusyMark] = (),
+) -> Ribbon | None:
+    """The same jars as `ribbon`, laid over one another on a single baseline.
+
+    Stacked rows answer "what does each jar need, and when"; this answers the
+    notebook's own question — which of two starters fed alike is the quicker
+    and the stronger — and that is read off the distance between two curves,
+    which only shows when they share an axis in both directions.
+    """
+    if len(series) < 2:
+        return None
+    drawn = tuple(
+        _ribbon_at(
+            width, series, start=start, end=end, now=now, tz=tz, busy=busy,
+            overlay=True,
+        )
+        for width in SIZES
+    )
+    if drawn[0] is None:
+        return None
+    return replace(drawn[0], sizes=drawn)
+
+
 def _ribbon_at(
     width: float,
     series: Sequence[RibbonSeries],
@@ -460,9 +496,13 @@ def _ribbon_at(
     now: datetime,
     tz: tzinfo,
     busy: Sequence[BusyMark] = (),
+    overlay: bool = False,
 ) -> Ribbon | None:
     if not series:
         return None
+    label_h = DUEL_TOP_H if overlay else ROW_LABEL_H
+    curve_h = DUEL_CURVE_H if overlay else ROW_CURVE_H
+    row_h = label_h + curve_h + ROW_GAP_H
 
     seconds = (end - start).total_seconds()
     if seconds <= 0:
@@ -472,7 +512,7 @@ def _ribbon_at(
         x=MARGIN_X,
         y=HEADER_H,
         w=width - MARGIN_X * 2,
-        h=ROW_H * len(series),
+        h=row_h * (1 if overlay else len(series)),
     )
 
     def x_for(at: datetime) -> float:
@@ -483,16 +523,16 @@ def _ribbon_at(
 
     rows: list[RibbonRow] = []
     for slot, one in enumerate(series, start=1):
-        top = plot.y + ROW_H * (slot - 1)
-        label_y = top + ROW_LABEL_H - 6
-        curve_top = top + ROW_LABEL_H
-        baseline = curve_top + ROW_CURVE_H
+        top = plot.y + (0 if overlay else row_h * (slot - 1))
+        label_y = top + label_h - 6
+        curve_top = top + label_h
+        baseline = curve_top + curve_h
 
         curves: list[RiseCurve] = []
         for feed in one.feeds:
             sampled = _curve_points(
                 feed, start=start, end=end, x_for=x_for,
-                baseline=baseline, height=ROW_CURVE_H,
+                baseline=baseline, height=curve_h,
             )
             peak_at = feed.at + timedelta(hours=feed.peak_h)
             curves.append(
@@ -515,7 +555,7 @@ def _ribbon_at(
             ObservationPoint(
                 mark=mark,
                 x=x_for(mark.at),
-                y=baseline - min(max(mark.rise_pct / 100.0, 0.0), 1.2) * ROW_CURVE_H,
+                y=baseline - min(max(mark.rise_pct / 100.0, 0.0), 1.2) * curve_h,
             )
             for mark in one.observations
             if start <= mark.at <= end
@@ -549,7 +589,7 @@ def _ribbon_at(
         if mark.end > start and mark.start < end
     )
 
-    height = HEADER_H + ROW_H * len(series) + AXIS_H
+    height = HEADER_H + plot.h + AXIS_H
     return Ribbon(
         rows=tuple(rows),
         ticks=_ticks(start, end, tz, x_for, _max_ticks(width)),
