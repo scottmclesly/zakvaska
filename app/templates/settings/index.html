@@ -288,5 +288,22 @@
   </details>
   {% endif %}
 </section>
+
+{# --- Hints ----------------------------------------------------------- #}
+<section class="card settings-wide" id="hints">
+  <h2 class="section-title">Hints</h2>
+  <p class="muted small">
+    Short notes on the steps of a bake, a recipe's stages and a jar's page,
+    each one put away for good with “Got it”. There are {{ hints.total }};
+    {% if hints.put_away_count %}you have put away {{ hints.put_away_count }}.
+    {%- else %}all of them are showing.{% endif %}
+  </p>
+  <form method="post" action="/hints/restore">
+    <button class="btn btn-secondary" type="submit"
+            {%- if not hints.put_away_count %} disabled{% endif %}>
+      Show every hint again
+    </button>
+  </form>
+</section>
 </div>
 {% endblock %}

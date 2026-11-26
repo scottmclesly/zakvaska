@@ -19,6 +19,7 @@ from app.routes import (
     bakes,
     equipment,
     health,
+    hints,
     home,
     jars,
     photos,
@@ -66,6 +67,7 @@ def create_app() -> FastAPI:
     app.include_router(backup.router)
     app.include_router(about.router)
     app.include_router(settings.router)
+    app.include_router(hints.router)
 
     # Served from the root so the service worker's scope covers the whole app.
     @app.api_route("/sw.js", methods=["GET", "HEAD"], include_in_schema=False)

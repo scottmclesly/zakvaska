@@ -17,19 +17,55 @@
   </div>
   {% endif %}
 
+  {#- Which rhythm is in force, and whose it is. Said outright, because a
+      24-hour cycle set on the wrong jar looks exactly like a jar that is
+      simply late. -#}
+  {%- set cycle = plan.cycle_h | round | int %}
+  {%- set app_cycle = (24 / app_feeds_per_day) | round | int %}
+  <p class="feedplan-rhythm small">
+    <strong>Every {{ cycle }} hours.</strong>
+    {% if jar.feeds_per_day %}
+      That is this jar's own rhythm ({{ jar.feeds_per_day }} a day), set on
+      <a href="/jars/{{ jar.id }}/edit">its edit page</a>.
+      {%- if jar.feeds_per_day != app_feeds_per_day %}
+      The app's setting is {{ app_feeds_per_day }} a day, every
+      {{ app_cycle }} hours.
+      {%- endif %}
+    {% else %}
+      That is the app's setting, {{ app_feeds_per_day }} a day, from
+      <a href="/settings">settings</a>. This jar has no rhythm of its own;
+      give it one on <a href="/jars/{{ jar.id }}/edit">its edit page</a>.
+    {% endif %}
+  </p>
+
   {% if plan.next_feed_at %}
   <div class="feedplan-when">
     <span class="feedplan-time">{{ plan.next_feed_at | local_time }}</span>
     <span class="muted">{{ plan.next_feed_at | local_day }}</span>
     <span class="muted">· {{ plan.next_feed_at | until(now) }}</span>
     {% if plan.anchored %}
-    <span class="badge" title="This jar's feeds are on times you chose.">moved</span>
+    <span class="badge badge-readonly" title="This jar's feeds are on a time you chose.">fixed time</span>
     {% endif %}
   </div>
 
+  {#- A moved feed is not a one-off: it becomes the time the jar is fed
+      from then on. Left unsaid, a stale one makes every jar look hours
+      overdue. -#}
+  {% if plan.anchored and jar.schedule_anchor_utc %}
+  <div class="anchor-note" role="note">
+    <strong>Fixed at {{ jar.schedule_anchor_utc | local_time }}.</strong>
+    <span class="small">
+      You moved a feed, so this jar's feeds are now counted from
+      {{ jar.schedule_anchor_utc | local_time }}
+      {%- if cycle == 24 %} every day{% else %}, every {{ cycle }} hours{% endif %},
+      whenever you actually feed it. It stays that way until you press
+      “Back to the usual rhythm” below.
+    </span>
+  </div>
+  {% endif %}
+
   <p class="muted small">
-    Every {{ plan.cycle_h | round | int }} hours. Moving this one moves the
-    ones after it by the same amount.
+    Moving this feed moves the ones after it by the same amount.
   </p>
 
   {% if next_feed_clash %}

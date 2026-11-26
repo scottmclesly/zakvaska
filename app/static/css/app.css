@@ -142,6 +142,11 @@
   --chalk-orange: #f0b279;
   --hand: "Chalkduster", "Marker Felt", "Bradley Hand", "Segoe Print", var(--display);
 
+  /* Raw dough, in the explainer drawings: paler than a crust. */
+  --dough: #ead6ad;
+  --dough-deep: #c9ab74;
+  --dough-pale: #e3d3b8;
+
   /* The cap picker's "any colour" chip. */
   --hue-1: #c0392b;
   --hue-2: #d2691e;
@@ -708,6 +713,182 @@ input[type="file"]::file-selector-button {
 }
 .disclosure[open] > summary::before { transform: rotate(45deg); }
 .disclosure > :not(summary) { margin-top: var(--s-3); }
+
+/* --- Hints --------------------------------------------------------------
+   A folded aside of short notes (partials/hints.html; the words are in
+   app/data/hints.py). Quiet by design: tinted like a pencilled margin note,
+   never a card competing with the step it sits on, and never between you
+   and a button. */
+.hints {
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  padding: var(--s-1) var(--s-3);
+}
+/* The last one put away takes the whole aside with it. */
+.hints:not(:has(.hint)) { display: none; }
+.hints > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--tap-sm);
+  list-style: none;
+  cursor: pointer;
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+.hints > summary::-webkit-details-marker { display: none; }
+.hints-mark { display: inline-flex; }
+.hints-mark svg { width: 16px; height: 16px; }
+.hints-count {
+  min-width: 1.5em;
+  padding: 0 var(--s-1);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+.hints > summary::after {
+  content: "";
+  margin-left: auto;
+  width: 0.45em;
+  height: 0.45em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 120ms ease-out;
+}
+.hints[open] > summary::after { transform: rotate(-135deg); }
+
+.hint-list { list-style: none; margin: 0; padding: 0 0 var(--s-2); }
+.hint {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s-1) var(--s-3);
+  align-items: start;
+  padding: var(--s-2) 0;
+  border-top: 1px dashed color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.hint-text { grid-column: 1; margin: 0; font-size: var(--text-sm); line-height: 1.45; max-width: var(--measure); }
+.hint-away { grid-column: 2; grid-row: 1; margin: 0; }
+.hint-away button {
+  min-height: var(--tap-sm);
+  padding: 0 var(--s-3);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.hint-away button:hover { color: var(--ink); border-color: var(--accent); }
+.hint-more { grid-column: 1 / -1; }
+.hint-more > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-sm);
+  cursor: pointer;
+  color: var(--accent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.hint-more > p { margin: var(--s-1) 0 var(--s-2); color: var(--ink-soft); font-size: var(--text-sm); max-width: var(--measure); }
+
+/* --- Explainer drawings ----------------------------------------------------
+   Small step-by-step pictures inside a hint (partials/explainers/). Each
+   frame is a drawing over a caption; the frames sit side by side while
+   there is room and stack on a phone. Drawn with the page's tokens, so
+   they turn with the theme; dough and crust keep their own colours. */
+.explainer { margin: var(--s-1) 0 var(--s-2); }
+.ex-frames {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+}
+/* Four frames read better two by two than three and an orphan. */
+.ex-frames:has(> :nth-child(4)):not(:has(> :nth-child(5))) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.ex-frame {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--card);
+}
+.ex-frame svg { display: block; width: 100%; max-width: 200px; height: auto; margin: 0 auto; }
+.ex-frame p { margin: 0; font-size: var(--text-xs); line-height: 1.4; color: var(--ink-soft); }
+.ex-frame p strong { color: var(--ink); }
+.ex-verdict {
+  display: inline-block;
+  margin-left: var(--s-1);
+  padding: 0 var(--s-2);
+  border-radius: var(--r-pill);
+  border: 1px solid currentColor;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ex-good { color: var(--ok); }
+.ex-wait { color: var(--chill); }
+.ex-bad { color: var(--danger); }
+
+.ex-vessel { fill: var(--glass); stroke: var(--ink-soft); stroke-width: 1.5; stroke-linejoin: round; }
+.ex-pot { fill: color-mix(in srgb, var(--ink) 55%, var(--card)); stroke: var(--ink-soft); stroke-width: 1; stroke-linejoin: round; }
+.ex-basket { fill: color-mix(in srgb, var(--wood-top) 60%, var(--card)); stroke: var(--wood-edge); stroke-width: 1.5; stroke-linejoin: round; }
+.ex-rib { fill: none; stroke: var(--wood-edge); stroke-width: 1; opacity: 0.6; }
+.ex-mat { fill: color-mix(in srgb, var(--ink-soft) 30%, transparent); }
+.ex-dough { fill: var(--dough); stroke: var(--dough-deep); stroke-width: 1.2; stroke-linejoin: round; }
+.ex-flap { fill: color-mix(in srgb, var(--dough) 80%, var(--highlight)); }
+.ex-pale { fill: var(--dough-pale); stroke: var(--dough-deep); stroke-width: 1.2; }
+.ex-crust { fill: var(--loaf-rye); stroke: var(--loaf-rye-deep); stroke-width: 1.2; }
+.ex-ear { fill: var(--loaf-enriched); stroke: var(--loaf-rye-deep); stroke-width: 1; stroke-linejoin: round; }
+.ex-bubble { fill: var(--card); stroke: var(--dough-deep); stroke-width: 0.8; opacity: 0.9; }
+.ex-band { fill: var(--danger); }
+.ex-line,
+.ex-dash,
+.ex-seam,
+.ex-score,
+.ex-steam,
+.ex-arrow,
+.ex-cloth,
+.ex-paper-line,
+.ex-hand-line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.ex-line { stroke: var(--dough-deep); stroke-width: 1.5; }
+.ex-dash { stroke: var(--ink-soft); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.ex-seam { stroke: var(--dough-deep); stroke-width: 2.5; }
+.ex-score { stroke: var(--loaf-rye-deep); stroke-width: 2.5; }
+.ex-steam { stroke: var(--ink-soft); stroke-width: 1.5; opacity: 0.6; }
+.ex-arrow { stroke: var(--accent); stroke-width: 2.5; }
+.ex-cloth { stroke: var(--ink); stroke-width: 3; opacity: 0.75; }
+.ex-paper { fill: var(--tape); stroke: var(--dough-deep); stroke-width: 0.8; }
+.ex-paper-line { stroke: var(--tape); stroke-width: 3; }
+.ex-steel { fill: color-mix(in srgb, var(--ink-soft) 55%, var(--card)); stroke: var(--ink-soft); stroke-width: 1; stroke-linejoin: round; }
+.ex-hand { fill: color-mix(in srgb, var(--accent) 35%, var(--card)); stroke: var(--accent); stroke-width: 1.2; stroke-linejoin: round; }
+.ex-hand-line { stroke: var(--accent); stroke-width: 1; opacity: 0.7; }
+.ex-big { fill: var(--accent); font-family: var(--display); font-size: 20px; font-weight: 700; }
+
+/* A fixed feeding time in force: said where the next feed is. */
+.anchor-note {
+  display: grid;
+  gap: var(--s-1);
+  padding: var(--s-2) var(--s-3);
+  border-left: 3px solid var(--warn);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  background: color-mix(in srgb, var(--warn) 9%, transparent);
+}
+.feedplan-rhythm { margin: 0; color: var(--ink-soft); }
+.feedplan-rhythm strong { color: var(--ink); }
 
 /* --- Layout helpers ----------------------------------------------------- */
 

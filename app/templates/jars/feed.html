@@ -59,6 +59,10 @@
 </section>
 {% endif %}
 
+{% with hint_list = hints.at(["feed"]), hints_open = true %}
+  {% include "partials/hints.html" %}
+{% endwith %}
+
 <form class="card form" id="feed-form" method="post"
       action="/jars/{{ jar.id }}/feed" enctype="multipart/form-data">
   {#- Grams are what gets stored, but the field takes whatever unit the

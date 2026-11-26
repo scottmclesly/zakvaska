@@ -120,6 +120,11 @@
 </section>
 </div>
 
+{% with hint_list = hints.jar(jar, now), hints_open = true,
+        hints_label = "About a new starter" %}
+  {% include "partials/hints.html" %}
+{% endwith %}
+
 {#- The ribbon's `now` line and the plan's countdown to the next feed,
     together: one refresh, and the picture and the words under it cannot
     disagree about what time it is. The "move it to" field inside the plan
