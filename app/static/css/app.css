@@ -1893,6 +1893,32 @@ table.data tfoot td { background: var(--bg); font-weight: 650; border-bottom: 0;
   stroke-width: 1;
   stroke-dasharray: 2 2;
 }
+
+/* The oven coming up to temperature. Warm, open and behind the bars: it is
+   not a step, and it must not read as one competing for the same hour. */
+.preheat-band rect {
+  fill: color-mix(in srgb, var(--warn) 12%, transparent);
+  stroke: color-mix(in srgb, var(--warn) 45%, transparent);
+  stroke-width: 0.6;
+  stroke-dasharray: 3 2;
+}
+.preheat-edge {
+  stroke: var(--warn);
+  stroke-width: 1.2;
+}
+.preheat-label {
+  fill: var(--warn);
+  font-size: 8px;
+  font-weight: 600;
+}
+.ribbon-swatch.is-preheat {
+  height: 9px;
+  background: color-mix(in srgb, var(--warn) 25%, transparent);
+  border: 1px dashed var(--warn);
+}
+/* A preheat alert is the whole sentence, so it carries the warm colour of
+   the band it belongs to rather than the usual link blue. */
+.alert-jar.is-preheat { color: var(--warn); }
 .levain-label {
   fill: var(--accent);
   font-size: 8px;

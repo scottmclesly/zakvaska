@@ -45,9 +45,11 @@ def alerts_json(ctx: Ctx) -> JSONResponse:
                     "id": alert.id,
                     "jar_id": alert.jar_id,
                     # Kept for the jar case the browser already knows about;
-                    # `subject` is the one that works for both kinds.
+                    # `subject` is the one that works for every kind — and
+                    # for a preheat it is the whole sentence, so the phone
+                    # notification says how hot and how long you have got.
                     "jar_name": alert.jar.name if alert.jar else None,
-                    "subject": alert.subject,
+                    "subject": alert_service.headline(alert, ctx.temp_unit),
                     "bake_id": (
                         alert.stage_log.bake_id if alert.stage_log else None
                     ),

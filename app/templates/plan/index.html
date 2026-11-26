@@ -148,6 +148,24 @@
     <legend>Rise, bake, cool</legend>
     <div class="field-row">
       <label>
+        <span>Baked in</span>
+        <select name="method">
+          {% for one in methods %}
+          <option value="{{ one.value }}"
+                  {% if inputs.method == one %}selected{% endif %}>
+            {{ one.label }}
+          </option>
+          {% endfor %}
+        </select>
+        <em class="muted small">
+          {%- if preheat_lead_min %}
+          {{ preheat_lead_min }} minutes of preheating, alongside the final rise
+          {%- else %}
+          nothing to preheat
+          {%- endif %}
+        </em>
+      </label>
+      <label>
         <span>Final rise <em>minutes</em></span>
         <input name="rise" type="number" step="15" min="15"
                value="{{ inputs.final_rise_min | num }}"

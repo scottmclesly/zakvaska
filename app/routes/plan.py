@@ -141,6 +141,7 @@ def _read_inputs(
 
     program_id = _int(params, "program")
     loaf = number("loaf")
+    method = _method(params.get("method"), program_id, inputs)
 
     return (
         replace(
@@ -162,6 +163,7 @@ def _read_inputs(
                 version,
                 total_flour if total_flour is not None else inputs.total_flour_g,
             ),
+            method=method,
             program_id=program_id if program_id is not None else inputs.program_id,
             loaf_lb=loaf if loaf is not None else inputs.loaf_lb,
             knead_only=params.get("whole") != "1",
@@ -177,6 +179,27 @@ def _read_inputs(
         ),
         notes,
     )
+
+
+def _method(
+    raw: str | None, program_id: int | None, inputs: PlanInputs
+) -> BakeMethod:
+    """How the loaf is to be cooked: what was picked, or what was implied.
+
+    A machine program means a bread-maker loaf, which is the inference this
+    page has always made and still the right default. Picking a method by
+    name beats it, so an oven bake kneaded in the machine is sayable — and
+    an unreadable value falls back rather than taking the page away, like
+    every other field here.
+    """
+    if raw:
+        try:
+            return BakeMethod(raw)
+        except ValueError:
+            pass
+    if program_id is not None:
+        return BakeMethod.BREAD_MAKER
+    return inputs.method
 
 
 def _int(params, name: str) -> int | None:
@@ -239,6 +262,18 @@ def _context(request: Request, ctx: ViewContext) -> dict:
                 temp_assumed=cycle.temp_assumed,
             )
 
+    # The preheat the chosen method wants, drawn against this plan rather
+    # than written anywhere: nothing on this page is stored, including this.
+    lead = settings_store.preheat_lead_min(ctx.session, inputs.method)
+    baking = made.step("bake")
+    preheat = None
+    if lead and baking is not None:
+        preheat = ribbon_service.PreheatMark(
+            start=baking.start - timedelta(minutes=lead),
+            end=baking.start,
+            lead_min=lead,
+        )
+
     levain = made.step("levain")
     drawn = ribbon_service.timeline(
         made.steps,
@@ -253,6 +288,7 @@ def _context(request: Request, ctx: ViewContext) -> dict:
         jar_feed=jar_feed,
         jar_name=jar.name if jar else None,
         levain_at=levain.start if levain else None,
+        preheat=preheat,
     )
 
     return {
@@ -282,6 +318,8 @@ def _context(request: Request, ctx: ViewContext) -> dict:
             and jar_plan.is_estimate
         ),
         "program": program,
+        "methods": list(BakeMethod),
+        "preheat_lead_min": lead,
         "versions": recipe_service.plannable_versions(ctx.session),
         "loaf_presets": _loaf_presets(version),
         "jars": jar_service.list_jars(ctx.session),
@@ -389,9 +427,7 @@ async def start_bake(request: Request, ctx: Ctx):
         plan=made,
         now=ctx.now,
         jar_id=jar.id if jar else None,
-        method=(
-            BakeMethod.BREAD_MAKER if program is not None else BakeMethod.OVEN
-        ),
+        method=inputs.method,
         equipment_program_id=program.id if program else None,
         crust_setting=version.default_crust,
         loaf_size=version.default_loaf_size,

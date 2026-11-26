@@ -186,6 +186,7 @@ templates.env.filters.update(
     until=until,
     temp=format_temp,
     temp_value=temp_value,
+    headline=alert_service.headline,
 )
 templates.env.globals["app_version"] = __version__
 

@@ -135,17 +135,27 @@ class AlertKind(enum.StrEnum):
     FEED_DUE = "feed_due"
     #: A bake-day step is due to be started, or a rise is due to be used.
     STAGE_DUE = "stage_due"
+    #: The oven (and the pot in it) has to go on now to be hot when the
+    #: bake step comes round. Its own kind rather than an early STAGE_DUE,
+    #: because the two say different things and the banner, the phone
+    #: notification and the JSON all have to tell them apart.
+    PREHEAT_DUE = "preheat_due"
 
     @property
     def label(self) -> str:
         return {
             AlertKind.FEED_DUE: "Feed due",
             AlertKind.STAGE_DUE: "Bake step due",
+            AlertKind.PREHEAT_DUE: "Preheat due",
         }[self]
 
     @property
     def is_about_a_bake(self) -> bool:
-        return self is AlertKind.STAGE_DUE
+        return self in (AlertKind.STAGE_DUE, AlertKind.PREHEAT_DUE)
+
+    @property
+    def is_preheat(self) -> bool:
+        return self is AlertKind.PREHEAT_DUE
 
 
 class BusyKind(enum.StrEnum):

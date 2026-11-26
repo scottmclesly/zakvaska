@@ -5,9 +5,12 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.models.enums import BakeMethod
 from app.models.setting import (
     DEFAULT_SETTINGS,
     FEEDS_PER_DAY_CHOICES,
+    PREHEAT_OVEN_CHOICES,
+    PREHEAT_POT_CHOICES,
     RIBBON_SPAN_CHOICES,
     Setting,
 )
@@ -79,6 +82,30 @@ def default_ferment_temp_c(session: Session) -> float:
         return float(get_setting(session, "default_ferment_temp_c") or default)
     except (TypeError, ValueError):
         return default
+
+
+def preheat_pot_min(session: Session) -> int:
+    """How long a cast-iron pot gets in the oven before the loaf goes in."""
+    return _int_setting(session, "preheat_pot_min", PREHEAT_POT_CHOICES)
+
+
+def preheat_oven_min(session: Session) -> int:
+    """The same heads-up for a bake with no pot to bring up to temperature."""
+    return _int_setting(session, "preheat_oven_min", PREHEAT_OVEN_CHOICES)
+
+
+def preheat_lead_min(session: Session, method: BakeMethod) -> int | None:
+    """How long before the bake step the oven wants turning on.
+
+    None for the bread maker, which heats itself as part of its own program:
+    there is nothing to be reminded of, and an alert that says to preheat
+    something would be wrong rather than merely unnecessary.
+    """
+    if method is BakeMethod.DUTCH_OVEN:
+        return preheat_pot_min(session)
+    if method is BakeMethod.OVEN:
+        return preheat_oven_min(session)
+    return None
 
 
 def jar_feeds_per_day(session: Session, jar) -> int:

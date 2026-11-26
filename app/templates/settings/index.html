@@ -122,6 +122,47 @@
   </form>
 </section>
 
+{# --- The preheat heads-up ------------------------------------------ #}
+<section class="card">
+  <h2 class="section-title">Preheating</h2>
+  <p class="muted small">
+    How long before the bake step you want telling to turn the oven on. The
+    preheat runs alongside the final proof rather than after it, so the
+    heads-up comes while the loaf is still in the pan — it does not push the
+    bake back. The bread maker heats itself, so it gets no reminder.
+  </p>
+  <form class="form" method="post" action="/settings/preheat">
+    <div class="field-row">
+      <label>
+        <span>Cast-iron pot</span>
+        <select name="preheat_pot_min">
+          {% for choice in preheat_pot_choices %}
+          <option value="{{ choice }}" {% if choice == preheat_pot_min %}selected{% endif %}>
+            {{ choice }} minutes
+          </option>
+          {% endfor %}
+        </select>
+        <em class="muted small">A lidded pot wants 45 minutes at least.</em>
+      </label>
+
+      <label>
+        <span>Oven, no pot</span>
+        <select name="preheat_oven_min">
+          {% for choice in preheat_oven_choices %}
+          <option value="{{ choice }}" {% if choice == preheat_oven_min %}selected{% endif %}>
+            {{ choice }} minutes
+          </option>
+          {% endfor %}
+        </select>
+        <em class="muted small">Only the air has to come up to temperature.</em>
+      </label>
+    </div>
+    <div class="row-actions">
+      <button class="btn" type="submit">Save preheating</button>
+    </div>
+  </form>
+</section>
+
 {# --- Busy blocks --------------------------------------------------- #}
 <section class="card">
   <h2 class="section-title">When you are busy</h2>

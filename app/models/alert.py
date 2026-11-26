@@ -105,7 +105,16 @@ class Alert(Base):
 
     @property
     def subject(self) -> str:
-        """What to call this alert in one short phrase."""
+        """What to call this alert in one short phrase.
+
+        A preheat is about the oven rather than about the step it is
+        counted back from, so it does not borrow that step's name — being
+        told "Bake" three quarters of an hour early would read as the
+        bake being due. The sentence with the temperature and the minutes
+        in it is `services.alerts.headline`, which knows the display unit.
+        """
+        if self.kind.is_preheat:
+            return "Preheat the oven"
         if self.stage_log is not None:
             return self.stage_log.name
         return self.jar.name if self.jar is not None else "something"

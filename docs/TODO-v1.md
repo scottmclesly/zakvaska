@@ -87,6 +87,12 @@ Work phase by phase. Each phase ends with its acceptance checks passing, tests g
       can be typed as the amounts it is written in — the baker's percentages
       are worked out from them and the batch is kept on the version, so it
       reads back in cups (2026-11-08)
+- [x] A preheat heads-up: /plan picks the bake method, and a cast-iron pot
+      bake gets told to turn the oven on a set lead time (30/45/60 min,
+      settable; 20 for a plain oven) before the bake step. The preheat is a
+      lead time on the bake step rather than a step of its own, so it runs
+      alongside the final proof instead of pushing the bake back, and it
+      follows the bake step through every nudge and re-plan (2026-11-26)
 
 ## v2 backlog (do not build in v1)
 - Back-scheduling from a target "bread out" time through recipe stages

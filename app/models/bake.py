@@ -137,6 +137,18 @@ class BakeStageLog(Base):
     planned_temp_c: Mapped[float | None] = mapped_column(Float)
     # Back-scheduling fills this in; v1 leaves it null (docs/TODO-v1.md).
     planned_start: Mapped[datetime | None] = mapped_column(UtcDateTime)
+    #: How long before this step the oven wants turning on. Set on a bake
+    #: step whose method needs it, from the settings, when the plan is
+    #: written down — copied for the same reason the durations are: the
+    #: plan a loaf was baked to is part of the record, so changing the
+    #: setting moves the next bake rather than the one in the oven.
+    #:
+    #: The preheat is deliberately *not* a step. It runs alongside the final
+    #: proof, and a step in the chain would push the bake back by its own
+    #: length. Null means no heads-up: the bread maker, a stage copied
+    #: straight from a recipe, and every bake made before this existed —
+    #: including one that already carries a preheat step by hand.
+    preheat_lead_min: Mapped[int | None] = mapped_column(Integer)
 
     #: Needs doing, so it is worth an alert at its start.
     hands_on: Mapped[bool] = mapped_column(
@@ -199,6 +211,17 @@ class BakeStageLog(Base):
     @property
     def is_planned(self) -> bool:
         return self.planned_start is not None
+
+    @property
+    def preheat_at(self) -> datetime | None:
+        """When the oven has to go on for this step to be baked on time.
+
+        The arithmetic only; whether it is still worth saying is
+        `followalong.preheat_moment`.
+        """
+        if self.planned_start is None or not self.preheat_lead_min:
+            return None
+        return self.planned_start - timedelta(minutes=self.preheat_lead_min)
 
     @property
     def drift_min(self) -> int | None:

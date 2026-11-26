@@ -263,12 +263,26 @@ def _follow_context(ctx: ViewContext, bake) -> dict:
     busy blocks, which may have been edited since the bake began.
     """
     if not followalong.has_plan(bake):
-        return {"now_view": None, "timeline": None}
+        return {
+            "now_view": None, "timeline": None,
+            "preheat_at": None, "preheat_lead_min": None,
+        }
 
     intervals = followalong.busy_for(ctx.session, bake, now=ctx.now, tz=ctx.tz)
     steps = followalong.planned_steps(bake, busy=intervals)
     first, last = ribbon_service.timeline_window(
         steps[0].start, steps[-1].end, ctx.now
+    )
+
+    span = followalong.preheat_span(bake)
+    preheat_log = followalong.preheat_log(bake)
+    preheat = (
+        ribbon_service.PreheatMark(
+            start=span[0], end=span[1],
+            lead_min=preheat_log.preheat_lead_min,
+        )
+        if span is not None and preheat_log is not None
+        else None
     )
     return {
         "now_view": followalong.now_view(bake, now=ctx.now, busy=intervals),
@@ -284,6 +298,11 @@ def _follow_context(ctx: ViewContext, bake) -> dict:
                 )
                 for one in intervals
             ),
+            preheat=preheat,
+        ),
+        "preheat_at": span[0] if span else None,
+        "preheat_lead_min": (
+            preheat_log.preheat_lead_min if preheat_log is not None else None
         ),
     }
 

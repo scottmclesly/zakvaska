@@ -70,6 +70,30 @@
   </g>
   {%- endif %}
 
+  {#- The oven coming up to temperature. Drawn behind the bars, across the
+      bake row and the one above it, because what it has to show is that the
+      preheat overlaps the end of the final proof rather than following it.
+      A hatch-free band and a line at its left edge: the line is the moment
+      the alert fires, the band is the waiting. -#}
+  {%- if timeline.preheat %}
+  {%- set warm = timeline.preheat %}
+  <g class="preheat-band">
+    <rect x="{{ warm.x1 | round(2) }}" y="{{ warm.y | round(2) }}"
+          width="{{ warm.width | round(2) }}" height="{{ warm.height | round(2) }}"
+          rx="2.5">
+      <title>Preheat from {{ warm.start | local_time }} — {{ warm.lead_min }} min
+        before the loaf goes in at {{ warm.end | local_time }}</title>
+    </rect>
+    <line class="preheat-edge" x1="{{ warm.x1 | round(2) }}"
+          y1="{{ warm.y | round(2) }}" x2="{{ warm.x1 | round(2) }}"
+          y2="{{ (warm.y + warm.height) | round(2) }}"/>
+    {%- if warm.width > 54 %}
+    <text class="preheat-label" x="{{ (warm.x1 + 4) | round(2) }}"
+          y="{{ (warm.y + 8) | round(2) }}">preheat</text>
+    {%- endif %}
+  </g>
+  {%- endif %}
+
   {%- for bar in timeline.bars %}
   <g class="step-bar {% if bar.clashes %}is-clash{% endif %}
             {% if bar.hands_on %}is-handson{% endif %}">

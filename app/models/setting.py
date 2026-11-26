@@ -18,18 +18,31 @@ from app.models.base import Base
 #                           an ambient temperature. 26.7 °C is 80 °F, the
 #                           proofing box setting.
 #   ribbon_span_h           how much time the ribbon shows at once.
+#   preheat_pot_min         how long before the bake a lidded cast-iron pot
+#                           needs in the oven. 45 minutes is the floor for a
+#                           pot heavy enough to be worth using; the preheat
+#                           runs alongside the final proof, not after it.
+#   preheat_oven_min        the same heads-up for a bake on a tray or in a
+#                           tin, where only the air has to come up to
+#                           temperature. Much shorter, so it is its own key.
 DEFAULT_SETTINGS = {
     "temp_unit": "F",
     "weight_unit": "g",
     "feeds_per_day": "2",
     "default_ferment_temp_c": "26.7",
     "ribbon_span_h": "48",
+    "preheat_pot_min": "45",
+    "preheat_oven_min": "20",
 }
 
 #: Offered in the settings form. One or two feeds a day; more is a levain.
 FEEDS_PER_DAY_CHOICES = (1, 2)
 #: How far the ribbon looks, in hours.
 RIBBON_SPAN_CHOICES = (24, 48, 72)
+#: How long a cast-iron pot gets in the oven before the loaf goes in.
+PREHEAT_POT_CHOICES = (30, 45, 60)
+#: The same for a plain oven bake, where there is no mass to heat.
+PREHEAT_OVEN_CHOICES = (10, 15, 20, 30)
 
 
 class Setting(Base):

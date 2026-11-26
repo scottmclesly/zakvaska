@@ -96,6 +96,20 @@ class BusyMark:
 
 
 @dataclass(frozen=True)
+class PreheatMark:
+    """The oven coming up to temperature before the bake step.
+
+    Not a step, which is exactly why it is handed over separately: it runs
+    alongside the step before the bake rather than after it, so it cannot
+    be a bar in the stack without claiming time of its own.
+    """
+
+    start: datetime
+    end: datetime
+    lead_min: int
+
+
+@dataclass(frozen=True)
 class RibbonSeries:
     """One jar's worth of ribbon."""
 
@@ -553,6 +567,26 @@ class StepBar:
 
 
 @dataclass(frozen=True)
+class PreheatBand:
+    """Where the preheat is drawn: across the rows, not along one."""
+
+    x1: float
+    x2: float
+    #: The top of the band, and how far down it reaches. It covers the bake
+    #: bar and the row above it, because overlapping the end of that row —
+    #: the final proof — is the thing worth seeing.
+    y: float
+    height: float
+    start: datetime
+    end: datetime
+    lead_min: int
+
+    @property
+    def width(self) -> float:
+        return max(self.x2 - self.x1, 0.6)
+
+
+@dataclass(frozen=True)
 class Timeline:
     bars: tuple[StepBar, ...]
     ticks: tuple[Tick, ...]
@@ -569,6 +603,8 @@ class Timeline:
     jar_name: str | None = None
     #: The levain build, marked on that curve.
     levain_x: float | None = None
+    #: The oven coming up to temperature, where there is one to preheat.
+    preheat: PreheatBand | None = None
 
     @property
     def span_h(self) -> float:
@@ -594,6 +630,7 @@ def timeline(
     jar_feed: FeedMark | None = None,
     jar_name: str | None = None,
     levain_at: datetime | None = None,
+    preheat: PreheatMark | None = None,
 ) -> Timeline | None:
     """Lay a bake's steps out along a time axis.
 
@@ -665,6 +702,26 @@ def timeline(
             baseline=baseline,
         )
 
+    band = None
+    if preheat is not None and preheat.end > start and preheat.start < end:
+        # Anchored to the bar it belongs to rather than to a row number, so
+        # it stays on the bake wherever in the chain that lands. It reaches
+        # one row up, over the end of whatever comes before — which is the
+        # final proof, and the overlap is the point.
+        baking = next((one for one in bars if one.key == "bake"), None)
+        if baking is None:
+            baking = bars[-1]
+        top = max(baking.y - (BAR_H + BAR_GAP), plot.y + jar_band)
+        band = PreheatBand(
+            x1=x_for(preheat.start),
+            x2=x_for(preheat.end),
+            y=top,
+            height=baking.y + BAR_H - top,
+            start=preheat.start,
+            end=preheat.end,
+            lead_min=preheat.lead_min,
+        )
+
     shades = tuple(
         BusyShade(x1=x_for(mark.start), x2=x_for(mark.end), label=mark.label)
         for mark in busy
@@ -690,6 +747,7 @@ def timeline(
             if levain_at is not None and start <= levain_at <= end
             else None
         ),
+        preheat=band,
     )
 
 
