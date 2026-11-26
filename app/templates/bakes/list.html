@@ -66,10 +66,18 @@
 {% if bakes %}
 <ul class="plain bake-list">
   {% for bake in bakes %}
+  {#- One loaf: what it was and when on the left, how it turned out on the
+      right, and under them the note to self — which is the line you come
+      back to this page for. -#}
   <li class="card bake-row">
     <div class="bake-row-head">
       <h2><a href="/bakes/{{ bake.id }}">{{ bake.label }}</a></h2>
-      <span class="badge badge-status status-{{ bake.status.value }}">{{ bake.status.label }}</span>
+      <div class="bake-row-end">
+        {% if bake.result and bake.result.rating %}
+        {% include "partials/stars.html" with context %}
+        {% endif %}
+        <span class="badge badge-status status-{{ bake.status.value }}">{{ bake.status.label }}</span>
+      </div>
     </div>
     <p class="bake-meta muted">
       {{ bake.at | local_day }} ·
@@ -77,14 +85,10 @@
       {%- if bake.jar %} · <a href="/jars/{{ bake.jar.id }}">{{ bake.jar.name }}</a>{% endif -%}
       {%- if bake.total_flour_g %} · {{ bake.total_flour_g | weigh_total(weight_unit, flour=true) }} flour{% endif -%}
     </p>
-    {% if bake.result %}
+    {% if bake.result and bake.result.next_time %}
     <p class="bake-verdict">
-      {% if bake.result.rating %}
-      {% include "partials/stars.html" with context %}
-      {% endif %}
-      {% if bake.result.next_time %}
-      <span class="muted">Next time: {{ bake.result.next_time }}</span>
-      {% endif %}
+      <span class="bake-next-label">Next time</span>
+      {{ bake.result.next_time }}
     </p>
     {% endif %}
   </li>
