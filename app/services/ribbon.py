@@ -81,6 +81,12 @@ class FeedMark:
     peak_h: float
     ratio_label: str | None = None
     temp_assumed: bool = False
+    #: When the jar was fed again, which is where this cycle stops. Feeding
+    #: discards most of what was in the jar and dilutes the rest, so the rise
+    #: it set off does not carry on afterwards — and drawing it on would put
+    #: two humps over each other and claim a peak the jar never reached.
+    #: None while this is the jar's latest feed.
+    ends_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -184,6 +190,15 @@ class RiseCurve:
     @property
     def has_shape(self) -> bool:
         return any(len(one.points) > 1 for one in self.segments)
+
+    @property
+    def peak_pre_empted(self) -> bool:
+        """True when the jar was fed again before this cycle peaked.
+
+        The predicted peak is then a time that never arrived, so it is not
+        marked on the curve and not claimed in the tooltip.
+        """
+        return self.feed.ends_at is not None and self.peak_at > self.feed.ends_at
 
     @property
     def area(self) -> str:
@@ -377,8 +392,11 @@ def _curve_points(
     if feed.peak_h <= 0:
         return []
 
-    # The curve is over at twice the peak, where the parabola reaches zero.
+    # The curve is over at twice the peak, where the parabola reaches zero
+    # — or sooner, if the jar was fed again before it got there.
     curve_end = feed.at + timedelta(hours=feed.peak_h * timing.PAST_TO)
+    if feed.ends_at is not None:
+        curve_end = min(curve_end, feed.ends_at)
     from_at = max(feed.at, start)
     to_at = min(curve_end, end)
     if to_at < from_at:

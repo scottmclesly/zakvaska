@@ -456,6 +456,17 @@ def test_recent_cycles_drops_feeds_whose_curves_are_long_over(session):
     assert [one.fed_at for one in cycles] == [_utc(8, 8)]
 
 
+def test_recent_cycles_drops_a_cycle_the_next_feed_cut_off(session):
+    """Its curve looks like it overlaps the window, but it ended at 20:00."""
+    jar = _jar(session)
+    _feed(session, jar, at=_utc(1, 14))
+    _feed(session, jar, at=_utc(1, 20))
+
+    cycles = plan.recent_cycles(session, jar, since=_utc(2, 0), until=_utc(3))
+
+    assert [one.fed_at for one in cycles] == [_utc(1, 20)]
+
+
 def test_recent_cycles_keeps_one_feed_rather_than_drawing_nothing(session):
     """An old jar still shows where it last got to, not a blank ribbon."""
     jar = _jar(session)

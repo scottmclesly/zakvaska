@@ -87,7 +87,8 @@
       <circle class="duel-feed" cx="{{ curve.x | round(2) }}" cy="{{ row.bottom }}" r="4">
         <title>{{ row.name }} fed {{ curve.feed.at | local_dt }}</title>
       </circle>
-      {%- if curve.peak_x is not none %}
+      {#- Not for a cycle the next feed cut short: that peak never came. -#}
+      {%- if curve.peak_x is not none and not curve.peak_pre_empted %}
       {#- A drop line from each peak to the clock: two of them side by side
           are the answer the chart is for. -#}
       <line class="duel-peak-line" x1="{{ curve.peak_x | round(2) }}" y1="{{ row.top }}"
