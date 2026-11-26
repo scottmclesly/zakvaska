@@ -245,6 +245,63 @@ def test_a_peak_outside_the_window_gets_no_marker():
     assert drawn.rows[0].curves[0].peak_x is None
 
 
+def test_a_cycle_stops_where_the_next_feed_begins():
+    """Feeding discards what was rising, so the old curve ends there."""
+    feed = ribbon.FeedMark(at=_at(1, 6), peak_h=5.0, ends_at=_at(1, 10))
+    drawn = _draw([_series(feeds=(feed,))])
+
+    curve = drawn.rows[0].curves[0]
+    points = [point for one in curve.segments for point in one.points]
+    cut = drawn.plot.x + (10 / 48) * drawn.plot.w   # 10:00 in a 48 h window
+
+    assert curve.has_shape
+    assert max(x for x, _ in points) == pytest.approx(cut, abs=0.5)
+
+
+def test_two_feeds_in_the_window_do_not_draw_over_each_other():
+    """The doubled-up humps: the first curve used to run on past the second."""
+    first = ribbon.FeedMark(at=_at(1, 6), peak_h=5.0, ends_at=_at(1, 10))
+    second = ribbon.FeedMark(at=_at(1, 10), peak_h=5.0)
+    row = _draw([_series(feeds=(first, second))]).rows[0]
+
+    earlier = [point for one in row.curves[0].segments for point in one.points]
+    later = [point for one in row.curves[1].segments for point in one.points]
+
+    assert max(x for x, _ in earlier) <= min(x for x, _ in later) + 0.01
+
+
+def test_a_cycle_cut_short_keeps_the_bands_it_got_to():
+    feed = ribbon.FeedMark(at=_at(1, 6), peak_h=5.0, ends_at=_at(1, 9))
+    curve = _draw([_series(feeds=(feed,))]).rows[0].curves[0]
+
+    # Three hours into a five-hour rise: on its way up, and no further.
+    assert [segment.band for segment in curve.segments] == [Band.RISING]
+
+
+def test_a_peak_the_jar_never_reached_is_not_claimed():
+    feed = ribbon.FeedMark(at=_at(1, 6), peak_h=5.0, ends_at=_at(1, 9))
+    curve = _draw([_series(feeds=(feed,))]).rows[0].curves[0]
+
+    assert curve.peak_pre_empted
+
+
+def test_a_peak_reached_before_the_next_feed_still_counts():
+    feed = ribbon.FeedMark(at=_at(1, 6), peak_h=5.0, ends_at=_at(1, 14))
+    curve = _draw([_series(feeds=(feed,))]).rows[0].curves[0]
+
+    assert not curve.peak_pre_empted
+    assert curve.peak_x is not None
+
+
+def test_the_latest_cycle_runs_its_full_course():
+    """Nothing has ended it yet, so it is drawn all the way back down."""
+    feed = ribbon.FeedMark(at=_at(1, 6), peak_h=5.0)
+    row = _draw([_series(feeds=(feed,))]).rows[0]
+    points = [point for one in row.curves[0].segments for point in one.points]
+
+    assert points[-1][1] == pytest.approx(row.bottom, abs=0.5)
+
+
 def test_the_fill_closes_back_along_the_baseline():
     feed = ribbon.FeedMark(at=_at(1, 6), peak_h=5.0)
     row = _draw([_series(feeds=(feed,))]).rows[0]

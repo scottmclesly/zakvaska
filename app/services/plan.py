@@ -356,9 +356,14 @@ def recent_cycles(
     ]
 
     kept: list[FedCycle] = []
-    for cycle in cycles:
-        # Its curve runs out at twice the peak, where the parabola hits zero.
+    for index, cycle in enumerate(cycles):
+        # Its curve runs out at twice the peak, where the parabola hits zero
+        # — or at the next feed, which ends the cycle whatever the parabola
+        # says. A cycle cut off before the window opened has nothing left to
+        # draw inside it.
         ends = cycle.fed_at + timedelta(hours=cycle.peak_h * timing.PAST_TO)
+        if index + 1 < len(cycles):
+            ends = min(ends, cycles[index + 1].fed_at)
         if ends >= since or cycle.fed_at >= since:
             kept.append(cycle)
     if not kept and cycles:
@@ -671,8 +676,15 @@ def jar_series(
                 peak_h=cycle.peak_h,
                 ratio_label=cycle.ratio_label,
                 temp_assumed=cycle.temp_assumed,
+                # The feed that ended it, where there was one: the curve
+                # stops there and hands over to the next one.
+                ends_at=(
+                    cycles[index + 1].fed_at
+                    if index + 1 < len(cycles)
+                    else None
+                ),
             )
-            for cycle in cycles
+            for index, cycle in enumerate(cycles)
         ),
         planned=tuple(planned_marks(session, jar, made, now=now, busy=busy)),
         observations=tuple(

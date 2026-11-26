@@ -149,6 +149,31 @@ def test_the_ribbon_draws_the_rise_curve_in_bands(client, session):
     assert "ribbon-path band-" in page.text
 
 
+def test_a_fed_again_jar_draws_one_hump_per_cycle_not_two_over_each_other(
+    client, session
+):
+    """The earlier curve stops at the later feed instead of running past it.
+
+    Both feeds are inside the window, so both are drawn — but the first one
+    was overtaken four hours into a five-hour rise, and the peak it was
+    heading for never happened.
+    """
+    jar = _jar(session)
+    _feed(session, jar, at=_hours_ago(5), starter=20, flour=20, water=20,
+          temp_c=f_to_c(78.0))
+    _feed(session, jar, at=_hours_ago(1), starter=20, flour=20, water=20,
+          temp_c=f_to_c(78.0))
+
+    page = client.get(f"/jars/{jar.id}")
+
+    # Counted per drawing: the ribbon is emitted once for each width.
+    drawings = len(ribbon_service.SIZES)
+    assert page.text.count('class="ribbon-curve"') == 2 * drawings
+    assert "before it peaked" in page.text
+    # Only the cycle still running claims a peak.
+    assert page.text.count('class="ribbon-peak"') == 1 * drawings
+
+
 def test_the_ribbon_marks_the_feeds_with_their_ratio(client, session):
     jar = _jar(session)
     _feed(session, jar, at=_hours_ago(3), starter=20, flour=100, water=100)
@@ -607,3 +632,50 @@ def test_a_move_too_far_for_any_ratio_says_so_instead_of_suggesting_one(
     assert "That lands in Sleep" in page.text
     assert "The closest a feedable ratio gets" in page.text
     assert "Somewhere cooler" in page.text
+
+
+# --- Head to head ---------------------------------------------------------
+
+
+def test_head_to_head_shows_for_two_jars_on_one_flour(client, session):
+    one = _jar(session, name="Homemade", flour_type="whole rye")
+    two = _jar(session, name="Bought", flour_type="Whole Rye")
+    other = _jar(session, name="Wheat", flour_type="bread flour")
+    for jar in (one, two, other):
+        _feed(session, jar, at=_hours_ago(2))
+    _release(session)
+
+    page = client.get("/")
+
+    assert 'data-chart="duel"' in page.text
+    # The pair on rye, in every width; the wheat jar is not in the race.
+    rows = page.text.count('class="duel-row')
+    assert rows == 2 * len(ribbon_service.SIZES)
+
+
+def test_head_to_head_is_absent_without_a_pair(client, session):
+    _feed(session, _jar(session, name="Rye", flour_type="rye"), at=_hours_ago(2))
+    _feed(session, _jar(session, name="Wheat", flour_type="wheat"), at=_hours_ago(2))
+    _release(session)
+
+    assert 'data-chart="duel"' not in client.get("/").text
+
+
+def test_head_to_head_does_not_claim_a_peak_the_next_feed_pre_empted(
+    client, session
+):
+    """Fed twice an hour apart: the first cycle never got to its peak, so
+    only the second gets a peak marker on the overlay."""
+    jars = [
+        _jar(session, name="Homemade", flour_type="rye"),
+        _jar(session, name="Bought", flour_type="rye"),
+    ]
+    for jar in jars:
+        _feed(session, jar, at=_hours_ago(2))
+        _feed(session, jar, at=_hours_ago(1))
+    _release(session)
+
+    page = client.get("/")
+
+    peaks = page.text.count('class="duel-peak"')
+    assert peaks == len(jars) * len(ribbon_service.SIZES)

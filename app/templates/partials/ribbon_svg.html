@@ -91,9 +91,11 @@
         <circle class="ribbon-feed-dot" cx="{{ curve.x | round(2) }}"
                 cy="{{ row.bottom }}" r="4"/>
         <title>Fed {{ curve.feed.at | local_dt }}{% if curve.feed.ratio_label %}
-          at {{ curve.feed.ratio_label }}{% endif %} — peaks about
-          {{ curve.peak_at | local_time }}{% if curve.feed.temp_assumed %}
-          (temperature assumed){% endif %}</title>
+          at {{ curve.feed.ratio_label }}{% endif %}
+          {%- if curve.peak_pre_empted %} — fed again
+          {{ curve.feed.ends_at | local_time }}, before it peaked
+          {%- else %} — peaks about {{ curve.peak_at | local_time }}{% endif %}
+          {%- if curve.feed.temp_assumed %} (temperature assumed){% endif %}</title>
       </g>
       {#- Under the baseline, where no curve is ever drawn over it. -#}
       {%- if curve.feed.ratio_label and curve.x < plot.right - 60 %}
@@ -101,8 +103,9 @@
             y="{{ row.bottom + 13 }}">{{ curve.feed.ratio_label }}</text>
       {%- endif %}
 
-      {#- A tick where the peak is predicted. -#}
-      {%- if curve.peak_x is not none %}
+      {#- A tick where the peak is predicted, unless the jar was fed again
+          before it got there: that peak never happened. -#}
+      {%- if curve.peak_x is not none and not curve.peak_pre_empted %}
       <circle class="ribbon-peak" cx="{{ curve.peak_x | round(2) }}"
               cy="{{ row.top }}" r="3">
         <title>Predicted peak, {{ curve.peak_at | local_dt }}</title>
