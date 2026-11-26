@@ -13,13 +13,33 @@
 </section>
 
 {% if recipes %}
-<ul class="recipe-grid">
+{#- Finding one of thirty-odd. The whole list is on the page, so this only
+    hides cards: no request, and without JavaScript the bar is hidden and
+    the list is simply all there. -#}
+<form class="recipe-find" role="search" data-recipe-find hidden
+      onsubmit="return false">
+  <label class="sr-only" for="recipe-q">Find a recipe</label>
+  <input id="recipe-q" type="search" placeholder="Find a recipe…"
+         autocomplete="off" data-recipe-q>
+  <div class="recipe-families" role="group" aria-label="Kind of bread">
+    <button class="chip is-current" type="button" data-family="" aria-pressed="true">All</button>
+    {% for family in recipes | map(attribute="category") | unique | sort(attribute="value") %}
+    <button class="chip" type="button" data-family="{{ family.value }}" aria-pressed="false">
+      {{- family.label -}}
+      <span class="chip-count">{{ recipes | selectattr("category", "equalto", family) | list | length }}</span>
+    </button>
+    {% endfor %}
+  </div>
+</form>
+<p class="card muted recipe-none" data-recipe-none hidden>No recipe matches that.</p>
+<ul class="recipe-grid" data-recipe-list>
   {% for recipe in recipes %}
   {% set latest = recipe.latest_version %}
   {#- A card is the link to its recipe: the name's anchor is stretched over
       all of it. One loaf, one name, one line of facts — thirty-six of these
       should be a page you can take in, not six screens of them. -#}
-  <li class="card recipe-card">
+  <li class="card recipe-card" data-family="{{ recipe.category.value }}"
+      data-find="{{ (recipe.name ~ ' ' ~ (recipe.source or '') ~ ' ' ~ (latest.default_program.name if latest and latest.default_program else '')) | lower }}">
     <div class="recipe-loaf">
       {% include "partials/loaf_art.html" %}
     </div>

@@ -254,3 +254,46 @@ document.addEventListener("input", (event) => {
     chip.style.backgroundImage = "none";
   }
 });
+
+// --- Finding a recipe ------------------------------------------------------
+// The list is all on the page already, so this hides cards rather than asking
+// the server for fewer. The bar arrives hidden and is shown from here: with no
+// JavaScript there is no dead search box, just the whole list.
+(function () {
+  var bar = document.querySelector("[data-recipe-find]");
+  var list = document.querySelector("[data-recipe-list]");
+  if (!bar || !list) return;
+
+  var box = bar.querySelector("[data-recipe-q]");
+  var none = document.querySelector("[data-recipe-none]");
+  var chips = bar.querySelectorAll("[data-family]");
+  var family = "";
+
+  function apply() {
+    var words = box.value.toLowerCase().split(/\s+/).filter(Boolean);
+    var shown = 0;
+    list.querySelectorAll(".recipe-card").forEach(function (card) {
+      var text = card.getAttribute("data-find") || "";
+      var match =
+        (!family || card.getAttribute("data-family") === family) &&
+        words.every(function (word) { return text.indexOf(word) !== -1; });
+      card.hidden = !match;
+      if (match) shown += 1;
+    });
+    if (none) none.hidden = shown !== 0;
+  }
+
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      family = chip.getAttribute("data-family");
+      chips.forEach(function (other) {
+        var on = other === chip;
+        other.classList.toggle("is-current", on);
+        other.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      apply();
+    });
+  });
+  box.addEventListener("input", apply);
+  bar.hidden = false;
+})();

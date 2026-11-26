@@ -1077,6 +1077,31 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   .program-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* Finding one: a box and the kinds of bread, above the grid. */
+.recipe-find {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+.recipe-find[hidden] { display: none; }
+.recipe-find input {
+  flex: 1 1 14rem;
+  max-width: 26rem;
+  font: inherit;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: var(--s-2) var(--s-4);
+  min-height: var(--tap);
+}
+.recipe-families { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.recipe-families .chip { cursor: pointer; font-family: inherit; gap: var(--s-2); }
+.chip-count { font-weight: 400; opacity: 0.7; }
+.recipe-card[hidden] { display: none; }
+
 /* Recipes: as many across as fit. */
 .recipe-grid {
   list-style: none;
