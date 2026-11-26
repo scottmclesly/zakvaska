@@ -129,6 +129,19 @@
   --scene-score: #f4e3c8;
   --scene-seed: #e8d6b4;
 
+  /* The slate by the door, and the chalks in its tray. An object, so the
+     same in either theme. */
+  --slate: #2c3632;
+  --slate-deep: #232b28;
+  --chalk: #f3efe2;
+  --chalk-soft: #b9bdb0;
+  --chalk-yellow: #f2d77c;
+  --chalk-pink: #f2a08f;
+  --chalk-green: #9fd6a8;
+  --chalk-blue: #a4c8e6;
+  --chalk-orange: #f0b279;
+  --hand: "Chalkduster", "Marker Felt", "Bradley Hand", "Segoe Print", var(--display);
+
   /* The cap picker's "any colour" chip. */
   --hue-1: #c0392b;
   --hue-2: #d2691e;
@@ -483,6 +496,71 @@ code {
      window. */
   .dash-now .jar-grid { grid-template-columns: 1fr; }
 }
+
+/* --- The chalkboard ------------------------------------------------------
+   "Right now" is the slate a bakery hangs by the door: today's bake and
+   what each jar wants, written up in chalk. It works by re-pointing the
+   page's own tokens at chalk colours inside the board, so the cards on it
+   need no rules of their own — they are simply written on something else. */
+.chalkboard {
+  --card: transparent;
+  --paper: var(--slate-deep);
+  --ink: var(--chalk);
+  --ink-soft: var(--chalk-soft);
+  --line: color-mix(in srgb, var(--chalk) 22%, transparent);
+  --accent: var(--chalk-yellow);
+  --accent-ink: var(--slate-deep);
+  --ok: var(--chalk-green);
+  --warn: var(--chalk-orange);
+  --danger: var(--chalk-pink);
+  --chill: var(--chalk-blue);
+  --band-rising: var(--chalk-blue);
+  --band-peak: var(--chalk-green);
+  --band-ok: var(--chalk-yellow);
+  --band-past: var(--chalk-orange);
+  --band-hungry: var(--chalk-pink);
+  --lift-1: none;
+
+  color: var(--ink);
+  padding: var(--s-4);
+  border-radius: var(--r-md);
+  /* Slate, with the ghost of what was wiped off it, in a pine frame. */
+  background:
+    radial-gradient(120% 80% at 20% 10%, color-mix(in srgb, var(--chalk) 7%, transparent), transparent 60%),
+    radial-gradient(90% 70% at 85% 90%, color-mix(in srgb, var(--chalk) 5%, transparent), transparent 55%),
+    var(--slate);
+  border: 7px solid var(--wood);
+  box-shadow:
+    inset 0 0 0 1px var(--wood-edge),
+    inset 0 2px 14px var(--shade-deep),
+    0 0 0 1px var(--wood-edge),
+    var(--lift-2);
+}
+.chalkboard > .section-title {
+  color: var(--chalk);
+  font-family: var(--hand);
+  font-size: var(--text-lg);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  padding-bottom: var(--s-2);
+  border-bottom: 2px dashed var(--line);
+}
+/* Entries are written straight on the slate and ruled off from each other,
+   rather than each being a card. */
+.chalkboard .card {
+  padding: var(--s-3) 0;
+  border: 0;
+  border-bottom: 1px dashed var(--line);
+  border-radius: 0;
+}
+.chalkboard .jar-grid { gap: 0; }
+.chalkboard .jar-grid > .card:last-child { border-bottom: 0; padding-bottom: 0; }
+.chalkboard .bake-live-name,
+.chalkboard .jar-card-head h2 { font-family: var(--hand); font-weight: 400; }
+.chalkboard .jar-card-head h2 a { color: var(--chalk); }
+.chalkboard .band-text { font-family: var(--hand); font-weight: 400; }
+.chalkboard .jar-card.is-overdue { border-color: var(--line); }
+.chalkboard .btn-secondary { border-color: color-mix(in srgb, var(--chalk) 45%, transparent); }
 
 /* A jar's card on the dashboard: who, how it is, when, and the three
    things you can do about it. */
