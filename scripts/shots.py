@@ -187,7 +187,8 @@ def main() -> None:
     parser.add_argument("--out", default="docs/facelift/shots")
     parser.add_argument("--pages", help="JSON file of {name: path}")
     parser.add_argument("--only", nargs="*", help="page names to limit to")
-    parser.add_argument("--dark", action="store_true")
+    parser.add_argument("--scheme", choices=("light", "dark"),
+                        help="force a colour scheme; default is the system's")
     args = parser.parse_args()
 
     pages = json.loads(Path(args.pages).read_text()) if args.pages else PAGES
@@ -215,9 +216,9 @@ def main() -> None:
         page = next(t for t in tabs if t["type"] == "page")
         ws = Socket(page["webSocketDebuggerUrl"])
         ws.call("Page.enable")
-        if args.dark:
+        if args.scheme:
             ws.call("Emulation.setEmulatedMedia",
-                    features=[{"name": "prefers-color-scheme", "value": "dark"}])
+                    features=[{"name": "prefers-color-scheme", "value": args.scheme}])
         for name, path in pages.items():
             for width, height in WIDTHS.items():
                 ws.call("Emulation.setDeviceMetricsOverride", width=width,

@@ -350,6 +350,65 @@ copy; with a rise chart on them they are about 0.2 and 0.8 screens longer.)
 Screenshots: `docs/facelift/shots/phase3/`, with `compare-*-1920.png` and
 `compare-phone.png` set against `before/`.
 
+## Phase 4 — what was done
+
+Five ideas, one commit each, so any one can be reverted on its own
+(`git revert <sha>`).
+
+| # | Idea | Commit | What it is |
+|---|---|---|---|
+| 7 | Recipe search and family chips | `Find a recipe by typing…` | A box and a chip per family over the grid. Filters cards already on the page; matches name, source and bread-maker program. Hidden without JavaScript. |
+| 1 | Chalkboard | `Write Right now up on a chalkboard` | The dashboard's side panel as a framed slate in chalk. Done by re-pointing tokens inside `.chalkboard`; remove the class and the plain panel is back. |
+| 2 | Jars show their mood | `Let a jar show how it is` | The drawing takes the readiness band: domed at peak, fallen with a tide line when going over, flat with a red tape corner when hungry. |
+| 3 | Counter mode | `Add a counter mode to a running bake` | One step, when it ends, what it asks for and one large button, full screen. Remembers itself across the reload after tapping Done; asks the screen to stay awake. Escape leaves. |
+| 6 | Head to head | `Set the jars on one flour head to head` | The jars sharing a flour overlaid on one baseline and one clock, each in its lid colour, with a drop line from each peak. |
+
+Not done, by your choice: 4 (index card and print), 5 (dough composition bar),
+8 (second shelf), 9 (manual light/dark switch).
+
+Things to know about these:
+
+- **Head to head compares on the clock**, from each jar's latest feed. It is a fair
+  race when the jars are fed together, which is how you run them. Jars fed hours
+  apart show as offset curves. Aligning them at "hours since feed" instead would be
+  a different chart; say if you want it.
+- **Head to head picks its jars by flour**: the largest group of fed jars with the
+  same `flour_type` text. Two jars whose flour is spelled differently will not be
+  paired.
+- **The chalk hand** is Chalkduster / Marker Felt where the system has one (macOS,
+  iOS) and falls back to the heading serif elsewhere, the Raspberry Pi's own
+  browser included. A phone viewing the Pi's pages uses the phone's fonts.
+- **Counter mode's wake lock** needs a secure context in most browsers: it works on
+  `localhost`, and will be silently skipped over plain `http://` on the LAN. The
+  mode itself works either way.
+- The copy's database also has two made-up feedings (notes say
+  `[facelift test data]`) so the jars were not all hungry at once.
+
+Light theme is now checked on home, a running bake, the jar page and recipes:
+`docs/facelift/shots/p4-light/`.
+
 ## Deferred / needs backend
 
-Nothing yet beyond item 1 above. This section is filled in as phases land.
+Nothing was blocked on the data model, storage or alert logic. What was touched
+outside templates and CSS is listed under Phase 3 and the head-to-head row above.
+
+Left undone, in rough order of worth:
+
+1. **Equipment cycle-time tables** still scroll sideways inside their card. Eleven
+   columns; wants a stacked layout per loaf size.
+2. **Stylesheet order.** Tokens → base → components are in place; the sections
+   below them are still in the order they were first written. Sorting them into
+   artwork / charts / screens is mechanical but touches every line.
+3. **Plan page on a phone** is half a screen longer than it was.
+4. **Head to head by hours since feed**, if the clock version is not the comparison
+   you want.
+5. **Wake lock over the LAN** needs HTTPS on the Pi; that is deployment, not UI.
+6. Ideas 4, 5, 8 and 9.
+
+## Bringing it back
+
+- The branch is `claude/zakvaska-ui-facelift-3ff063`; `main` is untouched.
+- There is no schema change and no migration, so your real `data/` works with this
+  code as it is.
+- `data/` in this worktree is a throwaway copy with made-up observations and
+  feedings in it. Do not copy it over the real one.
