@@ -23,7 +23,11 @@
         <span class="shelf-tag">feed me</span>
         {% endif %}
         <a class="shelf-jar" href="/jars/{{ jar.id }}">
-          {% with rise_pct = card.rise_pct, art_class = "jar-art-shelf" %}
+          {#- How the jar is this minute, where the page worked it out. -#}
+          {% set made = plans.get(jar.id) if plans is defined and plans else none %}
+          {% set ready = made.readiness_at(now) if made else none %}
+          {% with rise_pct = card.rise_pct, art_class = "jar-art-shelf",
+                  mood = ready.band.value if ready else none %}
             {% include "partials/jar_art.html" %}
           {% endwith %}
         </a>

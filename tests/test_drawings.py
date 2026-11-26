@@ -663,3 +663,48 @@ class TestTheRiseChart:
 
     def test_an_empty_dashboard_draws_no_chart(self, client):
         assert "chart-path" not in client.get("/").text
+
+
+class TestTheJarShowsItsMood:
+    """Where a jar is between feeds, drawn rather than written."""
+
+    def _fed(self, session, hours_ago):
+        from datetime import UTC, datetime, timedelta
+
+        from app.models.feeding import Feeding
+
+        jar = make_jar(session, name="Rye")
+        session.add(
+            Feeding(
+                jar_id=jar.id,
+                fed_at=datetime.now(UTC) - timedelta(hours=hours_ago),
+                starter_g=50, flour_g=50, water_g=50,
+            )
+        )
+        session.commit()
+        return jar
+
+    def test_a_jar_long_past_its_feed_slumps_and_flags_its_tape(
+        self, client, session
+    ):
+        jar = self._fed(session, hours_ago=60)
+
+        body = client.get(f"/jars/{jar.id}").text
+
+        assert "mood-hungry" in body
+        assert 'class="jar-flag"' in body
+        assert 'class="jar-tide"' in body
+
+    def test_a_jar_just_fed_is_not_flagged(self, client, session):
+        jar = self._fed(session, hours_ago=0.5)
+
+        body = client.get(f"/jars/{jar.id}").text
+
+        assert "mood-rising" in body
+        assert 'class="jar-flag"' not in body
+        assert 'class="jar-tide"' not in body
+
+    def test_a_jar_never_fed_has_no_mood_to_show(self, client, session):
+        jar = make_jar(session, name="New")
+
+        assert "mood-" not in client.get(f"/jars/{jar.id}").text

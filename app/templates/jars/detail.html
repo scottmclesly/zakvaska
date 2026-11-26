@@ -9,7 +9,8 @@
 {% block content %}
 <section class="hero hero-art">
   <div class="hero-jar">
-    {% with art_class = "jar-art-lg" %}
+    {% with art_class = "jar-art-lg",
+            mood = readiness.band.value if readiness else none %}
       {% include "partials/jar_art.html" %}
     {% endwith %}
     <div class="shelf-plank shelf-plank-sm" aria-hidden="true"></div>

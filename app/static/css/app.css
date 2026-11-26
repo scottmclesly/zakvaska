@@ -1589,6 +1589,16 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 /* State, drawn rather than written: flakes when it is dried down, hooch on
    a jar left too long, frost on the one in the cold, and the rubber band
    round the glass marking where the last feed left it. */
+/* Mood: where the jar is between feeds. Going over, it has fallen back and
+   left a line on the glass where it stood; hungry, it is flat, dull and has
+   a red corner on its tape. At its peak it simply stands tall and domed. */
+.jar-tide { fill: var(--contents); opacity: 0.55; }
+.jar-smear { fill: var(--contents); opacity: 0.12; }
+.jar-flag { fill: var(--danger); }
+.jar-art.state-active.mood-hungry { --contents: var(--starter-hungry); }
+.jar-art.state-active.mood-past { --contents: color-mix(in srgb, var(--starter-active) 60%, var(--starter-hungry)); }
+.jar-art.mood-peak .jar-dome { opacity: 0.8; }
+
 .jar-flake { fill: var(--contents); opacity: 0.9; }
 .jar-hooch { fill: color-mix(in srgb, var(--hooch) 62%, transparent); }
 .jar-rubber { fill: color-mix(in srgb, var(--ink) 28%, transparent); }
