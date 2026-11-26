@@ -22,12 +22,11 @@
   </p>
 </section>
 
-{#- Two columns once there is room. On the left, where the bake has got to:
-    the Now panel, the day drawn out, and what to weigh — the things you
-    glance at. On the right the running sheet, which is the thing you tap.
-    On a phone the sheet follows the day, as it always did. -#}
-<div class="split bake-page">
-<div class="stack">
+{#- Across the top, where the bake has got to: the day drawn out, as wide as
+    it can be because it is the picture you steer by, with the Now panel
+    standing beside it. Under that, two columns: what to weigh and what came
+    of it on the left, the running sheet you tap on the right. On a phone it
+    is one column — now, the day, then the sheet. -#}
 
 {#- Everything on this page that answers "where am I?" — the elapsed
     minutes, the Now panel's countdowns, the `now` line down the day —
@@ -36,6 +35,8 @@
     half-written note would cost more than a stale minute count.
     Nothing in here takes typing. -#}
 <div id="bake-live" {{ live("/bakes/" ~ bake.id, "#bake-live") }}>
+<div class="bake-top">
+<div class="bake-top-side">
 <section class="card">
   <dl class="stats stats-wide">
     <div>
@@ -99,8 +100,10 @@
 {% include "partials/bake_now.html" %}
 {% endif %}
 
+</div>
+
 {% if timeline %}
-<section class="card ribbon-card">
+<section class="card ribbon-card bake-day" data-chart="bake-day">
   <h2 class="section-title">The day</h2>
   {% include "partials/bake_timeline.html" %}
   <p class="ribbon-key muted">
@@ -109,6 +112,10 @@
 </section>
 {% endif %}
 </div>
+</div>
+
+<div class="split bake-page">
+<div class="stack">
 
 {% if scaled %}
 <h2 class="section-title">Weigh out</h2>

@@ -363,3 +363,77 @@ document.addEventListener("input", (event) => {
   if (remembered()) set(true);
 })();
 
+// --- Looking closer at a chart ---------------------------------------------
+// Every chart card ([data-chart]) gets a button that opens it to fill the
+// window, and Escape or the same button closes it. The charts sit in regions
+// that replace themselves as the clock moves, so the button is put back after
+// each swap and a chart that was open is opened again — keyed by the card's
+// name, which is unique on a page.
+(function () {
+  var ICON =
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"' +
+    ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"/></svg>';
+  var open = null;
+
+  function label(button, zoomed) {
+    button.innerHTML = ICON + "<span>" + (zoomed ? "Close" : "Enlarge") + "</span>";
+    button.setAttribute("aria-pressed", zoomed ? "true" : "false");
+  }
+
+  function show(key) {
+    open = key;
+    document.querySelectorAll("[data-chart]").forEach(function (card) {
+      var on = key !== null && card.getAttribute("data-chart") === key;
+      card.classList.toggle("is-zoomed", on);
+      var button = card.querySelector(".chart-zoom");
+      if (button) label(button, on);
+    });
+    var found = key !== null && document.querySelector('[data-chart="' + key + '"]');
+    if (!found) open = null;
+    else centreOnNow(found);
+    document.documentElement.classList.toggle("has-zoom", open !== null);
+  }
+
+  // Where an opened chart is wider than the screen and pans, start it on
+  // the `now` line rather than at last night.
+  function centreOnNow(card) {
+    if (card.scrollWidth <= card.clientWidth) return;
+    var drawn = Array.prototype.filter.call(
+      card.querySelectorAll("svg.fit"),
+      function (svg) { return svg.getClientRects().length > 0; }
+    )[0];
+    var line = drawn && drawn.querySelector(".ribbon-now line");
+    if (!line) return;
+    var box = line.getBoundingClientRect();
+    card.scrollLeft += box.left - card.clientWidth / 2;
+  }
+
+  function dress() {
+    document.querySelectorAll("[data-chart]").forEach(function (card) {
+      if (card.querySelector(".chart-zoom")) return;
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "chart-zoom";
+      label(button, false);
+      var head = card.querySelector(".chart-head");
+      if (head) head.appendChild(button);
+      else { button.classList.add("chart-zoom--float"); card.appendChild(button); }
+    });
+    if (open !== null) show(open);
+  }
+
+  document.addEventListener("click", function (event) {
+    var button = event.target.closest(".chart-zoom");
+    if (!button) return;
+    var key = button.closest("[data-chart]").getAttribute("data-chart");
+    show(open === key ? null : key);
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && open !== null) show(null);
+  });
+  document.addEventListener("DOMContentLoaded", dress);
+  document.addEventListener("htmx:afterSwap", dress);
+  dress();
+})();
+

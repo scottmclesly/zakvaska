@@ -1266,6 +1266,8 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .stage-actual strong { font-variant-numeric: tabular-nums; }
 
 .drift {
+  display: inline-block;
+  white-space: nowrap;
   margin-left: var(--s-2);
   padding: 1px var(--s-2);
   border-radius: var(--r-pill);
@@ -1286,7 +1288,27 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .bake-page .section-title { margin: 0; }
 .bake-page .ribbon-card,
 .bake-page .gallery-block { margin: 0; }
-.bake-page #bake-live { display: flex; flex-direction: column; gap: var(--s-4); }
+/* The top of a bake's page: the day, as wide as it can be, and where the
+   bake has got to standing beside it. One live region, so the `now` line on
+   the picture and the countdown in the panel cannot disagree. */
+.bake-top { display: grid; gap: var(--s-4); grid-template-columns: minmax(0, 1fr); margin-bottom: var(--s-4); }
+.bake-top > * { min-width: 0; }
+.bake-top-side { display: flex; flex-direction: column; gap: var(--s-4); }
+.bake-top .ribbon-card { margin: 0; }
+.bake-top .section-title { margin-top: 0; }
+@media (min-width: 1024px) {
+  /* The day takes the whole width — it is a time axis, and width is what
+     it reads by. Under it, the Now panel with the figures beside it. */
+  .bake-top:has(.bake-day) {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+    column-gap: var(--s-5);
+    align-items: start;
+  }
+  .bake-top:has(.bake-day) .bake-top-side { display: contents; }
+  .bake-top .bake-day { grid-column: 1 / -1; grid-row: 1; }
+  .bake-top .bake-now { grid-column: 1; grid-row: 2; }
+  .bake-top-side > .card:first-child { grid-column: 2; grid-row: 2; }
+}
 .bake-sheet { display: flex; flex-direction: column; gap: var(--s-3); }
 
 .stage-run { display: flex; flex-direction: column; gap: var(--s-2); }
@@ -2489,6 +2511,54 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   border-radius: var(--r-xs);
   background: color-mix(in srgb, var(--busy-shade) 20%, transparent);
 }
+
+/* --- Looking closer ------------------------------------------------------
+   Any chart can be opened to fill the window (app.js puts the button on
+   every [data-chart]). On a big screen it is simply bigger. On a phone it
+   is kept at least 820 units wide and pans sideways, so opening it gets you
+   the finer time axis rather than the same picture with a border. */
+[data-chart] { position: relative; }
+.chart-zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  min-height: var(--tap-sm);
+  padding: 0 var(--s-3);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+}
+.chart-zoom:hover { color: var(--ink); border-color: var(--accent); }
+.chart-zoom svg { width: 14px; height: 14px; }
+.chart-zoom--float { position: absolute; top: var(--card-pad); right: var(--card-pad); z-index: 1; }
+
+.has-zoom { overflow: hidden; }
+[data-chart].is-zoomed {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  margin: 0;
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  gap: var(--s-3);
+  padding:
+    max(var(--s-4), env(safe-area-inset-top)) var(--gutter)
+    max(var(--s-4), env(safe-area-inset-bottom));
+  background: var(--card);
+}
+.is-zoomed .chart-fit { min-width: 820px; }
+.is-zoomed .chart-zoom { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.is-zoomed .chart-zoom--float { position: fixed; top: max(var(--s-3), env(safe-area-inset-top)); right: var(--s-3); }
 
 /* --- Head to head --------------------------------------------------------
    Jars on one flour, overlaid. A curve is its jar's colour all the way
