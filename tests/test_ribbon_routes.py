@@ -679,3 +679,23 @@ def test_head_to_head_does_not_claim_a_peak_the_next_feed_pre_empted(
 
     peaks = page.text.count('class="duel-peak"')
     assert peaks == len(jars) * len(ribbon_service.SIZES)
+
+
+def test_a_hungry_jar_s_row_says_it_is_waiting(client, session):
+    """Fed a day and a half ago: the curve is long gone from the window, and
+    the row used to be empty but for the planned feeds."""
+    jar = _jar(session)
+    _feed(session, jar, at=_hours_ago(36), starter=20, flour=20, water=20,
+          temp_c=f_to_c(78.0))
+
+    page = client.get(f"/jars/{jar.id}")
+
+    assert page.text.count('class="ribbon-wait"') == len(ribbon_service.SIZES)
+    assert "hungry since" in page.text.lower()
+
+
+def test_a_freshly_fed_jar_s_row_does_not(client, session):
+    jar = _jar(session)
+    _feed(session, jar, at=_hours_ago(1))
+
+    assert 'class="ribbon-wait"' not in client.get(f"/jars/{jar.id}").text

@@ -69,6 +69,23 @@
     <line class="ribbon-baseline" x1="{{ plot.x }}" y1="{{ row.bottom }}"
           x2="{{ plot.right }}" y2="{{ row.bottom }}"/>
 
+    {#- Its last rise is spent and it has not been fed: a dashed line along
+        the baseline up to now, so the row says "waiting" rather than
+        nothing. -#}
+    {%- if row.hungry_width > 1 %}
+    <g class="ribbon-wait">
+      <line class="ribbon-path band-hungry" x1="{{ row.hungry_x1 | round(2) }}"
+            y1="{{ row.bottom - 3 }}" x2="{{ row.hungry_x2 | round(2) }}"
+            y2="{{ row.bottom - 3 }}"/>
+      {%- if row.hungry_width > 120 %}
+      <text class="ribbon-wait-label" x="{{ (row.hungry_x1 + 6) | round(2) }}"
+            y="{{ row.bottom - 9 }}">hungry since {{ row.hungry_since | local_time }}</text>
+      {%- endif %}
+      <title>Hungry since {{ row.hungry_since | local_dt }} — its last rise is
+        spent and it has not been fed</title>
+    </g>
+    {%- endif %}
+
     {%- for curve in row.curves %}
     <g class="ribbon-curve">
       {%- if curve.area %}
