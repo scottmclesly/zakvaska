@@ -13,6 +13,8 @@ from markupsafe import Markup, escape
 from app import __version__
 from app.config import get_settings
 from app.services import alerts as alert_service
+from app.services import hints as hint_service
+from app.services import settings_store
 from app.services import measures
 from app.services import bakeplan
 from app.services import plan as plan_service
@@ -310,6 +312,12 @@ def render(
             "alerts", alert_service.showing(ctx.session, ctx.now)
         )
         merged.setdefault("snooze_choices", alert_service.SNOOZE_CHOICES)
+        # The hints, less the ones put away: any page can ask for its own.
+        merged.setdefault("hints", hint_service.HintBook(ctx.session))
+        # What "the app's setting" is, wherever a jar's rhythm is explained.
+        merged.setdefault(
+            "app_feeds_per_day", settings_store.feeds_per_day(ctx.session)
+        )
     return templates.TemplateResponse(
         request=request, name=name, context=merged, status_code=status_code
     )

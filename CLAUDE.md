@@ -42,6 +42,14 @@ Comparing jars and iterating recipes is the point, so the data must be structure
   weight they came to is kept on the version as `batch_flour_g`, which is what lets a recipe
   written in cups read back in cups. Null means it was given as percentages.
 - Recipes are **versioned**: editing a recipe creates a new version; bakes point at a version.
+- **Hints are data.** Every tip the app gives a baker is a `Hint` in
+  `app/data/hints.py`; `app/services/hints.py` decides which step, stage or page
+  it belongs to (a bake's step by `step_key`, a recipe's stage by name). Templates
+  include `partials/hints.html` and never carry hint wording themselves. A hint is
+  one or two lines, never blocks a step, and is dismissed for good with "Got it":
+  the dismissed ids are one row in the settings table (`hints_dismissed`).
+  Explainer drawings are inline SVG in `templates/partials/explainers/`, coloured
+  only through the stylesheet's `.ex-*` classes so they follow the theme.
 - Never hard-delete jars, recipes or bakes — archive them. Lab-notebook history matters.
 - Every schema change ships with an Alembic migration.
 - Keep it dependency-light. Ask before adding a dependency not listed above.

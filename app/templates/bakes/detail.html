@@ -267,6 +267,13 @@
     </p>
     {% endif %}
 
+    {#- What a first loaf taught about this step. Open on the two steps
+        in hand; folded inside the others. Never in the way of the button. -#}
+    {% with hint_list = hints.step(log, bake), hints_open = open,
+            hints_label = "Tips for this step" %}
+      {% include "partials/hints.html" %}
+    {% endwith %}
+
     <div class="row-actions">
       {% if not log.actual_start %}
       <form method="post" action="/bakes/{{ bake.id }}/stages/{{ log.id }}/start">

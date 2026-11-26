@@ -1,0 +1,52 @@
+{# Hints for wherever this is included. Expects `hint_list` (from the page's
+   `hints` book: `hints.step(log, bake)`, `hints.stage(name)`, ...).
+
+   Optionally:
+     hints_label   what the fold is called; default "Tips"
+     hints_open    true to start unfolded — the step in hand, say
+
+   Draws nothing at all when there is nothing to say, so a page can include
+   it unconditionally. A hint never stands between you and a button: it is a
+   folded aside, each line can be put away for good with "Got it", and the
+   wording lives in app/data/hints.py, not here.
+#}
+{%- if hint_list %}
+<details class="hints"{% if hints_open %} open{% endif %}>
+  <summary>
+    <span class="hints-mark" aria-hidden="true">
+      {#- a baker's thumbprint of flour: a small bulb -#}
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5.5 10.5a4 4 0 1 1 5 0c-.4.4-.6.9-.6 1.5H6.1c0-.6-.2-1.1-.6-1.5z"/>
+        <path d="M6.5 14h3"/>
+      </svg>
+    </span>
+    {{ hints_label or "Tips" }}
+    <span class="hints-count">{{ hint_list | length }}</span>
+  </summary>
+  <ul class="hint-list">
+    {%- for hint in hint_list %}
+    <li class="hint" id="hint-{{ hint.id }}">
+      <p class="hint-text">{{ hint.text }}</p>
+      {%- if hint.more or hint.explainer %}
+      <details class="hint-more">
+        <summary>{{ "Show me" if hint.explainer else "More" }}</summary>
+        {%- if hint.explainer %}
+        {% include "partials/explainers/" ~ hint.explainer ~ ".html" %}
+        {%- endif %}
+        {%- if hint.more %}<p>{{ hint.more }}</p>{% endif %}
+      </details>
+      {%- endif %}
+      {#- With HTMX the line just goes; without it, the form posts and the
+          page comes back without it. -#}
+      <form class="hint-away" method="post" action="/hints/{{ hint.id }}/dismiss"
+            hx-post="/hints/{{ hint.id }}/dismiss"
+            hx-target="closest .hint" hx-swap="delete">
+        <input type="hidden" name="next" value="{{ request.url.path }}">
+        <button type="submit" title="Got it, hide this for good">Got it</button>
+      </form>
+    </li>
+    {%- endfor %}
+  </ul>
+</details>
+{%- endif %}
