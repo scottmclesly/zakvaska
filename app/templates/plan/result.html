@@ -56,7 +56,7 @@
     {#- The preheat is not a step and gets no row in the table below, so
         this is where the plan says it out loud. -#}
     {% if timeline and timeline.preheat %}
-    <p class="muted small">
+    <p class="muted small plan-preheat">
       Oven on at <strong>{{ timeline.preheat.start | local_time }}</strong> —
       {{ timeline.preheat.lead_min }} minutes before the loaf goes in, while
       the final rise is still going. You will be told.
