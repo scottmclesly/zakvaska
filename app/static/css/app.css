@@ -379,6 +379,102 @@ code {
   .hero h1 { font-size: var(--text-2xl); }
 }
 
+/* === 3. Components ====================================================== */
+
+/* --- Controls ---------------------------------------------------------- */
+
+/* Every box you type in or pick from, wherever it sits. :where() keeps this
+   at no specificity, so a place that needs a smaller or paler one says so
+   in a single class and wins. */
+:where(.form, .inline-form, .snooze-custom, .shot-caption, .upload, .field)
+  :where(input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]),
+         select, textarea) {
+  font: inherit;
+  font-weight: 400;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s-2) var(--s-3);
+  min-height: var(--tap);
+}
+
+:where(input, select, textarea, button, summary, a):focus-visible {
+  outline: var(--focus);
+  outline-offset: 2px;
+}
+
+/* The browser's own "Choose File" button, dressed as one of ours. */
+input[type="file"]::file-selector-button {
+  font: inherit;
+  font-weight: 600;
+  min-height: var(--tap-sm);
+  margin-right: var(--s-3);
+  padding: 0 var(--s-3);
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+
+/* A field: label over control over hint. Sized by what goes in it, so a
+   two-digit temperature does not get a box as wide as a recipe's name. */
+.field { display: flex; flex-direction: column; gap: var(--s-2); font-weight: 600; min-width: 0; }
+.field > span { font-size: var(--text-sm); }
+.field em { font-style: normal; font-weight: 400; color: var(--ink-soft); }
+.field input, .field select, .field textarea { width: 100%; }
+.field--num { flex: 0 1 9rem; }
+.field--time { flex: 0 1 15rem; }
+.field--text { flex: 1 1 14rem; }
+
+/* --- Panel -------------------------------------------------------------- */
+
+/* A card with a head: what it is on the left, what you can do on the right. */
+.panel { display: flex; flex-direction: column; gap: var(--s-3); container-type: inline-size; }
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-4);
+  flex-wrap: wrap;
+}
+.panel-head > :first-child { margin: 0; }
+.panel-actions { display: flex; gap: var(--s-2); flex-wrap: wrap; align-items: center; }
+
+/* --- Disclosure --------------------------------------------------------- */
+
+/* For the things you need twice a year: there, but folded away. */
+.disclosure > summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  min-height: var(--tap-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  list-style: none;
+}
+.disclosure > summary::-webkit-details-marker { display: none; }
+.disclosure > summary::before {
+  content: "";
+  width: 0.45em;
+  height: 0.45em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 120ms ease-out;
+}
+.disclosure[open] > summary::before { transform: rotate(45deg); }
+.disclosure > :not(summary) { margin-top: var(--s-3); }
+
+/* --- Layout helpers ----------------------------------------------------- */
+
+.stack { display: flex; flex-direction: column; gap: var(--stack-gap, var(--s-4)); }
+.stack > * { margin-block: 0; }
+.cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); }
+
 /* Buttons — sized for thumbs, since this gets used at the counter. ---- */
 
 .btn {
@@ -486,26 +582,9 @@ code {
 
 .form input,
 .form select,
-.form textarea {
-  font: inherit;
-  font-weight: 400;
-  color: var(--ink);
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: var(--s-3) var(--s-3);
-  min-height: var(--tap);   /* comfortable on a phone */
-  width: 100%;
-}
+.form textarea { width: 100%; }
 
 .form textarea { min-height: 72px; resize: vertical; }
-
-.form input:focus,
-.form select:focus,
-.form textarea:focus {
-  outline: var(--focus);
-  outline-offset: 1px;
-}
 
 .field-row { display: flex; flex-direction: column; gap: var(--s-4); }
 
@@ -549,13 +628,6 @@ code {
 }
 .inline-form input,
 .inline-form select {
-  font: inherit;
-  color: var(--ink);
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: var(--s-2) var(--s-3);
-  min-height: var(--tap);
   flex: 1;
   min-width: 140px;
 }
@@ -672,14 +744,10 @@ code {
 
 .snooze-custom { display: contents; }
 .snooze-custom input[type="number"] {
-  font: inherit;
   width: 72px;
   min-height: var(--tap-sm);
   padding: 0 var(--s-2);
-  color: var(--ink);
   background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
 }
 
 .alert-banner-foot { margin: var(--s-3) 0 0; display: flex; gap: var(--s-3); align-items: center; flex-wrap: wrap; }
@@ -939,13 +1007,9 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .shot-caption input {
   flex: 1;
   min-width: 0;
-  font: inherit;
   min-height: var(--tap-sm);
   padding: 0 var(--s-2);
-  color: var(--ink);
   background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
 }
 
 .shot-when { display: flex; gap: var(--s-3); align-items: baseline; justify-content: space-between; margin: 0; }
@@ -971,12 +1035,9 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .shot-small { gap: var(--s-1); }
 
 .upload input[type="file"] {
-  font: inherit;
-  padding: var(--s-3);
-  color: var(--ink);
+  padding: var(--s-2);
   background: var(--card);
-  border: 1px dashed var(--line);
-  border-radius: var(--r-md);
+  border-style: dashed;
   width: 100%;
 }
 
@@ -1094,6 +1155,19 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 
 /* --- Drawings ----------------------------------------------------------- */
 
+/* The drawing and the writing on its tape, as one object. It is a size
+   container, so the writing is sized from the jar it is stuck to rather
+   than from the page. */
+.jar-fig {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 58px;
+  line-height: 0;
+  container-type: inline-size;
+}
+.jar-fig > .jar-art { display: block; width: 100%; }
+
 .jar-art {
   width: 58px;
   height: auto;
@@ -1103,7 +1177,8 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   --bubble: color-mix(in srgb, var(--highlight) 55%, transparent);
 }
 .jar-art-lg { width: 124px; }
-.jar-art-shelf { width: 140px; }
+/* Three jars fit a phone side by side; past that the shelf scrolls. */
+.jar-art-shelf { width: clamp(92px, 25vw, 140px); }
 
 .jar-shadow { fill: color-mix(in srgb, var(--ink) 18%, transparent); }
 .jar-lid { fill: var(--ink-soft); opacity: 0.55; }
@@ -1172,18 +1247,65 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   stroke: var(--tape-edge);
   stroke-width: 0.6;
 }
-.jar-label-name,
-.jar-label-sub {
+/* The scene on the About page still writes on its tape in the drawing. */
+.jar-label-name {
   fill: var(--tape-ink);
   font-family: var(--display);
+  font-weight: 600;
 }
-/* Sizes come from the markup: a long name shrinks to fit the tape. */
-.jar-label-name { font-weight: 600; }
-.jar-label-sub { opacity: 0.8; }
-.jar-label-sub.is-control {
-  fill: var(--tape-ink-strong);
+.jar-label-name.is-control { fill: var(--tape-ink-strong); }
+
+/* The writing. It sits over the tape's rectangle — 44 of the drawing's 72
+   units wide, starting 75 of 103 down — and tilts with it.
+
+   `--n` is the longest line, in characters, and a glyph of this serif runs
+   a little over half an em: so 82cqi / n is the size at which that line
+   just fills the tape. The clamp keeps a three-letter name from shouting
+   and a long one from dissolving; past the floor, two lines and an
+   ellipsis take over, and the title on the jar has the whole name. */
+.jar-tape {
+  position: absolute;
+  left: 20.5%;
+  top: 72.8%;
+  width: 59%;
+  height: 14.4%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-2.4deg);
+  overflow: hidden;
+  color: var(--tape-ink);
+  font-family: var(--display);
+  font-weight: 600;
+  line-height: 1.04;
+  text-align: center;
+  --tape-max: 11.5cqi;
+}
+.jar-tape.is-wrapped,
+.jar-tape.is-control { --tape-max: 8.6cqi; }
+
+.jar-tape-name {
+  max-width: 100%;
+  font-size: clamp(5.2cqi, calc(82cqi / var(--n)), var(--tape-max));
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.jar-tape.is-wrapped .jar-tape-name { -webkit-line-clamp: 2; line-clamp: 2; }
+
+.jar-tape-sub {
+  margin-top: 1.5cqi;
+  color: var(--tape-ink-strong);
+  font-family: var(--sans);
+  font-size: 4.6cqi;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .sprig { width: 40px; height: auto; flex: 0 0 auto; opacity: 0.85; }
@@ -1227,7 +1349,7 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
    two x positions is far easier to read down. */
 .shelf {
   margin: 0 0 var(--s-5);
-  padding: var(--s-4) 0 var(--s-6);
+  padding: var(--s-4) 0 var(--s-8);
   overflow-x: auto;
   background: linear-gradient(
     180deg,
@@ -1257,9 +1379,9 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 }
 
 .shelf-jar { display: block; line-height: 0; }
-.shelf-jar .jar-art { transition: transform 120ms ease-out; }
-.shelf-jar:hover .jar-art,
-.shelf-jar:focus-visible .jar-art { transform: translateY(-3px); }
+.shelf-jar .jar-fig { transition: transform 120ms ease-out; }
+.shelf-jar:hover .jar-fig,
+.shelf-jar:focus-visible .jar-fig { transform: translateY(-3px); }
 
 /* A paper tag tied to a jar that is late for its feed. */
 .shelf-tag {
@@ -1276,6 +1398,30 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   font-weight: 700;
   letter-spacing: 0.03em;
   white-space: nowrap;
+}
+
+/* What is in the jar, on a slip pinned to the shelf's edge under it — where
+   a bakery puts the price. Two lines at most; the rest is on hover. */
+.shelf-caption {
+  position: absolute;
+  top: calc(100% + 26px);
+  left: 50%;
+  width: max-content;
+  max-width: 100%;
+  transform: translateX(-50%);
+  padding: var(--s-0) var(--s-2);
+  border-radius: var(--r-xs);
+  background: color-mix(in srgb, var(--tape) 12%, var(--card));
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  line-height: var(--leading-tight);
+  text-align: center;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .shelf-prop { align-self: flex-end; }
@@ -1318,7 +1464,7 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 /* The shelf below: jars that have been put away. Smaller and dustier, but
    still on show — jars are archived here, never deleted. */
 .shelf-put-away { margin-top: var(--s-0); padding-top: var(--s-2); }
-.shelf-put-away .jar-art { filter: saturate(0.5); }
+.shelf-put-away .jar-fig { filter: saturate(0.5); }
 .shelf-put-away .shelf-plank { filter: saturate(0.5) brightness(0.94); }
 .jar-art-put-away { width: 112px; }
 
@@ -1381,7 +1527,6 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   stroke-width: 2.5;
   stroke-linecap: round;
 }
-.jar-label-name.is-control { fill: var(--tape-ink-strong); }
 
 .about-why { display: flex; align-items: center; gap: var(--s-5); }
 .about-why > div { min-width: 0; }
@@ -2355,6 +2500,7 @@ table.steps tr.is-clash td {
 
 /* The native picker, sized to sit in the row like another swatch. */
 .form .cap-picker {
+  border: 1px solid var(--line);
   width: 40px;
   height: 28px;
   min-height: 0;
@@ -2382,7 +2528,7 @@ table.steps tr.is-clash td {
 /* A jar-shaped gap at the end of the shelf. Same silhouette and same size
    as a real jar — the path comes from one place (`jar_body_path`) so the
    two cannot drift — drawn as a dashed outline with a plus in it. */
-.ghost-art { width: 140px; height: auto; }
+.ghost-art { width: clamp(92px, 25vw, 140px); height: auto; }
 
 .ghost-body {
   fill: none;

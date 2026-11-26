@@ -31,18 +31,27 @@
 {%- else -%}
   {%- set caption = jar.flour_type or jar.culture_name or jar.origin.value -%}
 {%- endif -%}
-{%- set label_name = jar.name | truncate(10, True, "…", 0) -%}
-{%- set label_sub = caption | truncate(11, True, "…", 0) -%}
-{#- The tape gives the writing about 40 units, and this serif's widest
-    glyphs run 0.66em. Pen on tape has to be read from across the kitchen,
-    so the size has a floor and the name is what gives way: past ten
-    characters it is cut rather than shrunk any further. -#}
-{%- set name_size = [6.2, [8.4, 62 / ([label_name | length, 1] | max)] | min] | max -%}
-{%- set sub_size = [5.2, [6.2, 52 / ([label_sub | length, 1] | max)] | min] | max -%}
+{#- The tape is drawn; the writing on it is HTML laid over the drawing, so
+    it can wrap, size itself to the jar it is on and never be cut by a
+    character count. `--n` is the longest line in characters: the stylesheet
+    turns that into a size with a container query unit, so the same markup
+    fits a 58px jar and a 140px one. Past nine characters the name takes two
+    lines; only past what two lines can hold does it end in an ellipsis, and
+    the whole name is always there on hover. -#}
+{%- set name_len = jar.name | length -%}
+{%- set longest_word = jar.name.split() | map("length") | max if jar.name.split() else 1 -%}
+{%- set two_lines = name_len > 9 and not jar.is_control -%}
+{%- if two_lines -%}
+  {%- set tape_n = [longest_word, (name_len / 2) | round(0, "ceil") | int + 1] | max -%}
+{%- else -%}
+  {%- set tape_n = name_len -%}
+{%- endif -%}
+{%- set tape_n = [tape_n, 4] | max -%}
 {#- The lid colour travels as a custom property rather than as a fill
     attribute, so the lid, the screw band, the base and the darker edge that
     keeps a white cap readable are all worked out in app.css, and all of them
     theme with the page. -#}
+<span class="jar-fig {{ art_class or '' }}" title="{{ jar.name }}{% if caption %} — {{ caption }}{% endif %}">
 <svg class="jar-art {{ art_class or '' }} state-{{ state }}{% if jar.cap_color %} has-cap{% endif %}"
      viewBox="0 0 72 103"
      {%- if jar.cap_color %} style="--cap: {{ jar.cap_color }}"{% endif %}
@@ -156,11 +165,6 @@
   <g clip-path="url(#jarbody-{{ jar.id }})">
     <g class="jar-labelgroup" transform="rotate(-2.4 36 84)">
       <rect class="jar-label" x="14" y="75" width="44" height="17" rx="1.5"/>
-      <text class="jar-label-name" x="36" y="83" text-anchor="middle"
-            font-size="{{ name_size | round(2) }}">{{ label_name }}</text>
-      <text class="jar-label-sub {% if jar.is_control %}is-control{% endif %}"
-            x="36" y="89.4" text-anchor="middle"
-            font-size="{{ sub_size | round(2) }}">{{ label_sub }}</text>
     </g>
   </g>
   {%- endif %}
@@ -175,3 +179,11 @@
   </g>
   {%- endif %}
 </svg>
+{%- if labelled %}
+<span class="jar-tape{% if jar.is_control %} is-control{% endif %}{% if two_lines %} is-wrapped{% endif %}"
+      style="--n: {{ tape_n }}" aria-hidden="true">
+  <span class="jar-tape-name">{{ jar.name }}</span>
+  {%- if jar.is_control %}<span class="jar-tape-sub">control</span>{% endif %}
+</span>
+{%- endif %}
+</span>

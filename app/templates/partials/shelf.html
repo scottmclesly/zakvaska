@@ -27,6 +27,8 @@
             {% include "partials/jar_art.html" %}
           {% endwith %}
         </a>
+        {% set caption = "control" if jar.is_control else (jar.flour_type or jar.culture_name or jar.origin.value) %}
+        <span class="shelf-caption" title="{{ caption }}">{{ caption }}</span>
       </li>
       {% endfor %}
 
@@ -37,6 +39,8 @@
             {% include "partials/jar_art.html" %}
           {% endwith %}
         </a>
+        {% set caption = "control" if jar.is_control else (jar.flour_type or jar.culture_name or jar.origin.value) %}
+        <span class="shelf-caption" title="{{ caption }}">{{ caption }}</span>
       </li>
       {% endfor %}
 
