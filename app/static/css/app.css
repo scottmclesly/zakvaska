@@ -768,12 +768,17 @@ input[type="file"]::file-selector-button {
 
 .form textarea { min-height: 72px; resize: vertical; }
 
-.field-row { display: flex; flex-direction: column; gap: var(--s-4); }
+/* Fields side by side for as long as each has room, then onto the next
+   line — decided by the space the row is in, not by the window, so the
+   same form works in a side panel. */
+.field-row { display: flex; flex-wrap: wrap; gap: var(--s-4); }
+.field-row > label { flex: 1 1 9rem; min-width: 0; }
+/* A menu or a date needs to show what is chosen in it. */
+.field-row > label:has(select),
+.field-row > label:has(input[type="datetime-local"]) { flex-basis: 14rem; }
 
-@media (min-width: 560px) {
-  .field-row { flex-direction: row; }
-  .field-row > label { flex: 1; }
-}
+.plan-page #plan-result { display: flex; flex-direction: column; gap: var(--s-4); }
+.plan-page .stack > .card { margin: 0; }
 
 .form fieldset {
   border: 1px solid var(--line);
@@ -1013,6 +1018,15 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 }
 
 .scale-form, .diff-picker { margin: 0; }
+
+/* A recipe: formula beside method. */
+.recipe-page .section-title { margin: 0; }
+.recipe-page .stage-list { display: flex; flex-direction: column; gap: var(--s-2); }
+.recipe-page .stage { padding: var(--s-3) var(--s-4); }
+.recipe-page .stage-head h3 { font-size: var(--text-md); }
+.recipe-page .stage-notes { margin-top: var(--s-1); font-size: var(--text-sm); }
+.recipe-page .stage-ribbon { margin: 0; }
+.recipe-page .danger-zone { margin-top: var(--s-2); }
 
 .danger-zone { margin-top: var(--s-6); padding-top: var(--s-4); border-top: 1px solid var(--line); }
 .danger-zone p { margin: var(--s-2) 0 0; }

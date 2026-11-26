@@ -4,6 +4,8 @@
 <a class="btn btn-small btn-secondary" href="/bakes">Bakes</a>
 {% endblock %}
 
+{% block page_class %}page--wide{% endblock %}
+
 {% block content %}
 <section class="hero">
   <h1>Plan a bake</h1>
@@ -19,6 +21,9 @@
 </div>
 {% endif %}
 
+{#- What you are asking on the left, the answer on the right: change a
+    field and the day redraws beside it, instead of a screen below it. -#}
+<div class="split split--form plan-page">
 {# Everything that shapes the plan. A GET form, so a plan is a link you can
    keep — and the slider below posts the same fields over HTMX. #}
 <form class="card form" method="get" action="/plan" id="plan-form">
@@ -198,6 +203,7 @@
 {# The slider. A plain range input over an offset in minutes from now, so
    the browser does no date arithmetic and there is no JS build step: HTMX
    sends the whole form and swaps the answer back in. #}
+<div class="stack">
 <section class="card scrubber">
   <form hx-get="/plan/steps" hx-target="#plan-result" hx-swap="outerHTML"
         hx-include="#plan-form"
@@ -225,4 +231,6 @@
 </section>
 
 {% include "plan/result.html" %}
+</div>
+</div>
 {% endblock %}
