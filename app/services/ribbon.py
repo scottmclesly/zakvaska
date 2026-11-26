@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta, tzinfo
 
 from app.services import timing
@@ -29,27 +29,37 @@ from app.services.timing import Band
 
 # --- Geometry -----------------------------------------------------------
 #
-# Written in the SVG's own user units at about the width it renders, so the
-# type comes out the size it is written as rather than being scaled away on
-# a phone. The viewBox height is worked out from the number of rows.
+# One user unit is one CSS pixel, near enough: every picture is laid out at
+# several widths and the page shows whichever is closest to the space it has
+# (see `SIZES`), so nothing is ever stretched far. That is what lets the type
+# be written at the size it should be read at, and lets a wider picture spend
+# its width on time — more hours to the inch, more clock labels — instead of
+# on bigger letters. The viewBox height is worked out from the number of rows.
 
+#: The narrowest rendition, and the one every caller gets back directly.
 WIDTH = 360.0
+#: Every width a picture is drawn at, narrowest first. The stylesheet's
+#: container queries choose between them (`.chart-fit` in app.css), so the
+#: two lists have to agree.
+SIZES = (360.0, 560.0, 820.0, 1180.0)
 #: Left and right margins. Narrow: the ribbon wants its width for time.
 MARGIN_X = 6.0
 #: Above the first row, for the day labels.
-HEADER_H = 14.0
-#: One jar's row: a name line, then the band the curve is drawn in.
-ROW_LABEL_H = 13.0
-ROW_CURVE_H = 42.0
-ROW_GAP_H = 8.0
+HEADER_H = 18.0
+#: One jar's row: a name line, then the band the curve is drawn in, then
+#: room under the baseline for the feed's ratio.
+ROW_LABEL_H = 20.0
+ROW_CURVE_H = 44.0
+ROW_GAP_H = 18.0
 #: The strip under the last row that carries the clock times.
-AXIS_H = 20.0
+AXIS_H = 22.0
 
 ROW_H = ROW_LABEL_H + ROW_CURVE_H + ROW_GAP_H
 
 #: How often the curve is sampled. Fine enough that the peak reads as round.
 SAMPLE_MIN = 10.0
-#: At most this many clock labels across, or they collide.
+#: At most this many clock labels across the narrowest picture, or they
+#: collide. Wider ones get more in proportion: see `_max_ticks`.
 MAX_TICKS = 8
 _TICK_HOURS = (1, 2, 3, 4, 6, 8, 12, 24)
 
@@ -261,6 +271,12 @@ class Ribbon:
     plot: PlotBox
     viewbox: str
     axis_y: float
+    #: How wide this one was drawn, in user units.
+    width: float = WIDTH
+    #: The same ribbon at every width in `SIZES`, this one included. Empty
+    #: on the wider renditions themselves: only the one handed back carries
+    #: the set.
+    sizes: tuple["Ribbon", ...] = ()
 
     @property
     def span_h(self) -> float:
@@ -274,15 +290,21 @@ class Ribbon:
 # --- Laying it out ------------------------------------------------------
 
 
-def _tick_step_hours(span_h: float) -> int:
+def _max_ticks(width: float) -> int:
+    """A clock label needs about 45 units to itself, whatever the width."""
+    return max(MAX_TICKS, int(width / 45))
+
+
+def _tick_step_hours(span_h: float, max_ticks: int = MAX_TICKS) -> int:
     for hours in _TICK_HOURS:
-        if span_h / hours <= MAX_TICKS:
+        if span_h / hours <= max_ticks:
             return hours
     return _TICK_HOURS[-1]
 
 
 def _ticks(
-    start: datetime, end: datetime, tz: tzinfo, x_for
+    start: datetime, end: datetime, tz: tzinfo, x_for,
+    max_ticks: int = MAX_TICKS,
 ) -> tuple[Tick, ...]:
     """Clock-aligned ticks, so the labels are times a person recognises.
 
@@ -292,7 +314,7 @@ def _ticks(
     `charts.py` walks whole local days. 06:00 is a time; 05:43 is not.
     """
     span_h = (end - start).total_seconds() / 3600
-    step = _tick_step_hours(span_h)
+    step = _tick_step_hours(span_h, max_ticks)
 
     # Naive, so the stepping is on the clock rather than on the elapsed
     # second. The zone goes back on one reading at a time.
@@ -413,7 +435,32 @@ def ribbon(
     None when there are no jars to draw; a jar with nothing logged still gets
     a row, because an empty row with "never fed" on it says something and a
     missing row says nothing.
+
+    What comes back is the narrowest drawing, which is the one everything
+    that reads coordinates has always had. Its `sizes` holds the same ribbon
+    at every width in `SIZES`, for the template to emit side by side.
     """
+    drawn = tuple(
+        _ribbon_at(
+            width, series, start=start, end=end, now=now, tz=tz, busy=busy
+        )
+        for width in SIZES
+    )
+    if drawn[0] is None:
+        return None
+    return replace(drawn[0], sizes=drawn)
+
+
+def _ribbon_at(
+    width: float,
+    series: Sequence[RibbonSeries],
+    *,
+    start: datetime,
+    end: datetime,
+    now: datetime,
+    tz: tzinfo,
+    busy: Sequence[BusyMark] = (),
+) -> Ribbon | None:
     if not series:
         return None
 
@@ -424,7 +471,7 @@ def ribbon(
     plot = PlotBox(
         x=MARGIN_X,
         y=HEADER_H,
-        w=WIDTH - MARGIN_X * 2,
+        w=width - MARGIN_X * 2,
         h=ROW_H * len(series),
     )
 
@@ -437,7 +484,7 @@ def ribbon(
     rows: list[RibbonRow] = []
     for slot, one in enumerate(series, start=1):
         top = plot.y + ROW_H * (slot - 1)
-        label_y = top + ROW_LABEL_H - 3
+        label_y = top + ROW_LABEL_H - 6
         curve_top = top + ROW_LABEL_H
         baseline = curve_top + ROW_CURVE_H
 
@@ -505,15 +552,16 @@ def ribbon(
     height = HEADER_H + ROW_H * len(series) + AXIS_H
     return Ribbon(
         rows=tuple(rows),
-        ticks=_ticks(start, end, tz, x_for),
+        ticks=_ticks(start, end, tz, x_for, _max_ticks(width)),
         busy=shades,
         start=start,
         end=end,
         now=now,
         now_x=x_for(now),
         plot=plot,
-        viewbox=f"0 0 {WIDTH:g} {height:g}",
+        viewbox=f"0 0 {width:g} {height:g}",
         axis_y=plot.bottom,
+        width=width,
     )
 
 
@@ -605,6 +653,9 @@ class Timeline:
     levain_x: float | None = None
     #: The oven coming up to temperature, where there is one to preheat.
     preheat: PreheatBand | None = None
+    #: As on `Ribbon`: this drawing's width, and the whole set.
+    width: float = WIDTH
+    sizes: tuple["Timeline", ...] = ()
 
     @property
     def span_h(self) -> float:
@@ -613,10 +664,10 @@ class Timeline:
 
 #: One bar per step, each its own row: a bake day is ten steps at most and
 #: stacking them keeps every name readable without a tooltip.
-BAR_H = 13.0
-BAR_GAP = 2.0
+BAR_H = 20.0
+BAR_GAP = 4.0
 #: The strip above the bars holding the jar's readiness curve.
-JAR_BAND_H = 30.0
+JAR_BAND_H = 40.0
 
 
 def timeline(
@@ -637,7 +688,37 @@ def timeline(
     `steps` are `services.bakeplan.Step`s. Taken as anything with the right
     attributes rather than imported, so this module still knows nothing about
     recipes or the ORM — it only draws.
+
+    As with `ribbon`, the narrowest drawing comes back and carries the rest
+    in `sizes`.
     """
+    drawn = tuple(
+        _timeline_at(
+            width, steps, start=start, end=end, now=now, tz=tz, busy=busy,
+            jar_feed=jar_feed, jar_name=jar_name, levain_at=levain_at,
+            preheat=preheat,
+        )
+        for width in SIZES
+    )
+    if drawn[0] is None:
+        return None
+    return replace(drawn[0], sizes=drawn)
+
+
+def _timeline_at(
+    width: float,
+    steps: Sequence,
+    *,
+    start: datetime,
+    end: datetime,
+    now: datetime,
+    tz: tzinfo,
+    busy: Sequence[BusyMark] = (),
+    jar_feed: FeedMark | None = None,
+    jar_name: str | None = None,
+    levain_at: datetime | None = None,
+    preheat: PreheatMark | None = None,
+) -> Timeline | None:
     if not steps:
         return None
     seconds = (end - start).total_seconds()
@@ -648,7 +729,7 @@ def timeline(
     plot = PlotBox(
         x=MARGIN_X,
         y=HEADER_H,
-        w=WIDTH - MARGIN_X * 2,
+        w=width - MARGIN_X * 2,
         h=jar_band + len(steps) * (BAR_H + BAR_GAP),
     )
 
@@ -731,14 +812,15 @@ def timeline(
     height = HEADER_H + plot.h + AXIS_H
     return Timeline(
         bars=tuple(bars),
-        ticks=_ticks(start, end, tz, x_for),
+        ticks=_ticks(start, end, tz, x_for, _max_ticks(width)),
         busy=shades,
         start=start,
         end=end,
         now=now,
         now_x=x_for(now) if start <= now <= end else None,
         plot=plot,
-        viewbox=f"0 0 {WIDTH:g} {height:g}",
+        viewbox=f"0 0 {width:g} {height:g}",
+        width=width,
         axis_y=plot.bottom,
         jar_curve=jar_curve,
         jar_name=jar_name,

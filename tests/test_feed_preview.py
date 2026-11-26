@@ -459,7 +459,7 @@ class TestOnThePage:
         assert page.status_code == 200
         assert 'id="feed-preview"' in page.text
         assert "If you feed it this" in page.text
-        assert 'class="ribbon"' in page.text
+        assert 'class="ribbon fit fit-360"' in page.text
 
     def test_the_panel_refetches_on_the_fields_the_peak_depends_on(
         self, client, session
