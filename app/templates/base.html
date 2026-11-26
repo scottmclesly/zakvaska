@@ -16,20 +16,39 @@
   <script src="{{ url_for('static', path='/js/htmx.min.js') }}" defer></script>
 </head>
 <body>
+  {#- Which section this page belongs to, worked out from the address so no
+      page has to say. The dashboard is the jars' page. -#}
+  {%- set path = request.url.path -%}
+  {%- set sections = [
+        ("jars", "/", "Jars"),
+        ("recipes", "/recipes", "Recipes"),
+        ("bakes", "/bakes", "Bakes"),
+        ("plan", "/plan", "Plan"),
+        ("equipment", "/equipment", "Equipment"),
+      ] -%}
+  {%- if path.startswith("/recipes") %}{% set here = "recipes" -%}
+  {%- elif path.startswith("/bakes") or path.startswith("/photos") %}{% set here = "bakes" -%}
+  {%- elif path.startswith("/plan") %}{% set here = "plan" -%}
+  {%- elif path.startswith("/equipment") %}{% set here = "equipment" -%}
+  {%- elif path == "/" or path.startswith("/jars") %}{% set here = "jars" -%}
+  {%- else %}{% set here = "" %}{% endif -%}
+
   <header class="topbar">
     <a class="brand" href="/">
       {% include "partials/brand_mark.html" %}
       <span class="brand-name">zakvaska</span>
     </a>
-    <nav class="topnav">
-      {% block nav %}{% endblock %}
-    </nav>
+    {#- One list, placed twice by the stylesheet: along the header on a
+        laptop, and as a tab bar under the thumb on a phone. -#}
     <nav class="sectionnav" aria-label="Sections">
-      <a class="navlink" href="/">Jars</a>
-      <a class="navlink" href="/recipes">Recipes</a>
-      <a class="navlink" href="/bakes">Bakes</a>
-      <a class="navlink" href="/plan">Plan</a>
-      <a class="navlink" href="/equipment">Equipment</a>
+      {%- for section, href, label in sections %}
+      <a class="navlink{% if section == here %} is-here{% endif %}" href="{{ href }}"
+         {%- if section == here %} aria-current="page"{% endif %}>
+        {%- include "partials/nav_icon.html" %}<span>{{ label }}</span></a>
+      {%- endfor %}
+    </nav>
+    <nav class="topnav" aria-label="This page">
+      {% block nav %}{% endblock %}
     </nav>
   </header>
 
@@ -41,7 +60,7 @@
     {% include "partials/alerts_live.html" %}
   </div>
 
-  <main class="wrap">
+  <main class="wrap {% block page_class %}{% endblock %}">
     {% block content %}{% endblock %}
   </main>
 

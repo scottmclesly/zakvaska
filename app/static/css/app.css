@@ -317,7 +317,65 @@ h2:not(.section-title),
   white-space: nowrap;
 }
 
-.topnav { display: flex; gap: var(--s-3); }
+.topnav { display: flex; gap: var(--s-2); flex-wrap: wrap; justify-content: flex-end; }
+
+/* The sections. Along the header beside the brand on anything wider than a
+   phone, with the page's own actions pushed to the far end. */
+.sectionnav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  margin-right: auto;
+}
+
+.navlink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--tap-sm);
+  padding: 0 var(--s-3);
+  border-radius: var(--r-pill);
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+.navlink:hover, .navlink:focus-visible { color: var(--ink); }
+.navlink.is-here {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.nav-icon { width: 22px; height: 22px; flex: 0 0 auto; display: none; }
+
+/* On a phone the sections are a tab bar along the bottom, where a thumb
+   is, and the header keeps only the brand and this page's own action. */
+@media (max-width: 639px) {
+  .sectionnav {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 20;
+    margin: 0;
+    gap: 0;
+    justify-content: space-around;
+    padding: var(--s-1) var(--s-1) max(var(--s-1), env(safe-area-inset-bottom));
+    background: var(--card);
+    border-top: 1px solid var(--line);
+    box-shadow: var(--lift-2);
+  }
+  .navlink {
+    flex: 1 1 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--s-0);
+    min-height: var(--tap-lg);
+    padding: var(--s-1) 0;
+    border-radius: var(--r-md);
+    font-size: var(--text-xs);
+  }
+  .nav-icon { display: block; }
+  /* Room for the bar, so the last thing on a page is never under it. */
+  body { padding-bottom: calc(var(--tap-lg) + var(--s-3) + env(safe-area-inset-bottom)); }
+}
 
 /* Layout -------------------------------------------------------------- */
 
@@ -331,6 +389,26 @@ h2:not(.section-title),
   max-width: var(--page-max);
   margin: 0 auto;
   padding: var(--gutter);
+}
+
+/* --- Page shapes --------------------------------------------------------
+   Three of them. A page of charts takes all the width there is; a form
+   keeps to a column you can read down; everything else is the default. */
+.wrap.page--read { max-width: 760px; }
+@media (min-width: 1600px) {
+  .wrap.page--wide { max-width: min(1760px, 100%); }
+}
+
+/* Main and side. One column until there is room for two, then the side
+   stands beside the main instead of under it. */
+.split { display: grid; gap: var(--s-4); grid-template-columns: minmax(0, 1fr); }
+.split > * { min-width: 0; }
+@media (min-width: 1024px) {
+  .split { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); align-items: start; }
+  .split--even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .split--form { grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); }
+  /* Stays in view while the other column scrolls past it. */
+  .sticky { position: sticky; top: calc(64px + var(--s-4)); }
 }
 
 .hero h1 { margin: var(--s-2) 0 var(--s-1); font-size: var(--text-xl); }
@@ -369,6 +447,77 @@ code {
 /* A grid child is as wide as its longest word unless told otherwise, and
    a recipe's source is often a URL. */
 .jar-grid > * { min-width: 0; }
+
+/* --- The dashboard ------------------------------------------------------ */
+
+.dash {
+  display: grid;
+  gap: var(--s-4);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "head" "shelf" "now" "charts";
+}
+.dash > * { min-width: 0; }
+.dash-head { grid-area: head; }
+.dash-head .sub { margin-bottom: 0; }
+.dash-shelf { grid-area: shelf; }
+.dash-shelf .shelf { margin-bottom: 0; }
+.dash-now { grid-area: now; display: flex; flex-direction: column; gap: var(--s-3); }
+.dash-now > .section-title { margin: 0; }
+.dash-charts { grid-area: charts; display: flex; flex-direction: column; gap: var(--s-4); }
+.dash-charts .ribbon-card,
+.dash-charts .chart-card { margin: 0; }
+
+@media (min-width: 1024px) {
+  .dash {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+    grid-template-areas:
+      "head   head"
+      "shelf  now"
+      "charts now";
+    grid-template-rows: auto auto 1fr;
+    column-gap: var(--s-5);
+  }
+  /* In the side panel the cards are one under another, whatever the
+     window. */
+  .dash-now .jar-grid { grid-template-columns: 1fr; }
+}
+
+/* A jar's card on the dashboard: who, how it is, when, and the three
+   things you can do about it. */
+.jar-card { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-4); }
+.jar-card .jar-card-head { justify-content: flex-start; }
+.jar-card .jar-card-head .badge-state { margin-left: auto; }
+/* The flour is on the slip under the jar on the shelf, a hand's width
+   away; said again here it only makes the card longer. */
+.dash-now .jar-card .jar-meta { display: none; }
+.jar-card .jar-meta { margin: 0; }
+/* How it is first, across the card; then the two times side by side. */
+.jar-card .stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2) var(--s-4);
+  margin: 0;
+}
+.jar-card .stats > div:has(.band-text) { grid-column: 1 / -1; order: -1; }
+.jar-card .stats > div:has(.band-text) dt { display: none; }
+.jar-card .stats .band-text { font-size: var(--text-lg); }
+.jar-card .row-actions { margin-top: var(--s-1); gap: var(--s-2); }
+.jar-card .row-actions form { display: contents; }
+
+/* A loaf underway, at the top of the list. The whole card is the link. */
+.bake-live {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-4);
+  color: var(--ink);
+  text-decoration: none;
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--line));
+}
+.bake-live:hover { border-color: var(--warn); }
+.bake-live-name { font-family: var(--display); font-size: var(--text-lg); }
+.bake-live-step { font-weight: 600; }
+.bake-live-step .muted { font-weight: 400; }
 
 .jar-grid {
   list-style: none;
@@ -869,31 +1018,6 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 /* Archiving is a separate form, so it gets its own line under the edits. */
 .program-list li > form + form { margin-top: var(--s-3); padding-top: var(--s-3); border-top: 1px solid var(--line); }
 
-.sectionnav { display: flex; gap: var(--s-4); align-items: center; flex-wrap: wrap; }
-
-.navlink {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--tap-sm);
-  color: var(--ink-soft);
-  text-decoration: none;
-  font-weight: 600;
-  font-size: var(--text-sm);
-}
-.navlink:hover, .navlink:focus-visible { color: var(--ink); }
-
-@media (max-width: 639px) {
-  /* Too wide for one phone-width row, and the page's own action matters
-     more, so the section links take a row of their own underneath. */
-  .sectionnav {
-    flex: 1 0 100%;
-    order: 3;
-    gap: var(--s-4);
-    padding-top: var(--s-3);
-    border-top: 1px solid var(--line);
-  }
-}
-
 /* --- Bakes ------------------------------------------------------------- */
 
 .badge-status { font-weight: 600; }
@@ -1113,12 +1237,6 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .btn-danger:hover { background: var(--danger-bg); }
 
 .footer-link { color: inherit; }
-
-/* The section links used to share this row with two unit chips, which is
-   why it is allowed to wrap. The units are picked on /settings now. */
-@media (max-width: 520px) {
-  .sectionnav { gap: var(--s-4) var(--s-4); }
-}
 
 /* An approximate reading gets a quiet mark, so grams stay the source. */
 .approx { border-bottom: 1px dotted var(--ink-soft); cursor: help; }

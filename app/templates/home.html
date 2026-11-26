@@ -1,32 +1,75 @@
 {% extends "base.html" %}
 
+{% block page_class %}page--wide{% endblock %}
+
 {% block content %}
-<section class="hero">
-  <h1>Starter jars</h1>
-  <p class="sub">Feedings, observations and bakes, logged properly.</p>
-</section>
-
 {% if cards %}
-{% with shelf_cards = cards, shelf_ghost = true %}
-  {% include "partials/shelf.html" %}
-{% endwith %}
+{#- Three things, in the order they are wanted: what needs doing now, the
+    jars themselves, and the next two days. Side by side on a wide screen —
+    the charts take the width and the "now" list stands beside them — and
+    stacked on a phone with the list straight under the shelf. -#}
+<div class="dash">
+  <section class="hero dash-head">
+    <h1>Starter jars</h1>
+    <p class="sub">Feedings, observations and bakes, logged properly.</p>
+  </section>
 
-{% if ribbon %}
-{#- The `now` line down the ribbon is a coordinate the server worked out,
-    so it only moves when the server says so. -#}
-<div id="home-ribbon" {{ live("/", "#home-ribbon") }}>
-  {% with ribbon_title = "The next while" %}
-    {% include "partials/ribbon.html" %}
+  <div class="dash-shelf">
+  {% with shelf_cards = cards, shelf_ghost = true %}
+    {% include "partials/shelf.html" %}
   {% endwith %}
-</div>
-{% endif %}
+  </div>
 
-{# The shelf shows the jars; the cards below carry the numbers — and the
-   numbers are the ones that go stale, so this is the part that refreshes
-   itself. Overdue turns a card red here too, without a reload. #}
-<ul class="jar-grid" id="jar-cards" {{ live("/", "#jar-cards") }}>
-  {% for card in cards %}
-  {% set jar = card.jar %}
+  {# The numbers are the part that goes stale, so this is the part that
+     refreshes itself. Overdue turns a card red here too, without a reload. #}
+  <aside class="dash-now" id="dash-now" aria-label="Right now" {{ live("/", "#dash-now") }}>
+    <h2 class="section-title">Right now</h2>
+
+    {#- A loaf underway comes first: it has a clock on it. -#}
+    {% for one in underway %}
+    {% set bake = one.bake %}{% set view = one.view %}
+    <a class="card bake-live" href="/bakes/{{ bake.id }}">
+      <span class="now-label">
+        {%- if bake.status.value == "in_progress" %}Baking{% else %}Planned{% endif -%}
+      </span>
+      <strong class="bake-live-name">{{ bake.recipe.name }}</strong>
+      {% if view and not view.is_done %}
+        {% set current = view.current %}
+        {% if view.running %}
+        <span class="bake-live-step">{{ view.running.name }}
+          {%- if view.running.planned_end %}
+          <span class="muted">· ends {{ view.running.planned_end | local_time }}
+            ({{ view.running.planned_end | until(now) }})</span>
+          {%- endif %}</span>
+        {% elif view.due_now %}
+        <span class="bake-live-step">{{ view.due_now.name }}
+          <span class="muted">· due now</span></span>
+        {% elif current %}
+        <span class="bake-live-step"><span class="muted">Next:</span> {{ current.name }}
+          {%- if current.planned_start %}
+          <span class="muted">· {{ current.planned_start | local_time }}
+            ({{ current.planned_start | until(now) }})</span>
+          {%- endif %}</span>
+        {% endif %}
+        {% if view.next_hands_on and view.next_hands_on is not sameas current
+              and view.next_hands_on.planned_start %}
+        <span class="muted small">Then {{ view.next_hands_on.name }} at
+          {{ view.next_hands_on.planned_start | local_time }}</span>
+        {% endif %}
+        {% if view.is_behind %}
+        <span class="now-behind small">About {{ hours_label(view.behind_min / 60) }} behind the plan</span>
+        {% endif %}
+      {% elif view %}
+        <span class="bake-live-step">Every step is ticked off — write up the result.</span>
+      {% else %}
+        <span class="muted small">Open the running sheet</span>
+      {% endif %}
+    </a>
+    {% endfor %}
+
+    <ul class="jar-grid" id="jar-cards">
+      {% for card in cards %}
+      {% set jar = card.jar %}
   <li class="card jar-card {% if card.status.is_overdue %}is-overdue{% endif %}">
     <div class="jar-card-head">
       <h2>
@@ -34,12 +77,10 @@
         <a href="/jars/{{ jar.id }}">{{ jar.name }}</a>
       </h2>
       {% if jar.is_control %}<span class="badge badge-control">control</span>{% endif %}
+      <span class="badge badge-state state-{{ jar.state.value }}">{{ jar.state.label }}</span>
     </div>
 
-    <p class="jar-meta">
-      <span class="badge badge-state state-{{ jar.state.value }}">{{ jar.state.label }}</span>
-      <span class="muted">{{ jar.origin.value }}{% if jar.flour_type %} · {{ jar.flour_type }}{% endif %}</span>
-    </p>
+    <p class="jar-meta muted small">{{ jar.origin.value }}{% if jar.flour_type %} · {{ jar.flour_type }}{% endif %}</p>
 
     <dl class="stats">
       <div>
@@ -81,25 +122,44 @@
     </dl>
 
     <div class="row-actions">
-      <a class="btn" href="/jars/{{ jar.id }}/feed">Fed it</a>
+      <a class="btn btn-small" href="/jars/{{ jar.id }}/feed">Fed it</a>
       {#- The measurement the app cannot make for itself, one tap from the
           dashboard so it is never worth skipping. -#}
       <form method="post" action="/jars/{{ jar.id }}/peaked">
         <input type="hidden" name="next" value="/">
-        <button class="btn" type="submit">Peaked now</button>
+        <button class="btn btn-small btn-secondary" type="submit">Peaked now</button>
       </form>
-      <a class="btn btn-secondary" href="/jars/{{ jar.id }}/observe">Observe</a>
+      <a class="btn btn-small btn-secondary" href="/jars/{{ jar.id }}/observe">Observe</a>
     </div>
   </li>
-  {% endfor %}
-</ul>
-{% if rise_chart %}
-{% with chart = rise_chart, chart_title = "How they rise",
-        chart_caption = "Each dot is one observation. The line that keeps reaching higher is the jar that is working." %}
-  {% include "partials/rise_chart.html" %}
-{% endwith %}
-{% endif %}
+      {% endfor %}
+    </ul>
+  </aside>
+
+  <div class="dash-charts">
+    {% if ribbon %}
+    {#- The `now` line down the ribbon is a coordinate the server worked out,
+        so it only moves when the server says so. -#}
+    <div id="home-ribbon" {{ live("/", "#home-ribbon") }}>
+      {% with ribbon_title = "The next while" %}
+        {% include "partials/ribbon.html" %}
+      {% endwith %}
+    </div>
+    {% endif %}
+
+    {% if rise_chart %}
+    {% with chart = rise_chart, chart_title = "How they rise",
+            chart_caption = "Each dot is one observation. The line that keeps reaching higher is the jar that is working." %}
+      {% include "partials/rise_chart.html" %}
+    {% endwith %}
+    {% endif %}
+  </div>
+</div>
 {% else %}
+<section class="hero">
+  <h1>Starter jars</h1>
+  <p class="sub">Feedings, observations and bakes, logged properly.</p>
+</section>
 {#- An empty shelf is still the shelf: the ghost slot is on it, and with no
     jars to hide behind it is simply there, which is the way in. -#}
 {% with shelf_ghost = true, shelf_label = "The shelf, with no jars on it yet" %}

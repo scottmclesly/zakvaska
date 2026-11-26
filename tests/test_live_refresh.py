@@ -172,7 +172,7 @@ def test_the_region_reader_finds_a_nested_region():
 #: Each live region, and the page it pulls itself out of.
 REGIONS = (
     ("/", "home-ribbon"),
-    ("/", "jar-cards"),
+    ("/", "dash-now"),
     ("/jars/{jar}", "jar-status"),
     ("/jars/{jar}", "jar-cycle"),
     ("/bakes/{bake}", "bake-live"),
