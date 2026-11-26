@@ -1,0 +1,30 @@
+{# A 22px glyph for a section of the app, for the phone's tab bar. Expects
+   `section`. Drawn with currentColor so the active tab tints it. #}
+<svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+     stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+     stroke-linejoin="round">
+  {%- if section == "jars" -%}
+    {# a jar #}
+    <rect x="8" y="3" width="8" height="3" rx="1"/>
+    <path d="M9 6c0 2-2.5 2.5-2.5 5.5V19a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2v-7.5C17.5 8.5 15 8 15 6"/>
+    <path d="M6.5 14h11"/>
+  {%- elif section == "recipes" -%}
+    {# an index card #}
+    <rect x="3.5" y="5" width="17" height="14" rx="2"/>
+    <path d="M7 9.5h10M7 13h10M7 16h6"/>
+  {%- elif section == "bakes" -%}
+    {# a scored loaf #}
+    <path d="M3.5 15.5c0-5 3.5-8.5 8.5-8.5s8.5 3.5 8.5 8.5c0 1.5-1 2.5-2.5 2.5H6c-1.5 0-2.5-1-2.5-2.5z"/>
+    <path d="M9 10.5l1.5 3M12.5 10l1.5 3M16 11l1 2.5"/>
+  {%- elif section == "plan" -%}
+    {# a clock #}
+    <circle cx="12" cy="12" r="8.5"/>
+    <path d="M12 7.5V12l3 2"/>
+  {%- elif section == "equipment" -%}
+    {# the bread maker #}
+    <rect x="4" y="7" width="16" height="13" rx="2"/>
+    <path d="M7 7V5.5A1.5 1.5 0 0 1 8.5 4h7A1.5 1.5 0 0 1 17 5.5V7"/>
+    <rect x="7.5" y="10.5" width="5" height="3.5" rx="0.8"/>
+    <path d="M15.5 11.5h1.5M15.5 14h1.5"/>
+  {%- endif -%}
+</svg>

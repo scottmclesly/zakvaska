@@ -1,0 +1,6 @@
+{# The total-flour box. One definition, because it is written in two
+   places: on the page, and again out of band when picking a recipe
+   fills it in. `flour_g` is grams or none; `oob` marks the second kind. #}
+<input id="plan-flour" name="flour" type="text" autocomplete="off"
+       {% if oob is defined and oob %}hx-swap-oob="true"{% endif %}
+       value="{{ flour_g | weigh_total_input(weight_unit, flour=true) }}">

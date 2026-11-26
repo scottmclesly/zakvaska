@@ -4,6 +4,8 @@
 <a class="btn btn-small" href="/recipes/new">New recipe</a>
 {% endblock %}
 
+{% block page_class %}page--wide{% endblock %}
+
 {% block content %}
 <section class="hero">
   <h1>Recipes</h1>
@@ -11,53 +13,60 @@
 </section>
 
 {% if recipes %}
-<ul class="jar-grid">
+{#- Finding one of thirty-odd. The whole list is on the page, so this only
+    hides cards: no request, and without JavaScript the bar is hidden and
+    the list is simply all there. -#}
+<form class="recipe-find" role="search" data-recipe-find hidden
+      onsubmit="return false">
+  <label class="sr-only" for="recipe-q">Find a recipe</label>
+  <input id="recipe-q" type="search" placeholder="Find a recipe…"
+         autocomplete="off" data-recipe-q>
+  <div class="recipe-families" role="group" aria-label="Kind of bread">
+    <button class="chip is-current" type="button" data-family="" aria-pressed="true">All</button>
+    {% for family in recipes | map(attribute="category") | unique | sort(attribute="value") %}
+    <button class="chip" type="button" data-family="{{ family.value }}" aria-pressed="false">
+      {{- family.label -}}
+      <span class="chip-count">{{ recipes | selectattr("category", "equalto", family) | list | length }}</span>
+    </button>
+    {% endfor %}
+  </div>
+</form>
+<p class="card muted recipe-none" data-recipe-none hidden>No recipe matches that.</p>
+<ul class="recipe-grid" data-recipe-list>
   {% for recipe in recipes %}
   {% set latest = recipe.latest_version %}
-  <li class="card recipe-card">
-    <div class="recipe-head">
-      <div class="recipe-loaf">
-        {% include "partials/loaf_art.html" %}
-      </div>
-      <div class="recipe-head-text">
-        <div class="jar-card-head">
-          <h2><a href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h2>
-          <span class="badge">{{ recipe.category.label }}</span>
-        </div>
-        {% if recipe.source %}
-        <p class="source muted small">
-          {{ recipe.source }}{% if recipe.source_ref %} · {{ recipe.source_ref }}{% endif %}
-        </p>
-        {% endif %}
-      </div>
+  {#- A card is the link to its recipe: the name's anchor is stretched over
+      all of it. One loaf, one name, one line of facts — thirty-six of these
+      should be a page you can take in, not six screens of them. -#}
+  <li class="card recipe-card" data-family="{{ recipe.category.value }}"
+      data-find="{{ (recipe.name ~ ' ' ~ (recipe.source or '') ~ ' ' ~ (latest.default_program.name if latest and latest.default_program else '')) | lower }}">
+    <div class="recipe-loaf">
+      {% include "partials/loaf_art.html" %}
     </div>
-    <dl class="stats">
-      <div>
-        <dt>Latest</dt>
-        <dd>{{ latest.label if latest else "—" }}</dd>
-      </div>
-      <div>
-        <dt>Versions</dt>
-        <dd>{{ recipe.versions | length }}</dd>
-      </div>
-      {% if latest %}
-      <div>
-        <dt>Ingredients</dt>
-        <dd>{{ latest.ingredients | length }}</dd>
-      </div>
+    <div class="recipe-head-text">
+      <h2><a class="recipe-link" href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h2>
+      <p class="recipe-facts muted small">
+        <span class="badge">{{ recipe.category.label }}</span>
+        {{ latest.label if latest else "—" }}
+        {%- if recipe.versions | length > 1 %} of {{ recipe.versions | length }}{% endif %}
+        {%- if latest %} · {{ latest.ingredients | length }} ingredients{% endif %}
+      </p>
+      {% if latest and latest.default_program %}
+      <p class="recipe-machine muted small">
+        Bread maker: {{ latest.default_program.name }}{% if latest.default_loaf_size %},
+        {{ latest.default_loaf_size }}{% endif %}{% if latest.default_crust %},
+        {{ latest.default_crust }} crust{% endif %}
+      </p>
       {% endif %}
-    </dl>
-    {% if latest and latest.default_program %}
-    <p class="muted small">
-      Bread maker: {{ latest.default_program.name }}{% if latest.default_loaf_size %},
-      {{ latest.default_loaf_size }}{% endif %}{% if latest.default_crust %},
-      {{ latest.default_crust }} crust{% endif %}
-    </p>
-    {% endif %}
-    <div class="row-actions">
-      <a class="btn" href="/recipes/{{ recipe.id }}">Open</a>
+      {% if recipe.source %}
+      <p class="source muted small" title="{{ recipe.source }}{% if recipe.source_ref %} · {{ recipe.source_ref }}{% endif %}">
+        {{ recipe.source }}{% if recipe.source_ref %} · {{ recipe.source_ref }}{% endif %}
+      </p>
+      {% endif %}
       {% if recipe.versions | length > 1 %}
-      <a class="btn btn-secondary" href="/recipes/{{ recipe.id }}/diff">Compare versions</a>
+      <p class="recipe-more small">
+        <a href="/recipes/{{ recipe.id }}/diff">Compare versions</a>
+      </p>
       {% endif %}
     </div>
   </li>

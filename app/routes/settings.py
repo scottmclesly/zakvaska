@@ -19,7 +19,12 @@ from app.models.busy_block import (
     BusyBlock,
 )
 from app.models.enums import BusyKind
-from app.models.setting import FEEDS_PER_DAY_CHOICES, RIBBON_SPAN_CHOICES
+from app.models.setting import (
+    FEEDS_PER_DAY_CHOICES,
+    PREHEAT_OVEN_CHOICES,
+    PREHEAT_POT_CHOICES,
+    RIBBON_SPAN_CHOICES,
+)
 from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
 from app.services import busy as busy_service
@@ -49,6 +54,10 @@ def _page_context(ctx: ViewContext, errors: list[str] | None = None) -> dict:
         "feeds_per_day_choices": FEEDS_PER_DAY_CHOICES,
         "ribbon_span_h": settings_store.ribbon_span_h(session),
         "ribbon_span_choices": RIBBON_SPAN_CHOICES,
+        "preheat_pot_min": settings_store.preheat_pot_min(session),
+        "preheat_pot_choices": PREHEAT_POT_CHOICES,
+        "preheat_oven_min": settings_store.preheat_oven_min(session),
+        "preheat_oven_choices": PREHEAT_OVEN_CHOICES,
         # Held in Celsius, typed in whichever unit is on display.
         "ferment_temp": temp_in(
             settings_store.default_ferment_temp_c(session), ctx.temp_unit
@@ -161,6 +170,62 @@ def save_timing(
                 )
     except ValueError as exc:
         errors.append(str(exc))
+
+    if errors:
+        ctx.session.rollback()
+        return render(
+            request=request, ctx=ctx, name="settings/index.html",
+            context=_page_context(ctx, errors), status_code=400,
+        )
+
+    ctx.session.commit()
+    return _see_other()
+
+
+# --- The preheat heads-up -----------------------------------------------
+
+
+@router.post("/preheat")
+def save_preheat(
+    request: Request,
+    ctx: Ctx,
+    preheat_pot_min: Annotated[str, Form()] = "",
+    preheat_oven_min: Annotated[str, Form()] = "",
+):
+    """How much warning the oven needs, per method.
+
+    Two keys rather than one, because the numbers are not the same kind of
+    number: a cast-iron pot has to be hot all the way through and a bare
+    oven only has to be hot.
+    """
+    errors: list[str] = []
+    wanted: list[tuple[str, str, tuple[int, ...], str]] = [
+        (
+            "preheat_pot_min",
+            preheat_pot_min,
+            PREHEAT_POT_CHOICES,
+            "The pot preheat must be 30, 45 or 60 minutes.",
+        ),
+        (
+            "preheat_oven_min",
+            preheat_oven_min,
+            PREHEAT_OVEN_CHOICES,
+            "The oven preheat must be 10, 15, 20 or 30 minutes.",
+        ),
+    ]
+
+    for key, raw, choices, complaint in wanted:
+        try:
+            minutes = f.opt_int(raw, field="Preheat")
+        except ValueError as exc:
+            errors.append(str(exc))
+            continue
+        if minutes is None:
+            continue
+        if minutes not in choices:
+            errors.append(complaint)
+        else:
+            settings_store.set_setting(ctx.session, key, str(minutes))
 
     if errors:
         ctx.session.rollback()

@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% block page_class %}page--read{% endblock %}
+
 {% block content %}
 <section class="hero">
   <h1>Start a bake</h1>
@@ -50,34 +52,18 @@
         </select>
       </label>
       <label>
-        <span>Total flour <em>{{ total_unit_label(weight_unit) }}</em></span>
+        <span>Total flour <em>{{ total_unit_label(weight_unit, flour=true) }}</em></span>
         <input name="total_flour_g" type="text" autocomplete="off"
                spellcheck="false" value="{{ values.get('total_flour_g') }}"
-               placeholder="{{ total_placeholder }}">
+               placeholder="{{ flour_placeholder }}">
       </label>
     </div>
 
-    {% if loaf_presets %}
-    {# The machine is sold by loaf size, so work backwards from the pan. #}
-    <div class="loafrow">
-      <span class="loaflabel">Fill a tin</span>
-      {% for preset in loaf_presets %}
-      {#- The button fills the field, so it carries the text for the unit
-          on display as well as the grams behind it. -#}
-      <button type="button" class="chip chip-action" data-loaf
-              data-flour="{{ preset.flour_g | round(1) }}"
-              data-flour-text="{{ preset.flour_g | weigh_total_input(weight_unit) }}"
-              data-size="{{ preset.label }}">
-        <strong>{{ preset.label }}</strong>
-        <span class="muted small">{{ preset.flour_g | weigh_total(weight_unit) }} flour</span>
-      </button>
-      {% endfor %}
-    </div>
-    <p class="hint muted small">
-      Bread-maker loaf sizes: that is the dough the pan takes, and the baked
-      loaf comes out about a tenth lighter.
-    </p>
-    {% endif %}
+    {#- The machine is sold by loaf size, so work back from the pan. This
+        form records the setting as the text the machine prints. -#}
+    {% with flour_field = "total_flour_g", size_field = "loaf_size" %}
+      {% include "partials/loaf_presets.html" %}
+    {% endwith %}
   </div>
 
   <div class="card form">

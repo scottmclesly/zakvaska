@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup, escape
 
 from app import __version__
 from app.config import get_settings
@@ -103,11 +104,13 @@ def weigh(
     return shown.text if shown else "\u2014"
 
 
-def weigh_total(value: float | None, unit: str = measures.METRIC) -> str:
-    """A total, which never makes sense in cups. See measures.measure_total."""
+def weigh_total(
+    value: float | None, unit: str = measures.METRIC, flour: bool = False
+) -> str:
+    """A total. Flour reads in cups, dough never does. See measure_total."""
     if value is None:
         return "\u2014"
-    shown = measures.measure_total(value, unit)
+    shown = measures.measure_total(value, unit, flour=flour)
     return shown.text if shown else "\u2014"
 
 
@@ -130,13 +133,15 @@ def weigh_input(
     return measures.input_text(value, unit, name=name, role=role)
 
 
-def weigh_total_input(value: object = None, unit: str = measures.METRIC) -> str:
-    """The editable form of a total — grams, or ounces and pounds."""
+def weigh_total_input(
+    value: object = None, unit: str = measures.METRIC, flour: bool = False
+) -> str:
+    """The editable form of a total, in the unit its label claims."""
     if value is None:
         return ""
     if isinstance(value, str):
         return value
-    return measures.input_total_text(float(value), unit)
+    return measures.input_total_text(float(value), unit, flour=flour)
 
 
 def filesize(value: int | None) -> str:
@@ -182,6 +187,7 @@ templates.env.filters.update(
     until=until,
     temp=format_temp,
     temp_value=temp_value,
+    headline=alert_service.headline,
 )
 templates.env.globals["app_version"] = __version__
 
@@ -208,12 +214,8 @@ templates.env.globals["unit_label"] = lambda unit: measures.UNIT_LABELS.get(
 )
 # What a weight field accepts, said once so every hint agrees.
 templates.env.globals["amount_examples"] = measures.EXAMPLES
-# A total's unit, which is never cups. See measures.measure_total.
-templates.env.globals["total_unit_label"] = lambda unit: (
-    measures.UNIT_LABELS[measures.METRIC]
-    if unit == measures.METRIC
-    else measures.UNIT_LABELS[measures.US_WEIGHT]
-)
+# A total's unit: cups for flour, never for dough. See measure_total.
+templates.env.globals["total_unit_label"] = measures.total_unit_label
 # The pages that draw these walk the cycles and stages themselves, so they
 # ask for the bar rather than having one threaded through every route.
 # The nudge buttons beside a planned feed name themselves.
@@ -233,6 +235,52 @@ templates.env.globals["jar_body_path"] = (
     "M24 18 h24 v4 q0 3 5 6 q5 3 5 10 v52 q0 8 -8 8 h-28 "
     "q-8 0 -8 -8 v-52 q0 -7 5 -10 q5 -3 5 -6 z"
 )
+# --- Regions that tell the time -----------------------------------------
+#
+# Every relative time on every page — "due in 55 min", "fed 3 h ago", the
+# `now` line down a ribbon — is worked out from one `now`, captured when the
+# request arrived. Left alone it is a clock that stopped: you glance at "55
+# min" and you are a quarter of an hour late. So the handful of regions that
+# carry one ask the server again, on a timer and whenever the window comes
+# back to the front. Server-rendered, which is the point: the words come
+# from `humanize_delta` either way, so a refreshed countdown and a reloaded
+# one cannot word the same span differently.
+
+#: How often such a region asks again. Half a minute: a countdown shown to
+#: the minute is never more than 30 seconds stale, and on a LAN against
+#: SQLite the request costs less than drawing the page it lands in.
+LIVE_REFRESH_S = 30
+
+#: Skipped while you are typing, so a refresh never takes a half-written
+#: note or a time you were in the middle of picking. `zakvaskaIdle` is in
+#: app.js; a browser with no JS gets no refresh and no broken page.
+_IDLE = "zakvaskaIdle()"
+_VISIBLE = f"document.visibilityState==='visible'&&{_IDLE}"
+
+
+def live(get: str, select: str | None = None) -> Markup:
+    """The attributes that make one region refresh itself.
+
+    `select` names the region inside the full page it is pulled out of, so
+    most of these need no endpoint of their own: the page re-renders and the
+    region picks itself out of it. Without one, `get` is expected to be a
+    partial and its whole answer goes inside.
+    """
+    trigger = (
+        f"every {LIVE_REFRESH_S}s[{_IDLE}], "
+        f"visibilitychange[{_VISIBLE}] from:document"
+    )
+    parts = [f'hx-get="{escape(get)}"']
+    if select:
+        parts.append(f'hx-select="{escape(select)}" hx-swap="outerHTML"')
+    else:
+        parts.append('hx-swap="innerHTML"')
+    parts.append(f'hx-trigger="{escape(trigger)}"')
+    return Markup(" ".join(parts))
+
+
+templates.env.globals["live"] = live
+templates.env.globals["live_refresh_s"] = LIVE_REFRESH_S
 templates.env.globals["bakeplan_default_knead"] = bakeplan.DEFAULT_KNEAD_MIN
 templates.env.globals["cycle_bar"] = recipe_service.cycle_bar
 templates.env.globals["stage_bar"] = recipe_service.stage_bar

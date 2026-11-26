@@ -23,12 +23,13 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.models.alert import Alert
 from app.models.bake import Bake, BakeStageLog
-from app.models.enums import AlertKind
+from app.models.enums import AlertKind, BakeMethod
 from app.models.feeding import Feeding
 from app.models.jar import Jar
 from app.models.recipe import RecipeVersion
 from app.services import followalong
 from app.services.schedule import last_feeding, next_due_at
+from app.services.units import format_temp
 
 # Offered in the UI; "custom" is any number of minutes.
 SNOOZE_CHOICES = ((30, "30 min"), (120, "2 hours"))
@@ -57,11 +58,20 @@ def _pending_alerts(session: Session, jar_id: int) -> list[Alert]:
     )
 
 
-def _pending_stage_alerts(session: Session, log_id: int) -> list[Alert]:
+def _pending_stage_alerts(
+    session: Session, log_id: int, kind: AlertKind
+) -> list[Alert]:
+    """One kind at a time: a step can have alerts of two kinds against it.
+
+    Without the kind, the sweep that drops superseded step alerts would take
+    the pending preheat alert with them on every tick, and the heads-up
+    would be created and deleted forever without ever going off.
+    """
     return list(
         session.scalars(
             select(Alert).where(
                 Alert.stage_log_id == log_id,
+                Alert.kind == kind,
                 Alert.fired_at.is_(None),
                 Alert.acknowledged_at.is_(None),
             )
@@ -168,39 +178,104 @@ def _reconcile_stages(
 
     for bake in followalong.live_bakes(session):
         for log in bake.stage_logs:
-            wanted = {
-                moment
-                for moment in followalong.stage_due_moments(log)
-                if moment >= grace
-            }
+            _reconcile_moments(
+                session,
+                log,
+                AlertKind.STAGE_DUE,
+                followalong.stage_due_moments(log),
+                now=now,
+                grace=grace,
+                result=result,
+            )
+            # The oven going on is its own kind of alert about the same
+            # step: a different moment, different words, and a sweep of
+            # its own, so neither can drop the other's pending alert.
+            preheat = followalong.preheat_moment(log)
+            _reconcile_moments(
+                session,
+                log,
+                AlertKind.PREHEAT_DUE,
+                (preheat,) if preheat is not None else (),
+                now=now,
+                grace=grace,
+                result=result,
+            )
 
-            for alert in _pending_stage_alerts(session, log.id):
-                if alert.due_at not in wanted:
-                    session.delete(alert)
-                    result.dropped += 1
 
-            for due in sorted(wanted):
-                alert = session.scalars(
-                    select(Alert).where(
-                        Alert.stage_log_id == log.id,
-                        Alert.kind == AlertKind.STAGE_DUE,
-                        Alert.due_at == due,
-                    )
-                ).first()
+def _reconcile_moments(
+    session: Session,
+    log: BakeStageLog,
+    kind: AlertKind,
+    moments: tuple[datetime, ...],
+    *,
+    now: datetime,
+    grace: datetime,
+    result: ReconcileResult,
+) -> None:
+    """Make the alerts of one kind against one step match `moments` exactly.
 
-                if alert is None:
-                    alert = Alert(
-                        stage_log_id=log.id,
-                        kind=AlertKind.STAGE_DUE,
-                        due_at=due,
-                    )
-                    session.add(alert)
-                    session.flush()
-                    result.created.append(alert)
+    Create what is missing, drop what is no longer wanted, fire what is due.
+    Idempotent, which is what lets the scheduler call it every minute.
+    """
+    wanted = {moment for moment in moments if moment >= grace}
 
-                if alert.is_pending and now >= alert.effective_due_at:
-                    alert.fired_at = now
-                    result.fired.append(alert)
+    for alert in _pending_stage_alerts(session, log.id, kind):
+        if alert.due_at not in wanted:
+            session.delete(alert)
+            result.dropped += 1
+
+    for due in sorted(wanted):
+        alert = session.scalars(
+            select(Alert).where(
+                Alert.stage_log_id == log.id,
+                Alert.kind == kind,
+                Alert.due_at == due,
+            )
+        ).first()
+
+        if alert is None:
+            alert = Alert(stage_log_id=log.id, kind=kind, due_at=due)
+            session.add(alert)
+            session.flush()
+            result.created.append(alert)
+
+        if alert.is_pending and now >= alert.effective_due_at:
+            alert.fired_at = now
+            result.fired.append(alert)
+
+
+# --- What an alert says -------------------------------------------------
+
+
+def headline(alert: Alert, temp_unit: str = "F") -> str:
+    """The one line this alert puts in front of the baker.
+
+    Everything except a preheat says what it has always said: the jar's name
+    or the step's. A preheat has to say more than its subject, because the
+    useful part is the two numbers — how hot, and how long you have got —
+    and it needs the display unit to say the first of them, which is why
+    this takes the unit rather than living on the model.
+    """
+    if not alert.kind.is_preheat:
+        return alert.subject
+
+    log = alert.stage_log
+    if log is None:
+        return alert.subject
+
+    what = "the oven and pot" if _uses_a_pot(log) else "the oven"
+    celsius = log.planned_temp_c
+    if celsius is None and log.bake is not None:
+        celsius = log.bake.oven_temp_c
+    to_temp = f" to {format_temp(celsius, temp_unit)}" if celsius is not None else ""
+    lead = log.preheat_lead_min
+    in_min = f" — bake in {lead} min" if lead else ""
+    return f"Preheat {what}{to_temp} now{in_min}"
+
+
+def _uses_a_pot(log: BakeStageLog) -> bool:
+    """Whether there is a cast-iron pot in there to come up to temperature."""
+    return log.bake is not None and log.bake.method is BakeMethod.DUTCH_OVEN
 
 
 def showing(session: Session, now: datetime) -> list[Alert]:

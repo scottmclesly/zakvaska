@@ -1,0 +1,12 @@
+{# What picking a recipe fills in. The select swaps this in on change, so
+   the chips arrive with the recipe and the flour box opens on the batch
+   the recipe was written at — the same number a /plan?version=… link
+   opens on, rather than an empty box you have no number for.
+
+   The flour goes out of band: the select is inside the form, and one
+   change should answer in two places without replacing the select. #}
+{% include "plan/tin.html" %}
+{% with oob = true %}
+  {% include "plan/flour_field.html" %}
+  {% include "plan/loaf_field.html" %}
+{% endwith %}

@@ -33,7 +33,10 @@ Comparing jars and iterating recipes is the point, so the data must be structure
 - The display unit is also the **entry** unit: every weight field goes through
   `measures.parse_quantity` (`forms.req_weight` / `opt_weight`), so a bare number is read in
   the unit on display and a written-out unit ("250 g", "1 lb 2 oz", "1 ½ cups") wins over it.
-  Totals — flour, dough — use `parse_total` and are never cups.
+  Totals use `parse_total` / `measure_total`, which take `flour=`: a **flour** total reads in
+  cups at the generic flour density, a **dough** total never does — a mixture has no density
+  anyone measures. Pass `flour=True` at every flour-total site, label included, so the box and
+  the words over it agree about how a bare number will be read.
 - Recipes are stored as **baker's percentages** relative to total flour; grams are derived.
   A recipe may be *typed* as amounts instead: the percentages come from them and the flour
   weight they came to is kept on the version as `batch_flour_g`, which is what lets a recipe

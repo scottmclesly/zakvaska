@@ -17,6 +17,7 @@ from app.models.jar import Jar
 from app.models.observation import Observation
 from app.services import alerts as alert_service
 from app.services import plan as plan_service
+from app.services import ribbon as ribbon_service
 from app.services.units import f_to_c
 
 
@@ -76,10 +77,10 @@ def test_the_dashboard_draws_a_ribbon_for_both_jars(client, session):
     page = client.get("/")
 
     assert page.status_code == 200
-    assert 'class="ribbon"' in page.text
+    assert 'class="ribbon fit fit-360"' in page.text
     assert "Old Rye" in page.text and "Soviet rye" in page.text
-    # One row each, sharing the one axis.
-    assert page.text.count('class="ribbon-row') == 2
+    # One row each, sharing the one axis — in every width it is drawn at.
+    assert page.text.count('class="ribbon-row') == 2 * len(ribbon_service.SIZES)
 
 
 def test_the_jar_page_draws_its_own_ribbon(client, session):
@@ -89,24 +90,44 @@ def test_the_jar_page_draws_its_own_ribbon(client, session):
     page = client.get(f"/jars/{jar.id}")
 
     assert page.status_code == 200
-    assert 'class="ribbon"' in page.text
-    assert page.text.count('class="ribbon-row') == 1
+    assert 'class="ribbon fit fit-360"' in page.text
+    assert page.text.count('class="ribbon-row') == len(ribbon_service.SIZES)
 
 
-def test_the_ribbon_scales_rather_than_being_fixed_to_a_width(client, session):
-    """Phone and desktop get the same SVG: a viewBox and no width attribute.
-
-    That is what makes "renders at phone and desktop width" true without a
-    media query or a second layout to keep in step.
+def test_the_ribbon_is_drawn_at_every_width_and_fixed_to_none(client, session):
+    """Stretching one drawing to fit made the type three times too big on a
+    desktop and too small to read on a phone. So it is drawn once per width
+    in `SIZES` and the stylesheet shows the nearest — each still a viewBox
+    with no width attribute, so each still flexes the little it has to.
     """
     jar = _jar(session)
     _feed(session, jar, at=_hours_ago(4))
 
     page = client.get(f"/jars/{jar.id}")
 
-    assert 'viewBox="0 0 360' in page.text
-    svg = page.text.split('class="ribbon"')[1][:200]
-    assert "width=" not in svg
+    for width in ribbon_service.SIZES:
+        marker = f'class="ribbon fit fit-{width:g}" viewBox="0 0 {width:g} '
+        assert marker in page.text
+        svg = page.text.split(marker)[1][:200]
+        assert "width=" not in svg
+    assert 'class="chart-fit"' in page.text
+
+
+def test_a_wider_ribbon_spends_its_width_on_time(session):
+    """More room means more clock labels, not bigger ones."""
+    now = datetime.now(UTC)
+    drawn = ribbon_service.ribbon(
+        [ribbon_service.RibbonSeries(name="Rye", jar_id=1)],
+        start=now, end=now + timedelta(hours=48), now=now, tz=UTC,
+    )
+
+    widths = [one.width for one in drawn.sizes]
+    ticks = [len(one.ticks) for one in drawn.sizes]
+
+    assert tuple(widths) == ribbon_service.SIZES
+    assert ticks == sorted(ticks) and ticks[-1] > ticks[0]
+    # The rows are the same height in every one of them.
+    assert len({one.plot.h for one in drawn.sizes}) == 1
 
 
 def test_a_jar_never_fed_still_appears_on_the_ribbon(client, session):
@@ -114,7 +135,7 @@ def test_a_jar_never_fed_still_appears_on_the_ribbon(client, session):
 
     page = client.get("/")
 
-    assert 'class="ribbon"' in page.text
+    assert 'class="ribbon fit fit-360"' in page.text
     assert "Never fed" in page.text
 
 

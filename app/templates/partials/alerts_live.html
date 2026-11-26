@@ -1,0 +1,10 @@
+{# The alert banner, or nothing — the one definition of both.
+
+   base.html puts this inside the live wrapper on every page, and
+   `GET /partials/alerts` renders it on its own every refresh. Same
+   template both ways, so a banner that appears on a reload and a banner
+   that appears on its own cannot say different things.
+#}
+{%- if alerts %}
+{% include "partials/alert_banner.html" %}
+{%- endif %}

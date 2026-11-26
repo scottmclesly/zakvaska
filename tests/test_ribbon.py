@@ -431,3 +431,45 @@ def test_the_bands_drawn_are_the_bands_the_model_defines():
     # The peak band is 0.85-1.15 of a 10 h peak, so 3 h of a 30 h window.
     assert span_x / whole == pytest.approx(3.0 / 30.0, abs=0.02)
     assert timing.PEAK_TO - timing.PEAK_FROM == pytest.approx(0.3)
+
+
+# --- Head to head --------------------------------------------------------
+
+
+def _two_series():
+    from app.services.ribbon import FeedMark, RibbonSeries
+
+    now = datetime(2026, 11, 26, 12, 0, tzinfo=UTC)
+    return now, [
+        RibbonSeries(name="Homemade", jar_id=1,
+                     feeds=(FeedMark(at=now - timedelta(hours=2), peak_h=6.0),)),
+        RibbonSeries(name="Control", jar_id=2, is_control=True,
+                     feeds=(FeedMark(at=now - timedelta(hours=2), peak_h=8.0),)),
+    ]
+
+
+def test_head_to_head_puts_every_jar_on_one_baseline():
+    """Stacked rows cannot show which jar is ahead; one baseline can."""
+    from app.services import ribbon as ribbon_service
+
+    now, series = _two_series()
+    drawn = ribbon_service.head_to_head(
+        series, start=now - timedelta(hours=6), end=now + timedelta(hours=18),
+        now=now, tz=UTC,
+    )
+
+    first, second = drawn.rows
+    assert first.bottom == second.bottom and first.top == second.top
+    # The quicker jar's peak is to the left of the slower one's.
+    assert first.curves[0].peak_x < second.curves[0].peak_x
+    assert tuple(one.width for one in drawn.sizes) == ribbon_service.SIZES
+
+
+def test_head_to_head_needs_two_jars():
+    from app.services import ribbon as ribbon_service
+
+    now, series = _two_series()
+
+    assert ribbon_service.head_to_head(
+        series[:1], start=now, end=now + timedelta(hours=24), now=now, tz=UTC
+    ) is None

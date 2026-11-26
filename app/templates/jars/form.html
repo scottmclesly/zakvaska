@@ -5,6 +5,8 @@
 {{ v.get(name) if v.get(name) is not none else (default if default is not none else '') }}
 {%- endmacro %}
 
+{% block page_class %}page--read{% endblock %}
+
 {% block content %}
 <section class="hero">
   <h1>{{ "Edit jar" if jar else "New jar" }}</h1>

@@ -6,6 +6,12 @@
       "runtimeExecutable": ".venv/bin/python",
       "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8420"],
       "port": 8420
+    },
+    {
+      "name": "zakvaska-facelift",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["ZAKVASKA_PORT=8421", "ZAKVASKA_SCHEDULER=0", ".venv/bin/python", "-m", "uvicorn", "app.main:app", "--host", "127.0.0.1", "--port", "8421", "--reload", "--reload-dir", "app"],
+      "port": 8421
     }
   ]
 }

@@ -5,6 +5,10 @@
      art_class   a size class (jar-art-lg, jar-art-shelf)
      with_label  false to leave the taped label off
      dusty       true for a jar that has been put away a while
+     mood        where the jar is between feeds, as the ribbon's band name
+                 (rising, peak, ok, past, hungry): a starter at its peak
+                 stands domed and foaming, a hungry one has slumped and
+                 left a tide line on the glass
 
    Inline SVG so it themes with the page and costs no request. Every id is
    suffixed with the jar id: a repeated one would clip two jars alike.
@@ -23,27 +27,50 @@
 {%- else -%}
   {%- set fill_top = {"active": 52, "fridge": 62, "dormant": 68, "dried": 68}[state] -%}
 {%- endif -%}
-{%- set lively = (rise_pct > 40) if measured else (state == "active") -%}
-{%- set dome_ry = 4.2 if lively else 1.8 -%}
+{#- The mood is the model's reading of this minute, where a measurement may
+    be a day old: so it only ever overrules the drawing in the direction it
+    is sure of. An unmeasured jar stands where its mood puts it; a measured
+    one keeps its level, unless the jar has since gone over or gone hungry,
+    in which case it is drawn fallen however high it once stood. -#}
+{%- set mood = mood if (mood is defined and mood and state == "active") else none -%}
+{%- set mood_top = {"rising": 58, "peak": 42, "ok": 48, "past": 58, "hungry": 65}.get(mood) -%}
+{%- set was_top = fill_top -%}
+{%- if mood_top is not none -%}
+  {%- if not measured -%}{% set fill_top = mood_top %}
+  {%- elif mood in ("past", "hungry") -%}{% set fill_top = [fill_top, mood_top] | max %}{% endif -%}
+{%- endif -%}
+{%- set fallen = mood in ("past", "hungry") -%}
+{%- set flat = mood == "hungry" -%}
+{%- set lively = (not fallen) and ((rise_pct > 40) if measured else (state == "active")) -%}
+{%- set dome_ry = 6.4 if mood == "peak" else (1 if flat else (4.2 if lively else 1.8)) -%}
 {%- set body = jar_body_path -%}
 {%- if jar.is_control -%}
   {%- set caption = "control" -%}
 {%- else -%}
   {%- set caption = jar.flour_type or jar.culture_name or jar.origin.value -%}
 {%- endif -%}
-{%- set label_name = jar.name | truncate(10, True, "…", 0) -%}
-{%- set label_sub = caption | truncate(11, True, "…", 0) -%}
-{#- The tape gives the writing about 40 units, and this serif's widest
-    glyphs run 0.66em. Pen on tape has to be read from across the kitchen,
-    so the size has a floor and the name is what gives way: past ten
-    characters it is cut rather than shrunk any further. -#}
-{%- set name_size = [6.2, [8.4, 62 / ([label_name | length, 1] | max)] | min] | max -%}
-{%- set sub_size = [5.2, [6.2, 52 / ([label_sub | length, 1] | max)] | min] | max -%}
+{#- The tape is drawn; the writing on it is HTML laid over the drawing, so
+    it can wrap, size itself to the jar it is on and never be cut by a
+    character count. `--n` is the longest line in characters: the stylesheet
+    turns that into a size with a container query unit, so the same markup
+    fits a 58px jar and a 140px one. Past nine characters the name takes two
+    lines; only past what two lines can hold does it end in an ellipsis, and
+    the whole name is always there on hover. -#}
+{%- set name_len = jar.name | length -%}
+{%- set longest_word = jar.name.split() | map("length") | max if jar.name.split() else 1 -%}
+{%- set two_lines = name_len > 9 and not jar.is_control -%}
+{%- if two_lines -%}
+  {%- set tape_n = [longest_word, (name_len / 2) | round(0, "ceil") | int + 1] | max -%}
+{%- else -%}
+  {%- set tape_n = name_len -%}
+{%- endif -%}
+{%- set tape_n = [tape_n, 4] | max -%}
 {#- The lid colour travels as a custom property rather than as a fill
     attribute, so the lid, the screw band, the base and the darker edge that
     keeps a white cap readable are all worked out in app.css, and all of them
     theme with the page. -#}
-<svg class="jar-art {{ art_class or '' }} state-{{ state }}{% if jar.cap_color %} has-cap{% endif %}"
+<span class="jar-fig {{ art_class or '' }}" title="{{ jar.name }}{% if caption %} — {{ caption }}{% endif %}">
+<svg class="jar-art {{ art_class or '' }} state-{{ state }}{% if mood %} mood-{{ mood }}{% endif %}{% if jar.cap_color %} has-cap{% endif %}"
      viewBox="0 0 72 103"
      {%- if jar.cap_color %} style="--cap: {{ jar.cap_color }}"{% endif %}
      data-fill="{{ fill_top }}" role="img"
@@ -89,7 +116,18 @@
     <ellipse class="jar-hooch" cx="36" cy="{{ fill_top - 3.4 }}" rx="22" ry="1.4"/>
     {%- endif %}
 
-    {%- if state == "active" %}
+    {%- if fallen %}
+    <!-- the tide line: where it stood before it fell back -->
+    <rect class="jar-tide" x="14" y="{{ [was_top, 44] | min }}" width="44" height="1.4"/>
+    <rect class="jar-smear" x="14" y="{{ [was_top, 44] | min + 1.4 }}" width="44"
+          height="{{ [fill_top - ([was_top, 44] | min) - 1.4, 0] | max }}"/>
+    {%- endif %}
+
+    {%- if state == "active" and flat %}
+    <!-- spent: a few last bubbles and nothing at the surface -->
+    <circle class="jar-bubble" cx="27" cy="{{ fill_top + 8 }}" r="1.3"/>
+    <circle class="jar-bubble" cx="45" cy="{{ fill_top + 14 }}" r="1"/>
+    {%- elif state == "active" %}
     <!-- a crown of foam at the surface, and bubbles all through it -->
     <g class="jar-foam">
       <circle class="jar-bubble" cx="21" cy="{{ fill_top + 0.8 }}" r="2.6"/>
@@ -156,11 +194,10 @@
   <g clip-path="url(#jarbody-{{ jar.id }})">
     <g class="jar-labelgroup" transform="rotate(-2.4 36 84)">
       <rect class="jar-label" x="14" y="75" width="44" height="17" rx="1.5"/>
-      <text class="jar-label-name" x="36" y="83" text-anchor="middle"
-            font-size="{{ name_size | round(2) }}">{{ label_name }}</text>
-      <text class="jar-label-sub {% if jar.is_control %}is-control{% endif %}"
-            x="36" y="89.4" text-anchor="middle"
-            font-size="{{ sub_size | round(2) }}">{{ label_sub }}</text>
+      {%- if flat %}
+      <!-- a red corner on the tape: this one wants feeding -->
+      <path class="jar-flag" d="M51 75 H56.5 A1.5 1.5 0 0 1 58 76.5 V82 Z"/>
+      {%- endif %}
     </g>
   </g>
   {%- endif %}
@@ -175,3 +212,11 @@
   </g>
   {%- endif %}
 </svg>
+{%- if labelled %}
+<span class="jar-tape{% if jar.is_control %} is-control{% endif %}{% if two_lines %} is-wrapped{% endif %}"
+      style="--n: {{ tape_n }}" aria-hidden="true">
+  <span class="jar-tape-name">{{ jar.name }}</span>
+  {%- if jar.is_control %}<span class="jar-tape-sub">control</span>{% endif %}
+</span>
+{%- endif %}
+</span>

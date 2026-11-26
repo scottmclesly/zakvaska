@@ -12,3 +12,4 @@ backups/
 
 # Third-party manuals: keep local, do not commit
 docs/reference/*.pdf
+docs/facelift/shots/

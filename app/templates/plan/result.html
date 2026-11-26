@@ -13,7 +13,7 @@
   </div>
   {% endif %}
 
-  <section class="card">
+  <section class="card" data-chart="plan-day">
     <div class="chart-head">
       <h2 class="section-title">
         {% if mode == 'ready' %}
@@ -36,6 +36,9 @@
       <li><span class="ribbon-swatch is-handson"></span>hands-on</li>
       <li><span class="ribbon-swatch is-passive"></span>waiting</li>
       <li><span class="ribbon-swatch is-clashing"></span>clashes</li>
+      {% if timeline and timeline.preheat %}
+      <li><span class="ribbon-swatch is-preheat"></span>preheat</li>
+      {% endif %}
       {% if timeline and timeline.busy %}
       <li><span class="ribbon-swatch is-busy"></span>busy</li>
       {% endif %}
@@ -47,6 +50,16 @@
       these times are an estimate: the levain's rise is the model's guess
       about rye in general. Tapping &ldquo;Peaked now&rdquo; on the jar when
       it is at its best is what sharpens them.
+    </p>
+    {% endif %}
+
+    {#- The preheat is not a step and gets no row in the table below, so
+        this is where the plan says it out loud. -#}
+    {% if timeline and timeline.preheat %}
+    <p class="muted small plan-preheat">
+      Oven on at <strong>{{ timeline.preheat.start | local_time }}</strong> —
+      {{ timeline.preheat.lead_min }} minutes before the loaf goes in, while
+      the final rise is still going. You will be told.
     </p>
     {% endif %}
 

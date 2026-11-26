@@ -7,8 +7,13 @@
    arrives already cut into one polyline per readiness band, because the
    colour is the point.
 #}
-{%- set plot = ribbon.plot -%}
-<svg class="ribbon" viewBox="{{ ribbon.viewbox }}" role="img"
+{#- The same ribbon at every width the service drew it at. The stylesheet
+    shows the one nearest the space there is, so a wide card gets more hours
+    to the inch rather than bigger letters. -#}
+<div class="chart-fit">
+{%- for ribbon in (ribbon.sizes or (ribbon,)) %}
+{%- set plot = ribbon.plot %}
+<svg class="ribbon fit fit-{{ ribbon.width | int }}" viewBox="{{ ribbon.viewbox }}" role="img"
      aria-label="Feeding ribbon for
        {%- for row in ribbon.rows %} {{ row.name }}{% if not loop.last %},{% endif %}{% endfor %}:
        each jar's rise and its planned feeds over the next
@@ -32,14 +37,14 @@
     <line class="ribbon-tick {% if tick.is_day_start %}is-day{% endif %}"
           x1="{{ tick.x | round(2) }}" y1="{{ plot.y }}"
           x2="{{ tick.x | round(2) }}" y2="{{ ribbon.axis_y + 4 }}"/>
-    {%- if tick.is_day_start and tick.x < plot.right - 48 %}
-    <text class="ribbon-daylabel" x="{{ (tick.x + 3) | round(2) }}"
-          y="{{ plot.y - 4 }}" text-anchor="start">{{ tick.day_label }}</text>
+    {%- if tick.is_day_start and tick.x < plot.right - 80 %}
+    <text class="ribbon-daylabel" x="{{ (tick.x + 4) | round(2) }}"
+          y="{{ plot.y - 6 }}" text-anchor="start">{{ tick.day_label }}</text>
     {%- endif %}
     {#- Labels at the very edges would hang off the picture. -#}
-    {%- if tick.x > plot.x + 12 and tick.x < plot.right - 12 %}
+    {%- if tick.x > plot.x + 18 and tick.x < plot.right - 18 %}
     <text class="ribbon-xlabel" x="{{ tick.x | round(2) }}"
-          y="{{ ribbon.axis_y + 15 }}" text-anchor="middle">{{ tick.label }}</text>
+          y="{{ ribbon.axis_y + 17 }}" text-anchor="middle">{{ tick.label }}</text>
     {%- endif %}
     {%- endfor %}
   </g>
@@ -49,11 +54,11 @@
     {#- The jar's lid colour, so a row can be matched to the jar on the
         shelf without reading the name. -#}
     {%- if row.cap_color %}
-    <circle class="ribbon-cap" cx="{{ plot.x + 2.4 }}"
-            cy="{{ row.label_y - 2.4 }}" r="2.4"
+    <circle class="ribbon-cap" cx="{{ plot.x + 4.5 }}"
+            cy="{{ row.label_y - 4.5 }}" r="4"
             style="--cap: {{ row.cap_color }}"/>
     {%- endif %}
-    <text class="ribbon-name" x="{{ plot.x + (7 if row.cap_color else 0) }}"
+    <text class="ribbon-name" x="{{ plot.x + (13 if row.cap_color else 0) }}"
           y="{{ row.label_y }}">
       {{ row.name }}{% if row.is_control %} · control{% endif -%}
       {%- if row.is_estimate %} · estimate{% endif %}
@@ -84,21 +89,22 @@
               y1="{{ row.bottom }}" x2="{{ curve.x | round(2) }}"
               y2="{{ row.top }}"/>
         <circle class="ribbon-feed-dot" cx="{{ curve.x | round(2) }}"
-                cy="{{ row.bottom }}" r="3.2"/>
+                cy="{{ row.bottom }}" r="4"/>
         <title>Fed {{ curve.feed.at | local_dt }}{% if curve.feed.ratio_label %}
           at {{ curve.feed.ratio_label }}{% endif %} — peaks about
           {{ curve.peak_at | local_time }}{% if curve.feed.temp_assumed %}
           (temperature assumed){% endif %}</title>
       </g>
-      {%- if curve.feed.ratio_label and curve.x < plot.right - 26 %}
-      <text class="ribbon-ratio" x="{{ (curve.x + 4) | round(2) }}"
-            y="{{ row.bottom - 3 }}">{{ curve.feed.ratio_label }}</text>
+      {#- Under the baseline, where no curve is ever drawn over it. -#}
+      {%- if curve.feed.ratio_label and curve.x < plot.right - 60 %}
+      <text class="ribbon-ratio" x="{{ (curve.x + 7) | round(2) }}"
+            y="{{ row.bottom + 13 }}">{{ curve.feed.ratio_label }}</text>
       {%- endif %}
 
       {#- A tick where the peak is predicted. -#}
       {%- if curve.peak_x is not none %}
       <circle class="ribbon-peak" cx="{{ curve.peak_x | round(2) }}"
-              cy="{{ row.top }}" r="2.4">
+              cy="{{ row.top }}" r="3">
         <title>Predicted peak, {{ curve.peak_at | local_dt }}</title>
       </circle>
       {%- endif %}
@@ -108,7 +114,7 @@
     {#- Measured heights, against the prediction. -#}
     {%- for point in row.observations %}
     <circle class="ribbon-obs" cx="{{ point.x | round(2) }}"
-            cy="{{ point.y | round(2) }}" r="2.6">
+            cy="{{ point.y | round(2) }}" r="3.4">
       <title>Measured {{ point.mark.rise_pct | percent }} at
         {{ point.mark.at | local_dt }}</title>
     </circle>
@@ -121,10 +127,10 @@
             y1="{{ row.bottom }}" x2="{{ point.x | round(2) }}"
             y2="{{ row.top + 4 }}"/>
       <circle class="ribbon-planned-dot" cx="{{ point.x | round(2) }}"
-              cy="{{ row.bottom }}" r="3.2"/>
+              cy="{{ row.bottom }}" r="4"/>
       {%- if point.clashes %}
       <text class="ribbon-warn" x="{{ point.x | round(2) }}"
-            y="{{ row.top + 1 }}" text-anchor="middle">!</text>
+            y="{{ row.top + 2 }}" text-anchor="middle">!</text>
       {%- endif %}
       <title>Feed planned {{ point.mark.at | local_dt }}{% if point.clashes %}
         — inside {{ point.mark.busy_label }}{% endif %}</title>
@@ -135,8 +141,10 @@
 
   {#- Now, over the top of everything. -#}
   <g class="ribbon-now">
-    <line x1="{{ ribbon.now_x | round(2) }}" y1="{{ plot.y - 2 }}"
-          x2="{{ ribbon.now_x | round(2) }}" y2="{{ ribbon.axis_y + 2 }}"/>
-    <circle cx="{{ ribbon.now_x | round(2) }}" cy="{{ plot.y - 2 }}" r="2"/>
+    <line x1="{{ ribbon.now_x | round(2) }}" y1="{{ plot.y - 3 }}"
+          x2="{{ ribbon.now_x | round(2) }}" y2="{{ ribbon.axis_y + 3 }}"/>
+    <circle cx="{{ ribbon.now_x | round(2) }}" cy="{{ plot.y - 3 }}" r="3"/>
   </g>
 </svg>
+{%- endfor %}
+</div>

@@ -94,48 +94,61 @@ class TestTheDrawnJar:
 
         body = client.get(f"/jars/{jar.id}").text
 
-        assert ">Rye jar</text>" in body
+        assert 'class="jar-tape-name">Rye jar<' in body
 
-    def test_a_long_name_is_cut_rather_than_shrunk_past_reading(
+    def test_a_long_name_wraps_and_shrinks_rather_than_being_cut(
         self, client, session
     ):
-        """Pen on tape has to stay readable, so the name gives way first."""
+        """The tape used to cut a name at ten characters. Now the whole name
+        is written on it: a long one takes two lines and a smaller hand, and
+        the stylesheet works the size out from the longest line."""
         short = make_jar(session, name="Rye")
         long = make_jar(session, name="Soviet rye culture, second split")
 
         def label(jar):
             body = client.get(f"/jars/{jar.id}").text
             match = re.search(
-                r'class="jar-label-name"[^>]*font-size="([\d.]+)"[^>]*>([^<]*)<',
+                r'class="jar-tape([^"]*)"\s+style="--n: (\d+)"[^>]*>\s*'
+                r'<span class="jar-tape-name">([^<]*)<',
                 body,
             )
             assert match, body[:400]
-            return float(match.group(1)), match.group(2)
+            return match.group(1), int(match.group(2)), match.group(3)
 
-        short_size, short_text = label(short)
-        long_size, long_text = label(long)
+        short_class, short_n, short_text = label(short)
+        long_class, long_n, long_text = label(long)
 
         assert short_text == "Rye"
-        assert len(long_text) <= 10
-        assert long_text.startswith("Soviet")
-        assert long_size < short_size
-        # However long the name, the writing stays big enough to read.
-        assert long_size >= 6.2
+        assert long_text == "Soviet rye culture, second split"
+        assert "is-wrapped" in long_class
+        assert "is-wrapped" not in short_class
+        # A longer line means a smaller hand; and two lines mean the longest
+        # line is about half the name, not all of it.
+        assert short_n < long_n < len(long_text)
+
+    def test_the_whole_name_is_there_on_hover(self, client, session):
+        jar = make_jar(session, name="Soviet rye culture, second split")
+
+        body = client.get(f"/jars/{jar.id}").text
+
+        assert 'title="Soviet rye culture, second split' in body
 
     def test_the_label_says_control_on_the_control_jar(self, client, session):
         jar = make_jar(session, name="Soviet", is_control=True)
 
         body = client.get(f"/jars/{jar.id}").text
 
-        assert "jar-label-sub is-control" in body
-        assert ">control</text>" in body
+        assert "jar-tape is-control" in body
+        assert 'class="jar-tape-sub">control<' in body
 
-    def test_the_label_otherwise_names_the_flour(self, client, session):
-        jar = make_jar(session, name="Homemade", flour_type="whole rye")
+    def test_the_shelf_names_the_flour_under_the_jar(self, client, session):
+        """What is in the jar moved off the tape, where it was cut to eleven
+        characters, onto a slip under the shelf that has room for it."""
+        make_jar(session, name="Homemade", flour_type="whole rye")
 
-        body = client.get(f"/jars/{jar.id}").text
+        body = client.get("/").text
 
-        assert ">whole rye</text>" in body
+        assert re.search(r'class="shelf-caption"[^>]*>whole rye<', body)
 
     def test_a_dried_jar_draws_flakes_rather_than_a_pourable_mass(
         self, client, session
@@ -261,7 +274,7 @@ class TestTheShelfOfPutAwayJars:
     def test_it_is_still_labelled_with_its_name(self, client, session):
         self.put_away(session, name="Old rye")
 
-        assert ">Old rye</text>" in client.get("/").text
+        assert 'class="jar-tape-name">Old rye<' in client.get("/").text
 
     def test_an_archived_jar_is_not_also_on_the_live_shelf(
         self, client, session
@@ -650,3 +663,48 @@ class TestTheRiseChart:
 
     def test_an_empty_dashboard_draws_no_chart(self, client):
         assert "chart-path" not in client.get("/").text
+
+
+class TestTheJarShowsItsMood:
+    """Where a jar is between feeds, drawn rather than written."""
+
+    def _fed(self, session, hours_ago):
+        from datetime import UTC, datetime, timedelta
+
+        from app.models.feeding import Feeding
+
+        jar = make_jar(session, name="Rye")
+        session.add(
+            Feeding(
+                jar_id=jar.id,
+                fed_at=datetime.now(UTC) - timedelta(hours=hours_ago),
+                starter_g=50, flour_g=50, water_g=50,
+            )
+        )
+        session.commit()
+        return jar
+
+    def test_a_jar_long_past_its_feed_slumps_and_flags_its_tape(
+        self, client, session
+    ):
+        jar = self._fed(session, hours_ago=60)
+
+        body = client.get(f"/jars/{jar.id}").text
+
+        assert "mood-hungry" in body
+        assert 'class="jar-flag"' in body
+        assert 'class="jar-tide"' in body
+
+    def test_a_jar_just_fed_is_not_flagged(self, client, session):
+        jar = self._fed(session, hours_ago=0.5)
+
+        body = client.get(f"/jars/{jar.id}").text
+
+        assert "mood-rising" in body
+        assert 'class="jar-flag"' not in body
+        assert 'class="jar-tide"' not in body
+
+    def test_a_jar_never_fed_has_no_mood_to_show(self, client, session):
+        jar = make_jar(session, name="New")
+
+        assert "mood-" not in client.get(f"/jars/{jar.id}").text

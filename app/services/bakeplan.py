@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
 
-from app.models.enums import IngredientRole
+from app.models.enums import BakeMethod, IngredientRole
 from app.models.jar import Jar
 from app.models.recipe import EquipmentProgram, RecipeVersion
 from app.services import busy as busy_service
@@ -86,6 +86,11 @@ class PlanInputs:
     levain_ratio: float = DEFAULT_LEVAIN_RATIO
     levain_temp_c: float = 26.7
     levain_g: float | None = None
+
+    #: How the loaf is actually cooked. It changes nothing about the chain
+    #: of steps — a cast-iron pot bakes for as long as a tray does — but it
+    #: decides whether there is an oven to preheat, and how long it wants.
+    method: BakeMethod = BakeMethod.OVEN
 
     program_id: int | None = None
     loaf_lb: float | None = None
@@ -670,13 +675,20 @@ def default_inputs(
     """A plan already filled in sensibly, so the page opens on an answer."""
     total_flour = version.batch_flour_g if version else None
     bake_min = _stage_minutes(version, "bake")
+    program_id = version.default_program_id if version else None
     return PlanInputs(
         total_flour_g=total_flour,
         start_at=now,
+        # A recipe that names a machine program is a bread-maker recipe,
+        # which is the inference the planner has always made. Said out loud
+        # now, because the method is a field you can change.
+        method=(
+            BakeMethod.BREAD_MAKER if program_id else BakeMethod.OVEN
+        ),
         levain_ratio=DEFAULT_LEVAIN_RATIO,
         levain_temp_c=settings_store.default_ferment_temp_c(session),
         levain_g=_levain_grams(version, total_flour),
-        program_id=version.default_program_id if version else None,
+        program_id=program_id,
         loaf_lb=_loaf_lb(version.default_loaf_size if version else None),
         knead_only=True,
         bake_min=bake_min,

@@ -5,6 +5,8 @@
 <a class="btn btn-small btn-secondary" href="/bakes">All bakes</a>
 {% endblock %}
 
+{% block page_class %}page--wide{% endblock %}
+
 {% block content %}
 <section class="hero">
   <div class="jar-title">
@@ -20,6 +22,21 @@
   </p>
 </section>
 
+{#- Across the top, where the bake has got to: the day drawn out, as wide as
+    it can be because it is the picture you steer by, with the Now panel
+    standing beside it. Under that, two columns: what to weigh and what came
+    of it on the left, the running sheet you tap on the right. On a phone it
+    is one column — now, the day, then the sheet. -#}
+
+{#- Everything on this page that answers "where am I?" — the elapsed
+    minutes, the Now panel's countdowns, the `now` line down the day —
+    refreshes together. The running sheet below is deliberately outside it:
+    its rows carry a note field apiece, and a refresh that wiped a
+    half-written note would cost more than a stale minute count.
+    Nothing in here takes typing. -#}
+<div id="bake-live" {{ live("/bakes/" ~ bake.id, "#bake-live") }}>
+<div class="bake-top">
+<div class="bake-top-side">
 <section class="card">
   <dl class="stats stats-wide">
     <div>
@@ -55,7 +72,7 @@
     {% if bake.total_flour_g %}
     <div>
       <dt>Flour</dt>
-      <dd>{{ bake.total_flour_g | weigh_total(weight_unit) }}</dd>
+      <dd>{{ bake.total_flour_g | weigh_total(weight_unit, flour=true) }}</dd>
     </div>
     {% endif %}
     {% if bake.oven_temp_c is not none %}
@@ -83,8 +100,10 @@
 {% include "partials/bake_now.html" %}
 {% endif %}
 
+</div>
+
 {% if timeline %}
-<section class="card ribbon-card">
+<section class="card ribbon-card bake-day" data-chart="bake-day">
   <h2 class="section-title">The day</h2>
   {% include "partials/bake_timeline.html" %}
   <p class="ribbon-key muted">
@@ -92,79 +111,11 @@
   </p>
 </section>
 {% endif %}
+</div>
+</div>
 
-<h2 class="section-title">Running sheet</h2>
-{% if bake.stage_logs %}
-<ol class="stage-run">
-  {% for log in bake.stage_logs %}
-  <li class="card stage-step {% if log.is_running %}is-running{% elif log.is_done %}is-done{% endif %}">
-    <div class="stage-head">
-      <h3>
-        {{ log.name }}
-        {%- if log.hands_on %}<span class="badge badge-handson">hands on</span>{% endif %}
-      </h3>
-      <span class="stage-facts muted">
-        {%- if log.planned_start %}{{ log.planned_start | local_time }}{% endif -%}
-        {%- if log.planned_start and log.planned_min %} · {% endif -%}
-        {%- if log.planned_min %}{{ log.planned_min }} min planned{% endif -%}
-        {%- if log.planned_min and log.planned_temp_c is not none %} · {% endif -%}
-        {%- if log.planned_temp_c is not none %}{{ log.planned_temp_c | temp(temp_unit) }}{% endif -%}
-      </span>
-    </div>
-    {%- if log.at_peak is not none %}
-    <p class="stage-peak">
-      {{ "At its peak when it was used." if log.at_peak
-         else "Not at its peak — used anyway." }}
-    </p>
-    {%- endif %}
-
-    {% if log.is_done %}
-    <p class="stage-actual">
-      {{ log.actual_start | local_time }} → {{ log.actual_end | local_time }}
-      <strong>{{ log.actual_min }} min</strong>
-      {% if log.drift_min is not none and log.drift_min != 0 %}
-      <span class="drift {{ 'over' if log.drift_min > 0 else 'under' }}">
-        {{ "+" if log.drift_min > 0 }}{{ log.drift_min }} min
-      </span>
-      {% endif %}
-    </p>
-    {% elif log.is_running %}
-    <p class="stage-actual">
-      Started {{ log.actual_start | local_time }} ·
-      <strong>{{ log.actual_start | since(now) }}</strong>
-    </p>
-    {% endif %}
-
-    <div class="row-actions">
-      {% if not log.actual_start %}
-      <form method="post" action="/bakes/{{ bake.id }}/stages/{{ log.id }}/start">
-        <button class="btn btn-big" type="submit">Start {{ log.name }}</button>
-      </form>
-      {% elif log.is_running %}
-      <form method="post" action="/bakes/{{ bake.id }}/stages/{{ log.id }}/end">
-        <button class="btn btn-big" type="submit">Done with {{ log.name }}</button>
-      </form>
-      {% endif %}
-      {% if log.actual_start %}
-      <form method="post" action="/bakes/{{ bake.id }}/stages/{{ log.id }}/clear">
-        <button class="btn btn-small btn-secondary" type="submit">Undo</button>
-      </form>
-      {% endif %}
-    </div>
-
-    <form class="inline-form stage-note" method="post"
-          action="/bakes/{{ bake.id }}/stages/{{ log.id }}/note">
-      <label class="sr-only" for="note-{{ log.id }}">Note on {{ log.name }}</label>
-      <input id="note-{{ log.id }}" name="notes" value="{{ log.notes or '' }}"
-             placeholder="How did it go?">
-      <button class="btn btn-small btn-secondary" type="submit">Save note</button>
-    </form>
-  </li>
-  {% endfor %}
-</ol>
-{% else %}
-<p class="card muted">This recipe version had no stages, so there is nothing to tick off.</p>
-{% endif %}
+<div class="split bake-page">
+<div class="stack">
 
 {% if scaled %}
 <h2 class="section-title">Weigh out</h2>
@@ -231,8 +182,8 @@
 </section>
 {% endif %}
 
-<section class="danger-zone">
-  <h2 class="section-title">This bake</h2>
+<details class="card disclosure">
+  <summary>Status, or put this bake away</summary>
   <form class="inline-form" method="post" action="/bakes/{{ bake.id }}/finish">
     <label class="sr-only" for="bake-status">Status</label>
     <select id="bake-status" name="status">
@@ -252,5 +203,104 @@
     </button>
     <span class="muted">Bakes are archived, never deleted.</span>
   </form>
+</details>
+</div>
+
+<section class="bake-sheet">
+<h2 class="section-title">Running sheet</h2>
+{% if bake.stage_logs %}
+<ol class="stage-run">
+  {#- The step underway, and the first one not yet begun, are open: those
+      are the two you will tap. Everything else is one line — done steps
+      with what they took, later ones with when they are due and what they
+      ask for — and opens to the same buttons and the same note field. -#}
+  {% set seen = namespace(next=false) %}
+  {% for log in bake.stage_logs %}
+  {% set is_next = not log.actual_start and not seen.next %}
+  {% if is_next %}{% set seen.next = true %}{% endif %}
+  {% set open = log.is_running or is_next %}
+  <li class="card stage-step {% if log.is_running %}is-running{% elif log.is_done %}is-done{% elif is_next %}is-next{% else %}is-later{% endif %}">
+    {% if not open %}<details class="stage-fold"><summary>{% endif %}
+    <div class="stage-head">
+      <h3>
+        {{ log.name }}
+        {%- if log.hands_on %}<span class="badge badge-handson">hands on</span>{% endif %}
+      </h3>
+      <span class="stage-facts muted">
+        {%- if log.is_done %}
+        {{ log.actual_start | local_time }} → {{ log.actual_end | local_time }} ·
+        <strong>{{ log.actual_min }} min</strong>
+        {%- if log.drift_min is not none and log.drift_min != 0 %}
+        <span class="drift {{ 'over' if log.drift_min > 0 else 'under' }}">
+          {{ "+" if log.drift_min > 0 }}{{ log.drift_min }} min
+        </span>
+        {%- endif %}
+        {%- else %}
+        {%- if log.planned_start %}{{ log.planned_start | local_time }}{% endif -%}
+        {%- if log.planned_start and log.planned_min %} · {% endif -%}
+        {%- if log.planned_min %}{{ log.planned_min }} min planned{% endif -%}
+        {%- if log.planned_min and log.planned_temp_c is not none %} · {% endif -%}
+        {%- if log.planned_temp_c is not none %}{{ log.planned_temp_c | temp(temp_unit) }}{% endif -%}
+        {%- endif %}
+      </span>
+    </div>
+    {% if not open %}</summary>{% endif %}
+
+    {%- if log.at_peak is not none %}
+    <p class="stage-peak">
+      {{ "At its peak when it was used." if log.at_peak
+         else "Not at its peak — used anyway." }}
+    </p>
+    {%- endif %}
+
+    {% if log.is_done %}
+    <p class="stage-actual muted small">
+      Planned
+      {%- if log.planned_start %} {{ log.planned_start | local_time }}{% endif -%}
+      {%- if log.planned_min %} · {{ log.planned_min }} min{% endif -%}
+      {%- if log.planned_temp_c is not none %} · {{ log.planned_temp_c | temp(temp_unit) }}{% endif %}
+    </p>
+    {% elif log.is_running %}
+    <p class="stage-actual">
+      Started {{ log.actual_start | local_time }} ·
+      <strong>{{ log.actual_start | since(now) }}</strong>
+    </p>
+    {% endif %}
+
+    <div class="row-actions">
+      {% if not log.actual_start %}
+      <form method="post" action="/bakes/{{ bake.id }}/stages/{{ log.id }}/start">
+        <button class="btn {{ 'btn-big' if open else 'btn-secondary' }}" type="submit">Start {{ log.name }}</button>
+      </form>
+      {% elif log.is_running %}
+      <form method="post" action="/bakes/{{ bake.id }}/stages/{{ log.id }}/end">
+        <button class="btn btn-big" type="submit">Done with {{ log.name }}</button>
+      </form>
+      {% endif %}
+      {% if log.actual_start %}
+      <form method="post" action="/bakes/{{ bake.id }}/stages/{{ log.id }}/clear">
+        <button class="btn btn-small btn-secondary" type="submit">Undo</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <form class="inline-form stage-note" method="post"
+          action="/bakes/{{ bake.id }}/stages/{{ log.id }}/note">
+      <label class="sr-only" for="note-{{ log.id }}">Note on {{ log.name }}</label>
+      <textarea id="note-{{ log.id }}" name="notes" rows="2"
+                placeholder="How did it go?">{{ log.notes or '' }}</textarea>
+      <button class="btn btn-small btn-secondary" type="submit">Save note</button>
+    </form>
+    {% if not open %}</details>
+    {#- What the step asks for, readable without opening it. -#}
+    {% if log.notes %}<p class="stage-brief muted small">{{ log.notes }}</p>{% endif %}
+    {% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="card muted">This recipe version had no stages, so there is nothing to tick off.</p>
+{% endif %}
 </section>
+</div>
 {% endblock %}

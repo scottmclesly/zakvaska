@@ -7,6 +7,8 @@
 <a class="btn btn-small btn-secondary" href="/recipes">All recipes</a>
 {% endblock %}
 
+{% block page_class %}page--wide{% endblock %}
+
 {% block content %}
 <section class="hero hero-art">
   <div class="hero-loaf">
@@ -58,14 +60,18 @@
 </p>
 {% endif %}
 
+{#- The formula on the left, the method on the right: weigh from one, work
+    down the other. -#}
+<div class="split split--even recipe-page">
+<div class="stack">
 <section class="card">
   <h2 class="section-title">Scale to</h2>
   <form class="form scale-form" method="get" action="/recipes/{{ recipe.id }}/v/{{ version.version }}">
     <div class="field-row">
       <label>
-        <span>Total flour <em>{{ total_unit_label(weight_unit) }}</em></span>
+        <span>Total flour <em>{{ total_unit_label(weight_unit, flour=true) }}</em></span>
         <input name="flour" type="text" autocomplete="off" spellcheck="false"
-               value="{{ flour_input }}" placeholder="{{ total_placeholder }}">
+               value="{{ flour_input }}" placeholder="{{ flour_placeholder }}">
       </label>
       <label>
         <span>…or target dough weight <em>{{ total_unit_label(weight_unit) }}</em></span>
@@ -80,9 +86,9 @@
       {% endif %}
     </div>
     <p class="muted small">
-      Give either one. Flour wins if you fill in both. A total is read as a
-      weight — cups of mixed dough would be a made-up number — so grams,
-      ounces and pounds, written out or not.
+      Give either one. Flour wins if you fill in both. Each box reads in
+      the unit above it, and writing the unit out wins either way. A dough
+      weight is never cups: a mixture has no density anyone measures.
       {%- if scaled_from_batch %}
       This is the batch the recipe was written at.
       {%- endif %}
@@ -148,7 +154,7 @@
       <tr>
         <th scope="row">Flour</th>
         <td class="numeric">{{ flour_pct | percent(1) }}</td>
-        {% if scaled %}<td class="numeric strong">{{ scaled.total_flour_g | weigh_total(weight_unit) }}</td>{% endif %}
+        {% if scaled %}<td class="numeric strong">{{ scaled.total_flour_g | weigh_total(weight_unit, flour=true) }}</td>{% endif %}
         <td></td>
       </tr>
       <tr>
@@ -172,6 +178,9 @@
 <p class="card empty">No ingredients on this version.</p>
 {% endif %}
 
+</div>
+
+<div class="stack">
 <h2 class="section-title">Stages</h2>
 {% if version.stages %}
 {% with bar = stage_bar(version.stages) %}
@@ -225,4 +234,6 @@
   </form>
   <p class="muted small">Recipes are archived, never deleted — bakes point at these versions.</p>
 </section>
+</div>
+</div>
 {% endblock %}

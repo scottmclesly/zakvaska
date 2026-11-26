@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, tzinfo
 
 # --- Geometry -----------------------------------------------------------
@@ -135,6 +135,13 @@ class RiseChart:
     last_at: datetime
     plot: PlotBox = PLOT
     viewbox: str = VIEWBOX
+    #: How wide this one was drawn, and the same chart at every width in
+    #: `SIZES` — set on the one handed back, empty on the others. The
+    #: template emits them all and the stylesheet shows the nearest, so a
+    #: unit stays about a pixel and the type is read at the size it is
+    #: written (see `services.ribbon` for the same arrangement).
+    width: float = 360.0
+    sizes: tuple["RiseChart", ...] = ()
 
     @property
     def sample_count(self) -> int:
@@ -171,15 +178,15 @@ def _local_midnight(moment: datetime, tz: tzinfo) -> datetime:
     return local.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
-def _tick_step_hours(span_hours: float) -> int:
+def _tick_step_hours(span_hours: float, max_ticks: int = _MAX_TICKS) -> int:
     for hours in _TICK_HOURS:
-        if span_hours / hours <= _MAX_TICKS:
+        if span_hours / hours <= max_ticks:
             return hours
     return _TICK_HOURS[-1]
 
 
 def _tick_times(
-    first: datetime, last: datetime, tz: tzinfo
+    first: datetime, last: datetime, tz: tzinfo, max_ticks: int = _MAX_TICKS
 ) -> tuple[list[datetime], int]:
     """Round local instants to label the time axis with.
 
@@ -187,7 +194,7 @@ def _tick_times(
     is a time a person recognises, and 05:43 is not.
     """
     span_hours = (last - first).total_seconds() / 3600
-    step = _tick_step_hours(span_hours)
+    step = _tick_step_hours(span_hours, max_ticks)
     ticks: list[datetime] = []
 
     if step < 24:
@@ -229,8 +236,41 @@ def _trim(value: float) -> str:
 # --- The chart ----------------------------------------------------------
 
 
+#: The widths the rise chart is drawn at; the same as the ribbon's, because
+#: the same container queries choose between them.
+SIZES = (360.0, 560.0, 820.0, 1180.0)
+
+
 def rise_chart(
     inputs: Sequence[SeriesInput], *, tz: tzinfo, plot: PlotBox = PLOT
+) -> RiseChart | None:
+    """The chart at its narrowest, carrying every other width in `sizes`.
+
+    A caller that passes its own `plot` gets exactly that one drawing back.
+    """
+    base = _rise_chart_at(inputs, tz=tz, plot=plot)
+    if base is None or plot is not PLOT:
+        return base
+    wider = tuple(
+        _rise_chart_at(
+            inputs,
+            tz=tz,
+            plot=PlotBox(
+                x=PLOT.x, y=PLOT.y, w=width - (360.0 - PLOT.w), h=PLOT.h
+            ),
+            width=width,
+        )
+        for width in SIZES[1:]
+    )
+    return replace(base, sizes=(base, *wider))
+
+
+def _rise_chart_at(
+    inputs: Sequence[SeriesInput],
+    *,
+    tz: tzinfo,
+    plot: PlotBox = PLOT,
+    width: float = 360.0,
 ) -> RiseChart | None:
     """Rise against time, one line per jar, overlaid for comparison.
 
@@ -297,7 +337,10 @@ def rise_chart(
             )
         )
 
-    moments_ticks, step_hours = _tick_times(first, last, tz)
+    # A date label wants about 75 units to itself.
+    moments_ticks, step_hours = _tick_times(
+        first, last, tz, max(_MAX_TICKS, int(plot.w / 75))
+    )
     ticks = [
         XTick(at=at, x=x_for(at), label=_tick_label(at, step_hours))
         for at in moments_ticks
@@ -321,7 +364,8 @@ def rise_chart(
         first_at=first,
         last_at=last,
         plot=plot,
-        viewbox=VIEWBOX,
+        viewbox=f"0 0 {width:g} 170",
+        width=width,
     )
 
 

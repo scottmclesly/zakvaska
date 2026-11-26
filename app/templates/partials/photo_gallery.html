@@ -32,13 +32,16 @@
   </ul>
   {% endif %}
 
-  <form class="card form upload" method="post" action="/photos/upload"
+  {#- One line until it is wanted. -#}
+  <details class="card disclosure">
+  <summary>Add a photo</summary>
+  <form class="form upload" method="post" action="/photos/upload"
         enctype="multipart/form-data">
     <input type="hidden" name="owner_type" value="{{ owner_type }}">
     <input type="hidden" name="owner_id" value="{{ owner_id }}">
     <div class="field-row">
       <label>
-        <span>Add a photo</span>
+        <span>Photo</span>
         {# capture lets a phone go straight to the camera. #}
         <input type="file" name="photo" accept="image/*,.heic,.heif" capture="environment" required>
       </label>
@@ -51,4 +54,5 @@
       <button class="btn" type="submit">Upload</button>
     </div>
   </form>
+  </details>
 </section>

@@ -7,12 +7,15 @@
 #}
 {%- set feeds = alerts | rejectattr("is_about_a_bake") | list -%}
 {%- set steps = alerts | selectattr("is_about_a_bake") | list -%}
+{%- set preheats = steps | selectattr("kind.is_preheat") | list -%}
 <aside class="alert-banner" role="alert" aria-label="Alerts">
   <div class="alert-banner-inner">
     <p class="alert-banner-head">
       <span class="alert-count">{{ alerts | length }}</span>
       {%- if not steps %}
       jar{{ "" if feeds | length == 1 else "s" }} need{{ "s" if feeds | length == 1 else "" }} feeding
+      {%- elif not feeds and preheats | length == steps | length %}
+      oven{{ "" if steps | length == 1 else "s" }} to turn on
       {%- elif not feeds %}
       bake step{{ "" if steps | length == 1 else "s" }} due
       {%- else %}
@@ -29,7 +32,11 @@
           {%- if not alert.is_about_a_bake and alert.jar %}
           {%- with dot_color = alert.jar.cap_color %}{% include "partials/jar_dot.html" %}{% endwith %}
           {%- endif %}
-          <a class="alert-jar" href="{{ alert.url }}">{{ alert.subject }}</a>
+          {#- A preheat says the whole thing — how hot, and how long you
+              have got — because its subject alone would not get anyone to
+              the oven. Everything else says what it always said. -#}
+          <a class="alert-jar {% if alert.kind.is_preheat %}is-preheat{% endif %}"
+             href="{{ alert.url }}">{{ alert | headline(temp_unit) }}</a>
           <span class="muted">
             {%- if alert.is_about_a_bake %}
             {{ alert.stage_log.bake.label }} ·

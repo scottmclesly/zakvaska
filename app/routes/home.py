@@ -8,7 +8,12 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
 from app.routes.deps import ViewContext, get_view_context
-from app.services import charts, jars as jar_service, plan as plan_service
+from app.services import (
+    charts,
+    followalong,
+    jars as jar_service,
+    plan as plan_service,
+)
 from app.templates_env import render
 
 router = APIRouter()
@@ -30,6 +35,27 @@ def home(request: Request, ctx: Ctx) -> HTMLResponse:
     feeding_ribbon, plans = plan_service.build_ribbon(
         ctx.session, [card.jar for card in cards], now=ctx.now, tz=ctx.tz
     )
+    # The experiment itself: the jars on the same flour, on one axis.
+    duel = plan_service.build_head_to_head(
+        ctx.session,
+        plan_service.rivals([card.jar for card in cards]),
+        now=ctx.now,
+        tz=ctx.tz,
+    )
+    # A loaf underway is the other thing worth knowing at a glance. Read
+    # only: the same Now view the bake's own page works out.
+    underway = []
+    for bake in followalong.live_bakes(ctx.session):
+        view = None
+        if followalong.has_plan(bake):
+            view = followalong.now_view(
+                bake,
+                now=ctx.now,
+                busy=followalong.busy_for(
+                    ctx.session, bake, now=ctx.now, tz=ctx.tz
+                ),
+            )
+        underway.append({"bake": bake, "view": view})
     return render(
         request=request,
         ctx=ctx,
@@ -40,6 +66,8 @@ def home(request: Request, ctx: Ctx) -> HTMLResponse:
             "rise_chart": rise,
             "ribbon": feeding_ribbon,
             "plans": plans,
+            "underway": underway,
+            "duel": duel,
             "archived": [
                 jar
                 for jar in jar_service.list_jars(ctx.session, include_archived=True)

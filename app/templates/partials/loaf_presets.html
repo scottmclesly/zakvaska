@@ -1,0 +1,41 @@
+{# The loaf-size hot buttons: "I don't know the flour, I know the tin."
+
+   A bread maker is sold by the pound its pan takes, so each chip works
+   that weight back through the recipe's percentages to the flour it
+   needs. Expects `loaf_presets` (services.scaling.loaf_presets) and the
+   names of the fields a chip fills:
+
+     flour_field   the total-flour box, written in the unit on display
+     size_field    optional, takes the label  ("2.5 lb")
+     pounds_field  optional, takes the number (2.5)
+
+   Two forms ask for the same thing in different words — the bake form
+   records the machine setting as text, the planner times the program
+   from a number — so the row says which, and app.js fills them in. #}
+{% if loaf_presets %}
+<div class="loafrow" data-loaf-row
+     data-flour-field="{{ flour_field }}"
+     {% if size_field %}data-size-field="{{ size_field }}"{% endif %}
+     {% if pounds_field %}data-pounds-field="{{ pounds_field }}"{% endif %}>
+  <span class="loaflabel">Fill a tin</span>
+  {% for preset in loaf_presets %}
+  {#- The button fills the field, so it carries the text for the unit on
+      display as well as the grams behind it. -#}
+  <button type="button" class="loaf-tile" data-loaf
+          data-flour="{{ preset.flour_g | round(1) }}"
+          data-flour-text="{{ preset.flour_g | weigh_total_input(weight_unit, flour=true) }}"
+          data-size="{{ preset.label }}"
+          {#- "%g" so the number field lands on 2.5 and 3, not 3.0: this
+              value rides in the planner's query string, which is the link
+              a plan is kept as. -#}
+          data-pounds="{{ "%g" % preset.pounds }}">
+    <strong class="loaf-tile-size">{{ preset.label }}</strong>
+    <span class="loaf-tile-flour">{{ preset.flour_g | weigh_total(weight_unit, flour=true) }}</span>
+  </button>
+  {% endfor %}
+</div>
+<p class="hint muted small">
+  Pick the tin and the flour is filled in for it. That is the dough the pan
+  takes; the baked loaf comes out about a tenth lighter.
+</p>
+{% endif %}

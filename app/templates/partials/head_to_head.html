@@ -1,0 +1,127 @@
+{# The jars on one flour, laid over each other. Expects `duel`
+   (services.ribbon.Ribbon from `head_to_head`).
+
+   The ribbon above stacks the jars to say what each one needs. This one
+   overlays them to say which is ahead: both curves rise from the same
+   baseline against the same clock, so the gap between their peaks is on
+   the page instead of being worked out from two rows. Each curve is in its
+   jar's own lid colour, where it has one, so it can be matched to the shelf.
+#}
+<figure class="ribbon-card card duel" data-chart="duel">
+  <figcaption class="chart-head">
+    <h2 class="section-title">Head to head</h2>
+    <span class="muted small">same flour, same clock</span>
+  </figcaption>
+
+  <ul class="duel-key plain">
+    {%- for row in duel.rows %}
+    {%- set last = row.curves | last %}
+    <li class="slot-{{ row.slot }}{% if row.is_control %} is-control{% endif %}"
+        {%- if row.cap_color %} style="--series: {{ row.cap_color }}"{% endif %}>
+      <span class="duel-swatch" aria-hidden="true"></span>
+      <a class="duel-name" href="/jars/{{ row.jar_id }}">{{ row.name }}</a>
+      {%- if row.is_control %} <span class="badge badge-control">control</span>{% endif %}
+      <span class="muted small">
+        {%- if last %}
+          fed {{ last.feed.at | local_time }}
+          {%- if last.feed.ratio_label %} at {{ last.feed.ratio_label }}{% endif %}
+          · peak{{ "ed" if last.peak_at < duel.now else "s" }} about {{ last.peak_at | local_time }}
+          {%- if row.is_estimate %} (estimate){% endif %}
+        {%- else %}
+          {{ row.note or "nothing logged yet" }}
+        {%- endif %}
+      </span>
+    </li>
+    {%- endfor %}
+  </ul>
+
+  <div class="chart-fit">
+  {%- for duel in (duel.sizes or (duel,)) %}
+  {%- set plot = duel.plot %}
+  <svg class="ribbon fit fit-{{ duel.width | int }}" viewBox="{{ duel.viewbox }}" role="img"
+       aria-label="Head to head:
+         {%- for row in duel.rows %} {{ row.name }}{% if not loop.last %} against{% endif %}{% endfor %},
+         each jar's rise on one shared axis.">
+    <g class="ribbon-busy">
+      {%- for shade in duel.busy %}
+      {%- if shade.width > 0.2 %}
+      <rect class="ribbon-busy-band" x="{{ shade.x1 | round(2) }}" y="{{ plot.y }}"
+            width="{{ shade.width | round(2) }}" height="{{ plot.h }}">
+        <title>{{ shade.label }}</title>
+      </rect>
+      {%- endif %}
+      {%- endfor %}
+    </g>
+
+    <g class="ribbon-ticks">
+      {%- for tick in duel.ticks %}
+      <line class="ribbon-tick {% if tick.is_day_start %}is-day{% endif %}"
+            x1="{{ tick.x | round(2) }}" y1="{{ plot.y }}"
+            x2="{{ tick.x | round(2) }}" y2="{{ duel.axis_y + 4 }}"/>
+      {%- if tick.is_day_start and tick.x < plot.right - 80 %}
+      <text class="ribbon-daylabel" x="{{ (tick.x + 4) | round(2) }}"
+            y="{{ plot.y - 6 }}" text-anchor="start">{{ tick.day_label }}</text>
+      {%- endif %}
+      {%- if tick.x > plot.x + 18 and tick.x < plot.right - 18 %}
+      <text class="ribbon-xlabel" x="{{ tick.x | round(2) }}"
+            y="{{ duel.axis_y + 17 }}" text-anchor="middle">{{ tick.label }}</text>
+      {%- endif %}
+      {%- endfor %}
+    </g>
+
+    {%- set base = duel.rows[0] %}
+    <line class="ribbon-baseline" x1="{{ plot.x }}" y1="{{ base.bottom }}"
+          x2="{{ plot.right }}" y2="{{ base.bottom }}"/>
+
+    {%- for row in duel.rows %}
+    <g class="duel-row slot-{{ row.slot }}{% if row.is_control %} is-control{% endif %}"
+       {%- if row.cap_color %} style="--series: {{ row.cap_color }}"{% endif %}>
+      {%- for curve in row.curves %}
+      {%- for segment in curve.segments %}
+      {%- if segment.points | length > 1 %}
+      <polyline class="duel-path" points="{{ segment.polyline }}">
+        <title>{{ row.name }} — {{ segment.band.label }}</title>
+      </polyline>
+      {%- endif %}
+      {%- endfor %}
+      <circle class="duel-feed" cx="{{ curve.x | round(2) }}" cy="{{ row.bottom }}" r="4">
+        <title>{{ row.name }} fed {{ curve.feed.at | local_dt }}</title>
+      </circle>
+      {%- if curve.peak_x is not none %}
+      {#- A drop line from each peak to the clock: two of them side by side
+          are the answer the chart is for. -#}
+      <line class="duel-peak-line" x1="{{ curve.peak_x | round(2) }}" y1="{{ row.top }}"
+            x2="{{ curve.peak_x | round(2) }}" y2="{{ row.bottom }}"/>
+      <circle class="duel-peak" cx="{{ curve.peak_x | round(2) }}" cy="{{ row.top }}" r="4">
+        <title>{{ row.name }} peaks about {{ curve.peak_at | local_dt }}</title>
+      </circle>
+      {%- endif %}
+      {%- endfor %}
+      {%- for point in row.observations %}
+      <circle class="duel-obs" cx="{{ point.x | round(2) }}" cy="{{ point.y | round(2) }}" r="3.4">
+        <title>{{ row.name }} measured {{ point.mark.rise_pct | percent }} at
+          {{ point.mark.at | local_dt }}</title>
+      </circle>
+      {%- endfor %}
+      {%- for point in row.planned %}
+      <circle class="duel-planned" cx="{{ point.x | round(2) }}" cy="{{ row.bottom }}" r="4">
+        <title>{{ row.name }}: feed planned {{ point.mark.at | local_dt }}</title>
+      </circle>
+      {%- endfor %}
+    </g>
+    {%- endfor %}
+
+    <g class="ribbon-now">
+      <line x1="{{ duel.now_x | round(2) }}" y1="{{ plot.y - 3 }}"
+            x2="{{ duel.now_x | round(2) }}" y2="{{ duel.axis_y + 3 }}"/>
+      <circle cx="{{ duel.now_x | round(2) }}" cy="{{ plot.y - 3 }}" r="3"/>
+    </g>
+  </svg>
+  {%- endfor %}
+  </div>
+
+  <p class="chart-caption muted small">
+    Each line is a jar's predicted rise since its last feed; open rings are
+    what you measured. A dashed line is the control.
+  </p>
+</figure>

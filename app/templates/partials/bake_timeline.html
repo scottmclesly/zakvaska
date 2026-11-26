@@ -6,8 +6,10 @@
    readiness curve with the levain build marked on it, so you can see
    whether the levain is being built at the jar's best moment.
 #}
-{%- set plot = timeline.plot -%}
-<svg class="ribbon baketimeline" viewBox="{{ timeline.viewbox }}" role="img"
+<div class="chart-fit">
+{%- for timeline in (timeline.sizes or (timeline,)) %}
+{%- set plot = timeline.plot %}
+<svg class="ribbon baketimeline fit fit-{{ timeline.width | int }}" viewBox="{{ timeline.viewbox }}" role="img"
      aria-label="Bake timeline: {{ timeline.bars | length }} steps from
        {{ timeline.start | local_dt }} to {{ timeline.end | local_dt }}.">
 
@@ -27,13 +29,13 @@
     <line class="ribbon-tick {% if tick.is_day_start %}is-day{% endif %}"
           x1="{{ tick.x | round(2) }}" y1="{{ plot.y }}"
           x2="{{ tick.x | round(2) }}" y2="{{ timeline.axis_y + 4 }}"/>
-    {%- if tick.is_day_start and tick.x < plot.right - 48 %}
-    <text class="ribbon-daylabel" x="{{ (tick.x + 3) | round(2) }}"
-          y="{{ plot.y - 4 }}" text-anchor="start">{{ tick.day_label }}</text>
+    {%- if tick.is_day_start and tick.x < plot.right - 80 %}
+    <text class="ribbon-daylabel" x="{{ (tick.x + 4) | round(2) }}"
+          y="{{ plot.y - 6 }}" text-anchor="start">{{ tick.day_label }}</text>
     {%- endif %}
-    {%- if tick.x > plot.x + 12 and tick.x < plot.right - 12 %}
+    {%- if tick.x > plot.x + 18 and tick.x < plot.right - 18 %}
     <text class="ribbon-xlabel" x="{{ tick.x | round(2) }}"
-          y="{{ timeline.axis_y + 15 }}" text-anchor="middle">{{ tick.label }}</text>
+          y="{{ timeline.axis_y + 17 }}" text-anchor="middle">{{ tick.label }}</text>
     {%- endif %}
     {%- endfor %}
   </g>
@@ -55,7 +57,7 @@
     {%- endfor %}
     {%- if curve.peak_x is not none %}
     <circle class="ribbon-peak" cx="{{ curve.peak_x | round(2) }}"
-            cy="{{ curve.baseline - 22 }}" r="2.2">
+            cy="{{ curve.baseline - 32 }}" r="3">
       <title>{{ timeline.jar_name }} peaks about {{ curve.peak_at | local_time }}</title>
     </circle>
     {%- endif %}
@@ -64,8 +66,32 @@
     <line class="levain-mark" x1="{{ timeline.levain_x | round(2) }}"
           y1="{{ plot.y }}" x2="{{ timeline.levain_x | round(2) }}"
           y2="{{ curve.baseline }}"/>
-    <text class="levain-label" x="{{ (timeline.levain_x + 3) | round(2) }}"
-          y="{{ plot.y + 8 }}">levain</text>
+    <text class="levain-label" x="{{ (timeline.levain_x + 5) | round(2) }}"
+          y="{{ plot.y + 11 }}">levain</text>
+    {%- endif %}
+  </g>
+  {%- endif %}
+
+  {#- The oven coming up to temperature. Drawn behind the bars, across the
+      bake row and the one above it, because what it has to show is that the
+      preheat overlaps the end of the final proof rather than following it.
+      A hatch-free band and a line at its left edge: the line is the moment
+      the alert fires, the band is the waiting. -#}
+  {%- if timeline.preheat %}
+  {%- set warm = timeline.preheat %}
+  <g class="preheat-band">
+    <rect x="{{ warm.x1 | round(2) }}" y="{{ warm.y | round(2) }}"
+          width="{{ warm.width | round(2) }}" height="{{ warm.height | round(2) }}"
+          rx="2.5">
+      <title>Preheat from {{ warm.start | local_time }} — {{ warm.lead_min }} min
+        before the loaf goes in at {{ warm.end | local_time }}</title>
+    </rect>
+    <line class="preheat-edge" x1="{{ warm.x1 | round(2) }}"
+          y1="{{ warm.y | round(2) }}" x2="{{ warm.x1 | round(2) }}"
+          y2="{{ (warm.y + warm.height) | round(2) }}"/>
+    {%- if warm.width > 70 %}
+    <text class="preheat-label" x="{{ (warm.x1 + 5) | round(2) }}"
+          y="{{ (warm.y + 12) | round(2) }}">preheat</text>
     {%- endif %}
   </g>
   {%- endif %}
@@ -74,29 +100,37 @@
   <g class="step-bar {% if bar.clashes %}is-clash{% endif %}
             {% if bar.hands_on %}is-handson{% endif %}">
     <rect x="{{ bar.x1 | round(2) }}" y="{{ bar.y | round(2) }}"
-          width="{{ bar.width | round(2) }}" height="{{ bar.height }}" rx="2.5">
+          width="{{ bar.width | round(2) }}" height="{{ bar.height }}" rx="4">
       <title>{{ bar.name }} — {{ bar.start | local_time }} to
         {{ bar.end | local_time }}{% if bar.clashes %} (inside {{ bar.conflict_label }}){% endif %}</title>
     </rect>
-    {#- The label sits after the bar, or inside it when it is wide enough. -#}
-    {%- if bar.width > 62 %}
-    <text class="step-label is-inside" x="{{ (bar.x1 + 4) | round(2) }}"
-          y="{{ (bar.y + bar.height - 3.5) | round(2) }}">{{ bar.name }}</text>
-    {%- elif bar.x2 < plot.right - 70 %}
-    <text class="step-label" x="{{ (bar.x2 + 4) | round(2) }}"
-          y="{{ (bar.y + bar.height - 3.5) | round(2) }}">{{ bar.name }}</text>
+    {#- The name goes inside the bar when the bar is long enough to hold
+        it, after the bar when there is room before the edge, and before it
+        otherwise. A letter of this type runs about 6.4 units, which is
+        near enough to decide by: the old rule went by the bar's width
+        alone and printed a long name straight over the row's own end. -#}
+    {%- set text_w = bar.name | length * 6.4 + 12 %}
+    {%- set text_y = (bar.y + bar.height - 6) | round(2) %}
+    {%- if bar.width > text_w %}
+    <text class="step-label is-inside" x="{{ (bar.x1 + 6) | round(2) }}"
+          y="{{ text_y }}">{{ bar.name }}</text>
+    {%- elif bar.x2 + text_w < plot.right %}
+    <text class="step-label" x="{{ (bar.x2 + 6) | round(2) }}"
+          y="{{ text_y }}">{{ bar.name }}</text>
     {%- else %}
-    <text class="step-label" x="{{ (bar.x1 - 4) | round(2) }}" text-anchor="end"
-          y="{{ (bar.y + bar.height - 3.5) | round(2) }}">{{ bar.name }}</text>
+    <text class="step-label" x="{{ (bar.x1 - 6) | round(2) }}" text-anchor="end"
+          y="{{ text_y }}">{{ bar.name }}</text>
     {%- endif %}
   </g>
   {%- endfor %}
 
   {%- if timeline.now_x is not none %}
   <g class="ribbon-now">
-    <line x1="{{ timeline.now_x | round(2) }}" y1="{{ plot.y - 2 }}"
-          x2="{{ timeline.now_x | round(2) }}" y2="{{ timeline.axis_y + 2 }}"/>
-    <circle cx="{{ timeline.now_x | round(2) }}" cy="{{ plot.y - 2 }}" r="2"/>
+    <line x1="{{ timeline.now_x | round(2) }}" y1="{{ plot.y - 3 }}"
+          x2="{{ timeline.now_x | round(2) }}" y2="{{ timeline.axis_y + 3 }}"/>
+    <circle cx="{{ timeline.now_x | round(2) }}" cy="{{ plot.y - 3 }}" r="3"/>
   </g>
   {%- endif %}
 </svg>
+{%- endfor %}
+</div>

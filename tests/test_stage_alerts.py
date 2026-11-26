@@ -86,8 +86,15 @@ class TestStageAlertsAppear:
 
         found = _stage_alerts(session)
         assert found
-        assert all(one.kind is AlertKind.STAGE_DUE for one in found)
+        # Every one is about a bake rather than a jar, and every one is a
+        # step's own moment — bar the one preheat, which an oven bake now
+        # gets as well. `test_preheat.py` is where that one is pinned down.
         assert all(one.jar_id is None for one in found)
+        assert {one.kind for one in found} == {
+            AlertKind.STAGE_DUE,
+            AlertKind.PREHEAT_DUE,
+        }
+        assert [one.kind for one in found].count(AlertKind.PREHEAT_DUE) == 1
 
     def test_every_one_of_them_points_at_the_bake(self, session):
         bake = _bake(session, start=_at(16, 14), now=_at(15, 8))

@@ -40,6 +40,7 @@ from app.models.enums import BakeMethod, BakeStatus
 from app.models.recipe import RecipeVersion
 from app.services import bakeplan
 from app.services import busy as busy_service
+from app.services import settings_store
 from app.services.bakeplan import BakePlan, Step, StepSpec
 from app.services.busy import BusyInterval
 
@@ -50,6 +51,9 @@ NOT_A_STEP = ("wait",)
 
 #: Which generated step is the one whose length actually measures the jar.
 LEVAIN_STEP = "levain_rise"
+
+#: The step the oven has to be hot for.
+BAKE_STEP = "bake"
 
 
 # --- A plan, written down -----------------------------------------------
@@ -68,6 +72,7 @@ def start_from_plan(
     loaf_size: str | None = None,
     oven_temp_c: float | None = None,
     total_flour_g: float | None = None,
+    preheat_lead_min: int | None = None,
 ) -> Bake:
     """Create a bake carrying the plan's times, step by step.
 
@@ -75,15 +80,26 @@ def start_from_plan(
     in progress. A plan for tomorrow morning makes a planned one: the times
     are written down and the alerts will fire from them, but nothing is
     pretended to have begun.
+
+    `preheat_lead_min` is how much warning the oven wants; left out, it
+    comes from the method and the settings. It lands on the bake step and
+    nowhere else, which is what makes the heads-up move when that step does
+    without putting a step in the chain that would push the bake back.
     """
     steps = tuple(one for one in plan.steps if one.key not in NOT_A_STEP)
     begins = _whole_minute(steps[0].start if steps else plan.start)
     underway = begins <= now
 
     bake_min = None
-    baking = next((one for one in steps if one.key == "bake"), None)
+    baking = next((one for one in steps if one.key == BAKE_STEP), None)
     if baking is not None:
         bake_min = round(baking.duration_min)
+
+    lead = (
+        settings_store.preheat_lead_min(session, method)
+        if preheat_lead_min is None
+        else preheat_lead_min
+    )
 
     bake = Bake(
         recipe_version_id=version.id,
@@ -121,8 +137,9 @@ def start_from_plan(
                     if step.spec.model_min is not None
                     else None
                 ),
-                planned_temp_c=oven_temp_c if step.key == "bake" else None,
+                planned_temp_c=oven_temp_c if step.key == BAKE_STEP else None,
                 planned_start=at,
+                preheat_lead_min=lead if step.key == BAKE_STEP else None,
                 hands_on=step.hands_on,
                 must_be_home=step.must_be_home,
             )
@@ -420,6 +437,46 @@ def stage_due_moments(log: BakeStageLog) -> tuple[datetime, ...]:
         if end is not None and end not in moments:
             moments.append(end)
     return tuple(moments)
+
+
+def preheat_moment(log: BakeStageLog) -> datetime | None:
+    """When to say "turn the oven on", for the step that needs it hot.
+
+    Counted back from the step's *planned* start, which is the whole trick:
+    the preheat is not a step, so nothing in the chain moves when the lead
+    time changes, and the heads-up follows the bake step wherever it goes.
+    Nudge the bake, move a step before it, start the final proof late and
+    re-plan — the moment comes out of the new planned start every time,
+    because it is never stored.
+
+    Nothing once the step has begun: the loaf is in, and an oven that is
+    not hot by then is a thing to know, not to be reminded of.
+    """
+    if log.actual_start is not None or log.is_done:
+        return None
+    return log.preheat_at
+
+
+def preheat_log(bake: Bake) -> BakeStageLog | None:
+    """The step of this bake that wants the oven preheated, if any."""
+    return next(
+        (log for log in bake.stage_logs if log.preheat_lead_min is not None),
+        None,
+    )
+
+
+def preheat_span(bake: Bake) -> tuple[datetime, datetime] | None:
+    """The preheat as a stretch of time, for drawing it on the timeline.
+
+    From "turn it on" to "the loaf goes in", which is deliberately the
+    planned span rather than what is left of it: the band shows the preheat
+    overlapping the end of the proof, and that overlap is the point of
+    drawing it at all.
+    """
+    log = preheat_log(bake)
+    if log is None or log.preheat_at is None:
+        return None
+    return log.preheat_at, log.planned_start
 
 
 def live_bakes(session: Session) -> list[Bake]:
