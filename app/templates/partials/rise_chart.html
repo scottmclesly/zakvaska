@@ -32,7 +32,12 @@
   </ul>
   {%- endif %}
 
-  <svg class="chart" viewBox="{{ chart.viewbox }}" role="img"
+  {#- Drawn at every width in charts.SIZES; the stylesheet shows the one
+      nearest the room there is. -#}
+  <div class="chart-fit">
+  {%- for chart in (chart.sizes or (chart,)) %}
+  {%- set plot = chart.plot %}
+  <svg class="chart fit fit-{{ chart.width | int }}" viewBox="{{ chart.viewbox }}" role="img"
        aria-label="Rise over time: {% for line in chart.lines %}{{ line.name }} peaked at
                    {{ line.best.value | percent }}{% if not loop.last %}; {% endif %}{% endfor %}.">
     <!-- the paper the plot is drawn on -->
@@ -44,7 +49,7 @@
       <line class="chart-rule {% if band.is_doubled %}is-doubled{% elif band.is_baseline %}is-baseline{% endif %}"
             x1="{{ plot.x }}" y1="{{ band.y | round(2) }}"
             x2="{{ plot.right }}" y2="{{ band.y | round(2) }}"/>
-      <text class="chart-ylabel" x="{{ plot.x - 7 }}" y="{{ (band.y + 4) | round(2) }}"
+      <text class="chart-ylabel" x="{{ plot.x - 6 }}" y="{{ (band.y + 4) | round(2) }}"
             text-anchor="end">{{ band.label }}</text>
       {#- Tagged at the left, where a rise curve has not got to yet; at the
           right it sits on top of the latest reading. -#}
@@ -66,7 +71,9 @@
       {%- elif tick.x > plot.right - 34 %}
       <text class="chart-xlabel" x="{{ plot.right }}" y="{{ plot.bottom + 19 }}"
             text-anchor="end">{{ tick.label }}</text>
-      {%- else %}
+      {#- One that would run into the label tucked in at the right-hand end
+          is left out; its tick mark stays. -#}
+      {%- elif tick.x < plot.right - 110 or loop.last %}
       <text class="chart-xlabel" x="{{ tick.x | round(2) }}" y="{{ plot.bottom + 19 }}"
             text-anchor="middle">{{ tick.label }}</text>
       {%- endif %}
@@ -79,13 +86,15 @@
       <polyline class="chart-path" points="{{ line.polyline }}"/>
       {%- endif %}
       {%- for point in line.points %}
-      <circle class="chart-dot" cx="{{ point.x | round(2) }}" cy="{{ point.y | round(2) }}" r="2">
+      <circle class="chart-dot" cx="{{ point.x | round(2) }}" cy="{{ point.y | round(2) }}" r="3.5">
         <title>{{ line.name }} — {{ point.value | percent }} at {{ point.at | local_dt }}</title>
       </circle>
       {%- endfor %}
     </g>
     {%- endfor %}
   </svg>
+  {%- endfor %}
+  </div>
 
   <p class="chart-caption muted small">
     {%- if chart_caption %}{{ chart_caption }}
