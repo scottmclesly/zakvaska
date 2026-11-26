@@ -278,6 +278,78 @@ Known and left for Phase 3:
 Screenshots: `docs/facelift/shots/phase2/` (all screens, three widths), with
 `compare-desktop.png` and `compare-phone.png` side by side against `before/`.
 
+## Phase 3 — what was done
+
+Page length in screens, before → after:
+
+| Screen | 390 | 1280 | 1920 |
+|---|---|---|---|
+| Home | 2.7 → 2.4 | 2.4 → 1.6 | 1.8 → 1.2 |
+| Jar detail | 8.2 → 6.4 | 6.2 → 3.9 | 4.6 → 2.4 |
+| Bake in progress | 6.2 → 4.5 | 6.0 → 2.4 | 4.4 → 1.8 |
+| Bake done | 4.7 → 3.0 | 4.1 → 2.0 | 3.0 → 1.4 |
+| Plan a bake | 4.5 → 5.0 | 3.4 → 2.3 | 2.5 → 1.6 |
+| Recipe | 4.5 → 4.1 | 3.4 → 2.2 | 2.5 → 1.7 |
+| Recipes list | 13.0 → 5.8 | 6.4 → 2.4 | 4.8 → 1.3 |
+| Equipment | 10.4 → 6.1 | 7.3 → 3.3 | 5.4 → 2.4 |
+| Settings | 2.9 → 3.0 | 2.0 → 1.7 | 1.5 → 1.3 |
+
+(Home and jar detail were measured before the made-up observations went into the
+copy; with a rise chart on them they are about 0.2 and 0.8 screens longer.)
+
+- **Charts** (`services/ribbon.py`, `services/charts.py`): the ribbon, the bake day
+  and the rise chart are each laid out at four widths — 360, 560, 820, 1180 — and a
+  container query shows the nearest. Type is the page's own tokens. A 48-hour ribbon
+  has six-hourly labels on a phone and two-hourly on a desktop, and three jars take
+  about 230px of height at any width instead of 850. Step names on the bake day are
+  placed by whether they fit; the feed ratio sits under the baseline.
+- **Shell**: the header marks the current section. On a phone the sections are a tab
+  bar along the bottom. Pages are one of three widths: reading (760px, for forms),
+  standard (1188px) and wide (up to 1760px past a 1600px window).
+- **Home**: shelf and charts in the main column, a "Right now" panel beside them
+  with the bake in progress first and a compact card per jar.
+- **Jar**: status and charts on the left, the timeline as a compact list on the
+  right. State change, archive and photo upload are folded away.
+- **Bake**: Now panel, day, weigh-out and result on the left; the running sheet on
+  the right with only the current and next step open.
+- **Plan**: form on the left, scrubber, day and step table on the right.
+- **Recipe**: formula on the left, method on the right. **Recipes**: a dense grid of
+  cards that are themselves links. **Equipment**: programs are cards you read, two
+  across, with editing folded. **Settings**: three forms side by side.
+
+### Changes outside templates and CSS
+
+- `routes/home.py`: reads the live bakes and their Now view for the dashboard.
+  Read-only.
+- `services/ribbon.py`, `services/charts.py`: drawing geometry only — widths, row
+  heights, tick density. No timing or alert logic.
+- A step's note on the running sheet is a `<textarea>` now, not an `<input>`; the
+  field name and the route are unchanged.
+
+### Not carried over one-for-one
+
+- On the home jar cards the "purchased · flour" line is hidden; the flour is on the
+  slip under the jar. It is still on the jar's own page.
+- The recipes list no longer has an "Open" button or the Latest / Versions /
+  Ingredients stat row; the card is the link and the same facts are one line.
+- Equipment: menu number, device and total minutes show as text; the fields to
+  change them are under "Edit or archive".
+
+### Known rough edges
+
+- Equipment's cycle-time tables still scroll sideways inside their card when
+  opened (eleven columns).
+- On a phone the plan page is half a screen longer than before: the form's fields
+  wrap sooner. The answer is still below the form there.
+- The copy's database now holds 24 made-up observations (notes say
+  `[facelift test data]`) so the rise chart has something to draw. They are in the
+  copy only.
+- Light theme has not been screenshotted; it shares every token, but I have only
+  looked at dark.
+
+Screenshots: `docs/facelift/shots/phase3/`, with `compare-*-1920.png` and
+`compare-phone.png` set against `before/`.
+
 ## Deferred / needs backend
 
 Nothing yet beyond item 1 above. This section is filled in as phases land.
