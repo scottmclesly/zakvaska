@@ -297,3 +297,69 @@ document.addEventListener("input", (event) => {
   box.addEventListener("input", apply);
   bar.hidden = false;
 })();
+
+// --- Counter mode ----------------------------------------------------------
+// A running bake, reduced to the step in hand (partials/bake_now.html). It is
+// a class on <html>, so it survives the live region swapping itself and is
+// there before the first paint after a reload. It is remembered for this tab
+// and this bake only: tapping Done posts and comes back to the same address,
+// and you should come back to the counter, not to the whole page.
+//
+// While it is on, the screen is asked to stay awake — the reason for the mode
+// is a phone you are not touching. Browsers drop that lock whenever the tab
+// is hidden, so it is asked for again on the way back.
+(function () {
+  var KEY = "zakvaska.counter";
+  var root = document.documentElement;
+  var lock = null;
+
+  function awake() {
+    if (!("wakeLock" in navigator) || document.visibilityState !== "visible") return;
+    navigator.wakeLock.request("screen").then(function (got) {
+      lock = got;
+    }).catch(function () { /* low battery, or not allowed: carry on */ });
+  }
+
+  function set(on) {
+    root.classList.toggle("counter-mode", on);
+    try {
+      if (on) sessionStorage.setItem(KEY, location.pathname);
+      else sessionStorage.removeItem(KEY);
+    } catch (e) { /* private mode: it just will not survive the reload */ }
+    if (on) awake();
+    else if (lock) { lock.release(); lock = null; }
+  }
+
+  function remembered() {
+    try { return sessionStorage.getItem(KEY) === location.pathname; }
+    catch (e) { return false; }
+  }
+
+  // Delegated: the buttons live in a region that is replaced as it refreshes.
+  document.addEventListener("click", function (event) {
+    if (event.target.closest("[data-counter-on]")) set(true);
+    else if (event.target.closest("[data-counter-off]")) set(false);
+  });
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && root.classList.contains("counter-mode")) set(false);
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (root.classList.contains("counter-mode")) awake();
+  });
+
+  function reveal() {
+    document.querySelectorAll("[data-counter-on]").forEach(function (button) {
+      button.hidden = false;
+    });
+    // Nothing to show on this page: do not leave a blank screen behind.
+    if (root.classList.contains("counter-mode") && !document.querySelector(".counter")) {
+      set(false);
+    }
+  }
+  document.addEventListener("DOMContentLoaded", reveal);
+  document.body && document.body.addEventListener("htmx:afterSwap", reveal);
+  document.addEventListener("htmx:afterSwap", reveal);
+
+  if (remembered()) set(true);
+})();
+

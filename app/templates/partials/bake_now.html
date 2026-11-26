@@ -7,7 +7,15 @@
 #}
 {%- set view = now_view -%}
 <section class="card bake-now {% if view.is_behind %}is-behind{% endif %}">
-  <h2 class="section-title">Right now</h2>
+  <div class="panel-head">
+    <h2 class="section-title">Right now</h2>
+    {#- Shown by the script that makes it work; without it there is no
+        button that does nothing. -#}
+    {% if not view.is_done %}
+    <button class="btn btn-small btn-secondary" type="button"
+            data-counter-on hidden>Counter mode</button>
+    {% endif %}
+  </div>
 
   {% if view.is_done %}
   <p class="now-head">Every step is ticked off.</p>
@@ -131,3 +139,56 @@
   </div>
   {% endif %}
 </section>
+
+{#- Counter mode: the same moment, for a phone propped against the flour bin.
+    One step, the one thing to do about it, in type you can read from the
+    other side of the bench, and a button you can hit with a knuckle. It is
+    this page with everything else covered — the buttons post to the same
+    places — so it is switched on by a class on <html> (see app.js), which
+    also keeps the screen awake. Inside the live region, so its countdown
+    moves like the panel's does. -#}
+{% if not view.is_done %}
+{%- set step = view.running or view.due_now or view.next_up -%}
+<section class="counter" aria-label="Counter mode">
+  <p class="counter-what">
+    {%- if view.running %}On now{% elif view.due_now %}Due now{% else %}Next{% endif -%}
+  </p>
+  <h2 class="counter-step">{{ step.name }}</h2>
+
+  <p class="counter-when">
+    {% if view.running and view.running.planned_end %}
+      until <strong>{{ view.running.planned_end | local_time }}</strong>
+      <span class="counter-left">{{ view.running.planned_end | until(now) }}</span>
+    {% elif view.running %}
+      started {{ view.running.actual_start | local_time }}
+    {% elif step.planned_start %}
+      at <strong>{{ step.planned_start | local_time }}</strong>
+      <span class="counter-left">{{ step.planned_start | until(now) }}</span>
+    {% endif %}
+  </p>
+
+  {% if step.notes %}<p class="counter-how">{{ step.notes }}</p>{% endif %}
+
+  {% if view.running %}
+  <form method="post" action="/bakes/{{ bake.id }}/stages/{{ view.running.id }}/end">
+    <button class="btn counter-go" type="submit">Done</button>
+  </form>
+  {% else %}
+  <form method="post" action="/bakes/{{ bake.id }}/stages/{{ step.id }}/start">
+    <button class="btn counter-go" type="submit">Start</button>
+  </form>
+  {% endif %}
+
+  {% if view.next_hands_on and view.next_hands_on is not sameas step %}
+  <p class="counter-then">
+    Then <strong>{{ view.next_hands_on.name }}</strong>
+    {%- if view.next_hands_on.planned_start %} at
+    {{ view.next_hands_on.planned_start | local_time }}{% endif %}
+  </p>
+  {% endif %}
+
+  <button class="btn btn-secondary counter-off" type="button" data-counter-off>
+    Back to the whole page
+  </button>
+</section>
+{% endif %}

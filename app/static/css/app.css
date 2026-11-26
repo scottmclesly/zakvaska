@@ -2692,6 +2692,64 @@ table.steps tr.is-clash td {
 }
 .now-clashes strong { color: var(--band-hungry); }
 
+/* --- Counter mode --------------------------------------------------------
+   The running bake with everything but the step in hand covered. Type is
+   sized from the window, because the point is to read it from where you
+   are kneading; the button is the size of a fist. */
+.counter { display: none; }
+.counter-mode { overflow: hidden; }
+.counter-mode .counter {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(var(--s-3), 2.5vh, var(--s-6));
+  padding:
+    max(var(--s-5), env(safe-area-inset-top)) var(--s-5)
+    max(var(--s-5), env(safe-area-inset-bottom));
+  overflow-y: auto;
+  text-align: center;
+  background: var(--paper);
+  color: var(--ink);
+}
+.counter > * { margin: 0; max-width: 28ch; }
+.counter-what {
+  color: var(--accent);
+  font-size: clamp(var(--text-md), 3.5vmin, 1.75rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.counter-step {
+  font-family: var(--display);
+  font-size: clamp(2rem, 9vmin, 5.5rem);
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.counter-when { font-size: clamp(var(--text-lg), 5vmin, 2.75rem); color: var(--ink-soft); }
+.counter-when strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+.counter-left { display: block; font-size: 0.7em; }
+.counter-how {
+  max-width: 46ch;
+  font-size: clamp(var(--text-md), 3.2vmin, 1.625rem);
+  line-height: 1.4;
+}
+.counter form { width: min(100%, 30rem); max-width: none; }
+.counter-go {
+  width: 100%;
+  min-height: clamp(84px, 16vh, 150px);
+  border-radius: var(--r-lg);
+  font-size: clamp(1.75rem, 7vmin, 3.5rem);
+  font-weight: 700;
+  box-shadow: var(--lift-2);
+}
+.counter-then { font-size: clamp(var(--text-md), 3vmin, 1.5rem); color: var(--ink-soft); max-width: 40ch; }
+.counter-then strong { color: var(--ink); }
+.counter-off { margin-top: var(--s-2); }
+
 /* The levain question. Asked once, and then it is a fact about the jar. */
 .peak-ask {
   display: grid;
