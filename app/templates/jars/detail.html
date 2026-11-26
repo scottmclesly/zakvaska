@@ -4,6 +4,8 @@
 <a class="btn btn-small btn-secondary" href="/jars/{{ jar.id }}/edit">Edit</a>
 {% endblock %}
 
+{% block page_class %}page--wide{% endblock %}
+
 {% block content %}
 <section class="hero hero-art">
   <div class="hero-jar">
@@ -26,6 +28,13 @@
   </p>
   </div>
 </section>
+
+{#- What the jar is doing and what to do about it on the left, with the
+    charts under it; its whole history down the right, so the two can be
+    read against each other without scrolling one away. On a phone the
+    history simply follows. -#}
+<div class="split jar-page">
+<div class="stack">
 
 {#- "Last fed" and "Next due" are both relative, so they refresh. -#}
 <div id="jar-status" {{ live("/jars/" ~ jar.id, "#jar-status") }}>
@@ -137,8 +146,20 @@
 </section>
 {% endif %}
 
-<section class="card">
-  <h2 class="section-title">Move it</h2>
+{% if bakes %}
+<section>
+  <h2 class="section-title">Bakes it raised</h2>
+  {% with hide_jar = true %}{% include "partials/bake_rows.html" %}{% endwith %}
+</section>
+{% endif %}
+
+{% with owner_type = "jar", owner_id = jar.id, gallery_title = "Photos of this jar" %}
+{% include "partials/photo_gallery.html" %}
+{% endwith %}
+
+{#- Twice a year, not twice a day: folded away under everything else. -#}
+<details class="card disclosure">
+  <summary>Move it, or put it away</summary>
   <form class="inline-form" method="post" action="/jars/{{ jar.id }}/state">
     <label class="sr-only" for="state-select">New state</label>
     <select id="state-select" name="state">
@@ -159,20 +180,12 @@
     </button>
     <span class="muted">Jars are archived, never deleted.</span>
   </form>
-</section>
+</details>
 
-{% if bakes %}
-<section>
-  <h2 class="section-title">Bakes it raised</h2>
-  {% with hide_jar = true %}{% include "partials/bake_rows.html" %}{% endwith %}
-</section>
-{% endif %}
 
-{% with owner_type = "jar", owner_id = jar.id, gallery_title = "Photos of this jar" %}
-{% include "partials/photo_gallery.html" %}
-{% endwith %}
+</div>
 
-<section>
+<section class="jar-history">
   <h2 class="section-title">Timeline</h2>
   {% if events %}
   <ol class="timeline">
@@ -184,4 +197,5 @@
   <p class="card muted">Nothing logged yet. Start with “Fed it”.</p>
   {% endif %}
 </section>
+</div>
 {% endblock %}

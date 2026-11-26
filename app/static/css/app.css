@@ -402,7 +402,9 @@ h2:not(.section-title),
 /* Main and side. One column until there is room for two, then the side
    stands beside the main instead of under it. */
 .split { display: grid; gap: var(--s-4); grid-template-columns: minmax(0, 1fr); }
-.split > * { min-width: 0; }
+/* Each side is a size container, so what is inside it lays itself out by
+   the column it is in rather than by the window. */
+.split > * { min-width: 0; container-type: inline-size; }
 @media (min-width: 1024px) {
   .split { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); align-items: start; }
   .split--even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -719,7 +721,31 @@ input[type="file"]::file-selector-button {
   color: var(--ink-soft);
 }
 .stats dd { margin: var(--s-0) 0 0; font-weight: 600; }
-.stats-wide { gap: var(--s-6); }
+.stats-wide { gap: var(--s-4) var(--s-6); }
+
+/* The jar's page: charts beside history. The history is the narrower. */
+@media (min-width: 1024px) {
+  .split.jar-page { grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr); column-gap: var(--s-5); }
+}
+.jar-page .section-title:first-child { margin-top: 0; }
+/* Twenty feeds read as a list, not as twenty cards. */
+.jar-history .timeline { gap: var(--s-2); }
+.jar-history .timeline-item { gap: var(--s-1); }
+.jar-history .timeline-body { padding: var(--s-2) var(--s-3); box-shadow: none; }
+.jar-history .timeline-body h3 { margin-bottom: var(--s-0); font-size: var(--text-sm); }
+.jar-history .timeline-facts { font-size: var(--text-sm); margin: 0; }
+.jar-history .timeline-note { margin-top: var(--s-1); font-size: var(--text-sm); }
+.disclosure.card { padding-block: var(--s-2); }
+.jar-page .ribbon-card,
+.jar-page .chart-card,
+.jar-page .gallery-block { margin: 0; }
+.jar-page #jar-cycle { display: flex; flex-direction: column; gap: var(--s-4); }
+
+/* "Or put it at": the field and its button on one line. */
+.feedplan .form { flex-direction: row; flex-wrap: wrap; align-items: flex-end; gap: var(--s-3); }
+.feedplan .form > label { flex: 0 1 17rem; }
+.feedplan .form .row-actions { margin: 0; }
+.feedplan .form .btn-small { min-height: var(--tap); }
 
 .row-actions { display: flex; gap: var(--s-3); flex-wrap: wrap; margin-top: var(--s-4); }
 
@@ -826,7 +852,7 @@ input[type="file"]::file-selector-button {
 .timeline-facts { margin: var(--s-0) 0; font-size: var(--text-sm); }
 .timeline-note { margin: var(--s-2) 0 0; color: var(--ink-soft); font-size: var(--text-sm); }
 
-@media (min-width: 640px) {
+@container (min-width: 520px) {
   .timeline-item { flex-direction: row; gap: var(--s-4); }
   .timeline-when { flex-direction: column; gap: 0; width: 96px; flex-shrink: 0; text-align: right; padding-top: var(--s-4); }
   .timeline-body { flex: 1; }
