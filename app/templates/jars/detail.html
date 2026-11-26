@@ -27,6 +27,8 @@
   </div>
 </section>
 
+{#- "Last fed" and "Next due" are both relative, so they refresh. -#}
+<div id="jar-status" {{ live("/jars/" ~ jar.id, "#jar-status") }}>
 <section class="card {% if card.status.is_overdue %}is-overdue{% endif %}">
   <dl class="stats stats-wide">
     <div>
@@ -106,7 +108,13 @@
   </p>
   {% endif %}
 </section>
+</div>
 
+{#- The ribbon's `now` line and the plan's countdown to the next feed,
+    together: one refresh, and the picture and the words under it cannot
+    disagree about what time it is. The "move it to" field inside the plan
+    is why every refresh waits for you to stop typing. -#}
+<div id="jar-cycle" {{ live("/jars/" ~ jar.id, "#jar-cycle") }}>
 {% if ribbon %}
 {% with ribbon_title = "This jar's cycle" %}
   {% include "partials/ribbon.html" %}
@@ -114,6 +122,7 @@
 {% endif %}
 
 {% include "partials/feed_plan.html" %}
+</div>
 
 {% if rise_chart %}
 {% with chart = rise_chart, chart_title = "How it rises", chart_legend = false %}

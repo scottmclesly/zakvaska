@@ -93,6 +93,12 @@ Work phase by phase. Each phase ends with its acceptance checks passing, tests g
       lead time on the bake step rather than a step of its own, so it runs
       alongside the final proof instead of pushing the bake back, and it
       follows the bake step through every nudge and re-plan (2026-11-26)
+- [x] Pages that tell the time keep telling it: the regions carrying a
+      relative time — the jar cards, a jar's status and cycle, the bake's
+      Now panel and the alert banner — refresh themselves every 30 s and
+      whenever the window comes back to the front, server-rendered through
+      htmx, so a countdown is never more than half a minute stale and an
+      alert arrives on the page it fires on (2026-11-26)
 
 ## v2 backlog (do not build in v1)
 - Back-scheduling from a target "bread out" time through recipe stages

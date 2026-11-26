@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup, escape
 
 from app import __version__
 from app.config import get_settings
@@ -234,6 +235,52 @@ templates.env.globals["jar_body_path"] = (
     "M24 18 h24 v4 q0 3 5 6 q5 3 5 10 v52 q0 8 -8 8 h-28 "
     "q-8 0 -8 -8 v-52 q0 -7 5 -10 q5 -3 5 -6 z"
 )
+# --- Regions that tell the time -----------------------------------------
+#
+# Every relative time on every page — "due in 55 min", "fed 3 h ago", the
+# `now` line down a ribbon — is worked out from one `now`, captured when the
+# request arrived. Left alone it is a clock that stopped: you glance at "55
+# min" and you are a quarter of an hour late. So the handful of regions that
+# carry one ask the server again, on a timer and whenever the window comes
+# back to the front. Server-rendered, which is the point: the words come
+# from `humanize_delta` either way, so a refreshed countdown and a reloaded
+# one cannot word the same span differently.
+
+#: How often such a region asks again. Half a minute: a countdown shown to
+#: the minute is never more than 30 seconds stale, and on a LAN against
+#: SQLite the request costs less than drawing the page it lands in.
+LIVE_REFRESH_S = 30
+
+#: Skipped while you are typing, so a refresh never takes a half-written
+#: note or a time you were in the middle of picking. `zakvaskaIdle` is in
+#: app.js; a browser with no JS gets no refresh and no broken page.
+_IDLE = "zakvaskaIdle()"
+_VISIBLE = f"document.visibilityState==='visible'&&{_IDLE}"
+
+
+def live(get: str, select: str | None = None) -> Markup:
+    """The attributes that make one region refresh itself.
+
+    `select` names the region inside the full page it is pulled out of, so
+    most of these need no endpoint of their own: the page re-renders and the
+    region picks itself out of it. Without one, `get` is expected to be a
+    partial and its whole answer goes inside.
+    """
+    trigger = (
+        f"every {LIVE_REFRESH_S}s[{_IDLE}], "
+        f"visibilitychange[{_VISIBLE}] from:document"
+    )
+    parts = [f'hx-get="{escape(get)}"']
+    if select:
+        parts.append(f'hx-select="{escape(select)}" hx-swap="outerHTML"')
+    else:
+        parts.append('hx-swap="innerHTML"')
+    parts.append(f'hx-trigger="{escape(trigger)}"')
+    return Markup(" ".join(parts))
+
+
+templates.env.globals["live"] = live
+templates.env.globals["live_refresh_s"] = LIVE_REFRESH_S
 templates.env.globals["bakeplan_default_knead"] = bakeplan.DEFAULT_KNEAD_MIN
 templates.env.globals["cycle_bar"] = recipe_service.cycle_bar
 templates.env.globals["stage_bar"] = recipe_service.stage_bar

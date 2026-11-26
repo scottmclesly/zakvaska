@@ -12,13 +12,19 @@
 {% endwith %}
 
 {% if ribbon %}
-{% with ribbon_title = "The next while" %}
-  {% include "partials/ribbon.html" %}
-{% endwith %}
+{#- The `now` line down the ribbon is a coordinate the server worked out,
+    so it only moves when the server says so. -#}
+<div id="home-ribbon" {{ live("/", "#home-ribbon") }}>
+  {% with ribbon_title = "The next while" %}
+    {% include "partials/ribbon.html" %}
+  {% endwith %}
+</div>
 {% endif %}
 
-{# The shelf shows the jars; the cards below carry the numbers. #}
-<ul class="jar-grid">
+{# The shelf shows the jars; the cards below carry the numbers — and the
+   numbers are the ones that go stale, so this is the part that refreshes
+   itself. Overdue turns a card red here too, without a reload. #}
+<ul class="jar-grid" id="jar-cards" {{ live("/", "#jar-cards") }}>
   {% for card in cards %}
   {% set jar = card.jar %}
   <li class="card jar-card {% if card.status.is_overdue %}is-overdue{% endif %}">

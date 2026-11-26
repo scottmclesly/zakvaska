@@ -9,6 +9,47 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+// --- Is it a good moment to refresh? -------------------------------------
+// The regions that show a relative time refresh themselves on a timer (see
+// templates_env.live). A refresh replaces markup, so it must not land while
+// someone is part way through filling something in — the time you were
+// picking for a feed, the minutes in the snooze box — and it must never
+// stop landing, because a countdown frozen by a cursor left in a field is
+// the very bug all of this exists to fix.
+//
+// So: quiet for a few seconds after a keystroke, and quiet while the cursor
+// sits in a field of a window you are actually looking at. Neither can
+// wedge. `document.activeElement` keeps naming the last field even after it
+// is blurred and even once the window is in the background, which is why
+// `hasFocus` is asked as well: nobody is typing into a window that does not
+// have the keyboard, and coming back to a stale clock is worse than coming
+// back to a box that went back to its default.
+(function () {
+  //: How long after the last keystroke a refresh keeps its hands off.
+  var QUIET_MS = 8000;
+  var typedAt = 0;
+
+  function isField(element) {
+    if (!element) return false;
+    var tag = element.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+    return element.isContentEditable === true;
+  }
+
+  // Captured on the document, so they go on working through every swap.
+  ["input", "keydown"].forEach(function (name) {
+    document.addEventListener(name, function () {
+      typedAt = Date.now();
+    }, true);
+  });
+
+  window.zakvaskaIdle = function () {
+    if (Date.now() - typedAt < QUIET_MS) return false;
+    if (!document.hasFocus()) return true;
+    return !isField(document.activeElement);
+  };
+})();
+
 // --- Feeding alerts ------------------------------------------------------
 // The server decides when an alert fires; this only mirrors that into a
 // desktop notification while a tab happens to be open. Closing the tab must

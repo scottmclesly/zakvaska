@@ -20,6 +20,13 @@
   </p>
 </section>
 
+{#- Everything on this page that answers "where am I?" — the elapsed
+    minutes, the Now panel's countdowns, the `now` line down the day —
+    refreshes together. The running sheet below is deliberately outside it:
+    its rows carry a note field apiece, and a refresh that wiped a
+    half-written note would cost more than a stale minute count.
+    Nothing in here takes typing. -#}
+<div id="bake-live" {{ live("/bakes/" ~ bake.id, "#bake-live") }}>
 <section class="card">
   <dl class="stats stats-wide">
     <div>
@@ -92,6 +99,7 @@
   </p>
 </section>
 {% endif %}
+</div>
 
 <h2 class="section-title">Running sheet</h2>
 {% if bake.stage_logs %}

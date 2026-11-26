@@ -33,9 +33,13 @@
     </nav>
   </header>
 
-  {% if alerts %}
-  {% include "partials/alert_banner.html" %}
-  {% endif %}
+  {#- The banner refreshes itself, so an alert that fires while you are
+      looking at a page arrives on the page rather than waiting for the
+      next reload. The wrapper is always here, empty or not: there has to
+      be something on the page for the refresh to land in. -#}
+  <div id="alerts-live" {{ live("/partials/alerts") }}>
+    {% include "partials/alerts_live.html" %}
+  </div>
 
   <main class="wrap">
     {% block content %}{% endblock %}
