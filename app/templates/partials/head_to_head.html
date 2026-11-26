@@ -30,6 +30,7 @@
         {%- else %}
           {{ row.note or "nothing logged yet" }}
         {%- endif %}
+        {%- if row.hungry_since %} · <span class="band-text band-hungry">hungry since {{ row.hungry_since | local_time }}</span>{% endif %}
       </span>
     </li>
     {%- endfor %}
@@ -76,6 +77,15 @@
     {%- for row in duel.rows %}
     <g class="duel-row slot-{{ row.slot }}{% if row.is_control %} is-control{% endif %}"
        {%- if row.cap_color %} style="--series: {{ row.cap_color }}"{% endif %}>
+      {#- Spent and unfed: a dashed line in the jar's colour, each a little
+          above the last so two waiting jars do not hide each other. -#}
+      {%- if row.hungry_width > 1 %}
+      <line class="duel-wait" x1="{{ row.hungry_x1 | round(2) }}"
+            y1="{{ row.bottom - 4 * row.slot }}" x2="{{ row.hungry_x2 | round(2) }}"
+            y2="{{ row.bottom - 4 * row.slot }}">
+        <title>{{ row.name }}: hungry since {{ row.hungry_since | local_dt }}</title>
+      </line>
+      {%- endif %}
       {%- for curve in row.curves %}
       {%- for segment in curve.segments %}
       {%- if segment.points | length > 1 %}

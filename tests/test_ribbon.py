@@ -530,3 +530,58 @@ def test_head_to_head_needs_two_jars():
     assert ribbon_service.head_to_head(
         series[:1], start=now, end=now + timedelta(hours=24), now=now, tz=UTC
     ) is None
+
+
+# --- Waiting on a feed ----------------------------------------------------
+
+
+def _one_jar(fed_hours_ago, peak_h=6.0, ends_at=None):
+    from app.services.ribbon import FeedMark, RibbonSeries
+
+    now = datetime(2026, 11, 26, 19, 0, tzinfo=UTC)
+    feed = FeedMark(at=now - timedelta(hours=fed_hours_ago), peak_h=peak_h,
+                    ends_at=ends_at)
+    drawn = ribbon.ribbon(
+        [RibbonSeries(name="Rye", jar_id=1, feeds=(feed,))],
+        start=now - timedelta(hours=6), end=now + timedelta(hours=42),
+        now=now, tz=UTC,
+    )
+    return now, drawn.rows[0], drawn
+
+
+def test_a_spent_unfed_jar_is_drawn_waiting_up_to_now():
+    """Its curve ended hours ago; a blank row would say nothing at all."""
+    now, row, drawn = _one_jar(fed_hours_ago=22)
+
+    # Spent at twice the peak: 12 h after the feed, ten hours ago, which is
+    # before the window opens, so the line starts at the left edge.
+    assert row.hungry_since == now - timedelta(hours=10)
+    assert row.hungry_x1 == drawn.plot.x
+    assert row.hungry_x2 == drawn.now_x
+    assert row.hungry_width > 0
+
+
+def test_the_wait_starts_where_the_curve_ended_when_that_is_in_view():
+    now, row, drawn = _one_jar(fed_hours_ago=15)
+
+    assert row.hungry_since == now - timedelta(hours=3)
+    assert drawn.plot.x < row.hungry_x1 < row.hungry_x2 == drawn.now_x
+
+
+def test_a_jar_still_rising_or_falling_is_not_waiting():
+    _, row, _ = _one_jar(fed_hours_ago=4)
+
+    assert row.hungry_since is None and row.hungry_width == 0
+
+
+def test_a_jar_never_fed_is_not_drawn_waiting():
+    from app.services.ribbon import RibbonSeries
+
+    now = datetime(2026, 11, 26, 19, 0, tzinfo=UTC)
+    drawn = ribbon.ribbon(
+        [RibbonSeries(name="New", jar_id=1, note="Never fed")],
+        start=now - timedelta(hours=6), end=now + timedelta(hours=42),
+        now=now, tz=UTC,
+    )
+
+    assert drawn.rows[0].hungry_since is None

@@ -248,6 +248,20 @@ class RibbonRow:
     cap_color: str | None = None
     is_estimate: bool = False
     note: str | None = None
+    #: The jar's last rise has run its whole course and nothing has been fed
+    #: since: from where that curve ended, or the left edge if it ended
+    #: before the window, to now. Drawn as a dashed line along the baseline,
+    #: because a row that simply goes blank reads as "nothing to see" when
+    #: what it means is "waiting on you". None while a rise is still going.
+    hungry_x1: float | None = None
+    hungry_x2: float | None = None
+    hungry_since: datetime | None = None
+
+    @property
+    def hungry_width(self) -> float:
+        if self.hungry_x1 is None or self.hungry_x2 is None:
+            return 0.0
+        return self.hungry_x2 - self.hungry_x1
 
     @property
     def height(self) -> float:
@@ -579,6 +593,16 @@ def _ribbon_at(
             if start <= mark.at <= end
         )
 
+        # Spent and not fed since: say so along the baseline, up to now.
+        hungry_x1 = hungry_x2 = hungry_since = None
+        if one.feeds:
+            last = max(one.feeds, key=lambda feed: feed.at)
+            spent = last.at + timedelta(hours=last.peak_h * timing.PAST_TO)
+            if last.ends_at is None and last.peak_h > 0 and spent < now and now > start:
+                hungry_since = spent
+                hungry_x1 = x_for(max(spent, start))
+                hungry_x2 = x_for(min(now, end))
+
         rows.append(
             RibbonRow(
                 name=one.name,
@@ -598,6 +622,9 @@ def _ribbon_at(
                 label_y=label_y,
                 is_estimate=one.is_estimate,
                 note=one.note,
+                hungry_x1=hungry_x1,
+                hungry_x2=hungry_x2,
+                hungry_since=hungry_since,
             )
         )
 
