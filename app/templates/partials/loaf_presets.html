@@ -21,7 +21,7 @@
   {% for preset in loaf_presets %}
   {#- The button fills the field, so it carries the text for the unit on
       display as well as the grams behind it. -#}
-  <button type="button" class="chip chip-action" data-loaf
+  <button type="button" class="loaf-tile" data-loaf
           data-flour="{{ preset.flour_g | round(1) }}"
           data-flour-text="{{ preset.flour_g | weigh_total_input(weight_unit, flour=true) }}"
           data-size="{{ preset.label }}"
@@ -29,13 +29,13 @@
               value rides in the planner's query string, which is the link
               a plan is kept as. -#}
           data-pounds="{{ "%g" % preset.pounds }}">
-    <strong>{{ preset.label }}</strong>
-    <span class="muted small">{{ preset.flour_g | weigh_total(weight_unit, flour=true) }} flour</span>
+    <strong class="loaf-tile-size">{{ preset.label }}</strong>
+    <span class="loaf-tile-flour">{{ preset.flour_g | weigh_total(weight_unit, flour=true) }}</span>
   </button>
   {% endfor %}
 </div>
 <p class="hint muted small">
-  Bread-maker loaf sizes: that is the dough the pan takes, and the baked
-  loaf comes out about a tenth lighter.
+  Pick the tin and the flour is filled in for it. That is the dough the pan
+  takes; the baked loaf comes out about a tenth lighter.
 </p>
 {% endif %}

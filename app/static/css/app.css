@@ -1556,38 +1556,64 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 
 /* --- Loaf-size hot buttons ---------------------------------------------- */
 
+/* One control in three parts, like the size buttons on the machine itself:
+   the label over it, then the tins side by side in equal shares of whatever
+   width the form has, so it is one tidy row in a 300px column and across a
+   page alike. Each says its size, and under it the flour that fills it. */
 .loafrow {
   display: flex;
-  align-items: center;
-  gap: var(--s-2);
   flex-wrap: wrap;
   margin-top: var(--s-4);
 }
 .loaflabel {
+  flex: 0 0 100%;
+  margin-bottom: var(--s-2);
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--ink-soft);
 }
 
-.chip-action {
-  display: inline-flex;
+.loaf-tile {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  min-height: var(--tap);
-  padding: var(--s-1) var(--s-4);
-  background: transparent;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-0);
+  min-height: var(--tap-lg);
+  padding: var(--s-2) var(--s-1);
+  font: inherit;
+  line-height: var(--leading-tight);
   color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
   cursor: pointer;
-  line-height: 1.2;
 }
-.chip-action:hover { border-color: var(--accent); }
-.chip-action.is-chosen {
+/* Joined edge to edge: one border between neighbours, corners at the ends. */
+.loaf-tile + .loaf-tile { margin-left: -1px; }
+.loaf-tile:first-of-type { border-radius: var(--r-md) 0 0 var(--r-md); }
+.loaf-tile:last-of-type { border-radius: 0 var(--r-md) var(--r-md) 0; }
+.loaf-tile:only-of-type { border-radius: var(--r-md); }
+.loaf-tile-size { font-family: var(--display); font-size: var(--text-lg); }
+.loaf-tile-flour {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+.loaf-tile:hover { border-color: var(--accent); z-index: 1; }
+.loaf-tile.is-chosen {
+  z-index: 1;
   border-color: var(--accent);
   background: var(--accent);
   color: var(--accent-ink);
 }
-.chip-action.is-chosen .muted { color: var(--accent-ink); opacity: 0.75; }
+.loaf-tile.is-chosen .loaf-tile-flour { color: var(--accent-ink); opacity: 0.8; }
+.loaf-tile { position: relative; }
+.loafrow + .hint { margin-top: var(--s-2); }
 
 /* --- Drawings ----------------------------------------------------------- */
 
