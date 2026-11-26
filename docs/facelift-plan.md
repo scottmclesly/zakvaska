@@ -237,6 +237,47 @@ Each would be its own commit in Phase 4. Tick the ones you want.
 4. **Rise chart**: the notebook has no observations, so I could not audit it with
    real data. I'd add a few made-up observations to the copy only.
 
+## Phase 2 — what was done
+
+Commits `2923253`, `5e97726` and the one after it.
+
+| | Before | After |
+|---|---|---|
+| Hard-coded colours below the token block | 99 | 0 |
+| Font sizes in page rules | 30 | 6 tokens |
+| Spacing values | 20 | 9 tokens |
+| Radii | 12 | 5 tokens |
+| Dark-mode blocks | 6 | 1 |
+| Copies of the text-input styling | 5 | 1 |
+
+- **Tokens** are the first 250 lines of `app.css`: page, status, starter bands, a
+  shared stage palette, ingredient roles, chart series, artwork, type, space, shape.
+  Core tokens renamed to `--paper`, `--card`, `--line`, `--ink`, `--ink-soft`.
+  `--accent` kept its name: `--crust` was already taken by the loaf drawings.
+- **Fluid type**: headings use `clamp()`; small sizes are fixed so they never shrink.
+- **Components** added: shared controls, `.field` (+ `--num`, `--time`, `--text`
+  widths), `.panel`, `.disclosure`, `.stack`, `.cluster`, a styled file-input button.
+  The new ones are defined but mostly unused until Phase 3 lays the pages out.
+- **Jar labels**: the name is HTML over the drawn tape, sized in `cqi` from the jar
+  it is on, wrapping to two lines, full name in the title. The flour/culture caption
+  moved to a slip under the shelf. No more 10- and 11-character cuts.
+- **Bugs fixed on the way**: `--radius-sm` was used three times and never defined;
+  the shelf hid the third jar on a phone; `/recipes` and `/about` scrolled sideways
+  on a phone.
+
+Known and left for Phase 3:
+
+- Pages are 5–10% taller at desktop: the spacing scale rounds 10px up to 12 and
+  20 up to 24. Phase 3 changes the layouts, which is where the height comes back.
+- The stat row on a home jar card wraps at 1280. Those cards are rebuilt in Phase 3.
+- Type inside the chart SVGs is still in SVG units; it moves to tokens when the
+  charts are redrawn at their own widths.
+- The stylesheet is tokens → base → components, then the old sections in their
+  old order. Artwork / charts / screens get sorted as Phase 3 rewrites them.
+
+Screenshots: `docs/facelift/shots/phase2/` (all screens, three widths), with
+`compare-desktop.png` and `compare-phone.png` side by side against `before/`.
+
 ## Deferred / needs backend
 
 Nothing yet beyond item 1 above. This section is filled in as phases land.

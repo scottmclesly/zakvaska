@@ -172,7 +172,7 @@
 
   /* The page's side margin, and the inside of a card: both open up as the
      window does. */
-  --gutter: clamp(var(--s-4), 2.5vw, var(--s-6));
+  --gutter: clamp(var(--s-4), 2vw, var(--s-5));
   --card-pad: clamp(var(--s-4), 2vw, var(--s-5));
 
   /* One column width for the whole app, named so the page and the alert
@@ -358,12 +358,17 @@ h2:not(.section-title),
 .muted { color: var(--ink-soft); font-size: var(--text-sm); }
 
 code {
+  overflow-wrap: anywhere;
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   padding: 1px var(--s-1);
   font-size: 0.875em;
 }
+
+/* A grid child is as wide as its longest word unless told otherwise, and
+   a recipe's source is often a URL. */
+.jar-grid > * { min-width: 0; }
 
 .jar-grid {
   list-style: none;
@@ -1177,8 +1182,9 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   --bubble: color-mix(in srgb, var(--highlight) 55%, transparent);
 }
 .jar-art-lg { width: 124px; }
-/* Three jars fit a phone side by side; past that the shelf scrolls. */
-.jar-art-shelf { width: clamp(92px, 25vw, 140px); }
+/* Three jars and the empty slot fit a phone side by side; past that the
+   shelf scrolls. */
+.jar-art-shelf { width: clamp(72px, 20vw, 140px); }
 
 .jar-shadow { fill: color-mix(in srgb, var(--ink) 18%, transparent); }
 .jar-lid { fill: var(--ink-soft); opacity: 0.55; }
@@ -1676,7 +1682,7 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   margin-bottom: var(--s-2);
 }
 .recipe-loaf { flex: 0 0 auto; display: flex; }
-.recipe-head-text { flex: 1 1 auto; min-width: 0; }
+.recipe-head-text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
 
 /* --- Bars of elapsed time ----------------------------------------------- */
 
@@ -2528,7 +2534,7 @@ table.steps tr.is-clash td {
 /* A jar-shaped gap at the end of the shelf. Same silhouette and same size
    as a real jar — the path comes from one place (`jar_body_path`) so the
    two cannot drift — drawn as a dashed outline with a plus in it. */
-.ghost-art { width: clamp(92px, 25vw, 140px); height: auto; }
+.ghost-art { width: clamp(72px, 20vw, 140px); height: auto; }
 
 .ghost-body {
   fill: none;
