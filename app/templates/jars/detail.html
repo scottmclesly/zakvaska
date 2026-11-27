@@ -32,6 +32,7 @@
     {%- if jar.flour_type %} · {{ jar.flour_type }}{% endif %}
     {%- if jar.parent %} · split from <a href="/jars/{{ jar.parent.id }}">{{ jar.parent.name }}</a>{% endif %}
   </p>
+  {% if not jar.archived %}{% include "partials/compare_toggle.html" %}{% endif %}
   </div>
 </section>
 

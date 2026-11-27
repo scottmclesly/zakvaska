@@ -635,30 +635,72 @@ def test_a_move_too_far_for_any_ratio_says_so_instead_of_suggesting_one(
 
 
 # --- Head to head ---------------------------------------------------------
+#
+# Asked for, about jars you pick: "Add to comparison" on a jar's page puts
+# it on a list, and /compare draws the list on one axis.
 
 
-def test_head_to_head_shows_for_two_jars_on_one_flour(client, session):
+def _compare(client, *jar_ids):
+    for jar_id in jar_ids:
+        client.post(f"/compare/{jar_id}/add")
+
+
+def test_the_dashboard_no_longer_sets_jars_head_to_head(client, session):
+    one = _jar(session, name="Homemade", flour_type="whole rye")
+    two = _jar(session, name="Bought", flour_type="Whole Rye")
+    for jar in (one, two):
+        _feed(session, jar, at=_hours_ago(2))
+    _release(session)
+
+    assert 'data-chart="duel"' not in client.get("/").text
+
+
+def test_the_comparison_draws_the_jars_that_were_picked(client, session):
     one = _jar(session, name="Homemade", flour_type="whole rye")
     two = _jar(session, name="Bought", flour_type="Whole Rye")
     other = _jar(session, name="Wheat", flour_type="bread flour")
     for jar in (one, two, other):
         _feed(session, jar, at=_hours_ago(2))
+    ids = (one.id, two.id)
     _release(session)
 
-    page = client.get("/")
+    _compare(client, *ids)
+    page = client.get("/compare")
 
     assert 'data-chart="duel"' in page.text
-    # The pair on rye, in every width; the wheat jar is not in the race.
+    # The two that were picked, in every width; the third was not asked for.
     rows = page.text.count('class="duel-row')
     assert rows == 2 * len(ribbon_service.SIZES)
+    assert "same flour, same clock" in page.text
 
 
-def test_head_to_head_is_absent_without_a_pair(client, session):
-    _feed(session, _jar(session, name="Rye", flour_type="rye"), at=_hours_ago(2))
-    _feed(session, _jar(session, name="Wheat", flour_type="wheat"), at=_hours_ago(2))
+def test_jars_on_different_flours_can_be_compared_and_it_says_so(client, session):
+    rye = _jar(session, name="Rye", flour_type="rye")
+    wheat = _jar(session, name="Wheat", flour_type="wheat")
+    for jar in (rye, wheat):
+        _feed(session, jar, at=_hours_ago(2))
+    ids = (rye.id, wheat.id)
     _release(session)
 
-    assert 'data-chart="duel"' not in client.get("/").text
+    _compare(client, *ids)
+    page = client.get("/compare").text
+
+    assert 'data-chart="duel"' in page
+    assert "same flour, same clock" not in page
+    assert "same clock" in page
+
+
+def test_one_jar_is_not_a_comparison(client, session):
+    jar = _jar(session, name="Rye", flour_type="rye")
+    _feed(session, jar, at=_hours_ago(2))
+    jar_id = jar.id
+    _release(session)
+
+    _compare(client, jar_id)
+    page = client.get("/compare").text
+
+    assert 'data-chart="duel"' not in page
+    assert "One more to compare it with" in page
 
 
 def test_head_to_head_does_not_claim_a_peak_the_next_feed_pre_empted(
@@ -673,12 +715,14 @@ def test_head_to_head_does_not_claim_a_peak_the_next_feed_pre_empted(
     for jar in jars:
         _feed(session, jar, at=_hours_ago(2))
         _feed(session, jar, at=_hours_ago(1))
+    ids = [jar.id for jar in jars]
     _release(session)
 
-    page = client.get("/")
+    _compare(client, *ids)
+    page = client.get("/compare")
 
     peaks = page.text.count('class="duel-peak"')
-    assert peaks == len(jars) * len(ribbon_service.SIZES)
+    assert peaks == len(ids) * len(ribbon_service.SIZES)
 
 
 def test_a_hungry_jar_s_row_says_it_is_waiting(client, session):

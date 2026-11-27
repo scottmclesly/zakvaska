@@ -38,7 +38,7 @@
   {%- if path.startswith("/recipes") %}{% set here = "recipes" -%}
   {%- elif path.startswith("/bakes") or path.startswith("/photos") or path.startswith("/plan") %}{% set here = "bakes" -%}
   {%- elif path.startswith("/settings") or path.startswith("/equipment") or path.startswith("/backup") %}{% set here = "settings" -%}
-  {%- elif path == "/" or path.startswith("/jars") %}{% set here = "jars" -%}
+  {%- elif path == "/" or path.startswith("/jars") or path.startswith("/compare") %}{% set here = "jars" -%}
   {%- else %}{% set here = "" %}{% endif -%}
 
   <header class="topbar">

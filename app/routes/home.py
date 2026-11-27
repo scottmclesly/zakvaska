@@ -36,13 +36,6 @@ def home(request: Request, ctx: Ctx) -> HTMLResponse:
     feeding_ribbon, plans = plan_service.build_ribbon(
         ctx.session, [card.jar for card in cards], now=ctx.now, tz=ctx.tz
     )
-    # The experiment itself: the jars on the same flour, on one axis.
-    duel = plan_service.build_head_to_head(
-        ctx.session,
-        plan_service.rivals([card.jar for card in cards]),
-        now=ctx.now,
-        tz=ctx.tz,
-    )
     # A loaf underway is the other thing worth knowing at a glance. Read
     # only: the same Now view the bake's own page works out.
     underway = []
@@ -68,7 +61,6 @@ def home(request: Request, ctx: Ctx) -> HTMLResponse:
             "ribbon": feeding_ribbon,
             "plans": plans,
             "underway": underway,
-            "duel": duel,
             # Offered on the empty shelf only, and only until the first jar.
             "demo_offer": not cards and demo_service.can_load(ctx.session),
             "archived": [

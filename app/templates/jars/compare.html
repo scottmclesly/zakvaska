@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
+
+{% block page_class %}page--wide{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="jar-title">
+    <h1>Compare jars</h1>
+  </div>
+  <p class="sub">
+    The jars you have picked, their rises laid over each other on one clock.
+    Add a jar from its own page with <strong>Add to comparison</strong>.
+  </p>
+</section>
+
+{% if jars %}
+{#- Who is in it, and the way out for each. -#}
+<ul class="compare-chips plain">
+  {% for jar in jars %}
+  <li class="chip compare-chip">
+    {% with dot_color = jar.cap_color %}{% include "partials/jar_dot.html" %}{% endwith %}
+    <a href="/jars/{{ jar.id }}">{{ jar.name }}</a>
+    {%- if jar.is_control %} <span class="badge badge-control">control</span>{% endif %}
+    <form method="post" action="/compare/{{ jar.id }}/remove">
+      <input type="hidden" name="next" value="/compare">
+      <button class="compare-chip-x" type="submit" title="Take {{ jar.name }} out"
+              aria-label="Take {{ jar.name }} out of the comparison">&times;</button>
+    </form>
+  </li>
+  {% endfor %}
+  {% if jars | length > 1 %}
+  <li>
+    <form method="post" action="/compare/clear">
+      <button class="btn btn-small btn-secondary" type="submit">Clear</button>
+    </form>
+  </li>
+  {% endif %}
+</ul>
+{% endif %}
+
+{% if jars | length >= 2 %}
+<div id="compare-duel" {{ live("/compare", "#compare-duel") }}>
+  {% if duel %}{% include "partials/head_to_head.html" %}{% endif %}
+</div>
+
+{% if rise_chart %}
+{% with chart = rise_chart, chart_title = "How they rise",
+        chart_caption = "Each dot is one observation. The line that keeps reaching higher is the jar that is working." %}
+  {% include "partials/rise_chart.html" %}
+{% endwith %}
+{% endif %}
+
+{% else %}
+<section class="empty card">
+  {% if jars %}
+  <h2>One more to compare it with</h2>
+  <p>
+    A comparison needs two jars. Open another jar's page and press
+    <strong>Add to comparison</strong>.
+  </p>
+  {% else %}
+  <h2>Nothing picked yet</h2>
+  <p>
+    Open a jar's page and press <strong>Add to comparison</strong>, then do
+    the same on the one to set it against. Up to {{ most }} at a time.
+  </p>
+  {% endif %}
+  {% if suggestion %}
+  <p class="muted">
+    Or start with
+    {% for jar in suggestion %}<strong>{{ jar.name }}</strong>{% if not loop.last %}{{ " and " if loop.revindex == 2 else ", " }}{% endif %}{% endfor %}:
+    they are being fed on the same flour.
+  </p>
+  <form method="post" action="/compare/suggested">
+    <button class="btn" type="submit">Compare those</button>
+  </form>
+  {% endif %}
+  <p><a class="btn btn-secondary" href="/">Back to the jars</a></p>
+</section>
+{% endif %}
+{% endblock %}

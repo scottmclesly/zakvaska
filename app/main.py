@@ -17,6 +17,7 @@ from app.routes import (
     alerts,
     backup,
     bakes,
+    compare,
     demo,
     equipment,
     health,
@@ -65,6 +66,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(home.router)
+    app.include_router(compare.router)
     app.include_router(jars.router)
     app.include_router(alerts.router)
     app.include_router(recipes.router)
