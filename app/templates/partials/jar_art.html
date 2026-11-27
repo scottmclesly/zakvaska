@@ -9,6 +9,15 @@
                  (rising, peak, ok, past, hungry): a starter at its peak
                  stands domed and foaming, a hungry one has slumped and
                  left a tide line on the glass
+     overdue     true once the feed this jar is waiting for has come due
+
+   The drawing *moves* by one value, `life` (services/jars.py: active,
+   hungry, overdue, resting), worked out here from the jar, its mood and
+   `overdue`. Active, the bubbles come up briskly; hungry, they slow;
+   overdue, they stop and a grey haze gathers over the starter; resting,
+   nothing stirs. All of the motion is in app.css, keyed on `life-*`, and
+   all of it is switched off for a reader who asked for less motion, who
+   gets this same drawing standing still.
 
    Inline SVG so it themes with the page and costs no request. Every id is
    suffixed with the jar id: a repeated one would clip two jars alike.
@@ -33,6 +42,7 @@
     one keeps its level, unless the jar has since gone over or gone hungry,
     in which case it is drawn fallen however high it once stood. -#}
 {%- set mood = mood if (mood is defined and mood and state == "active") else none -%}
+{%- set life = jar_life(jar, mood, overdue is defined and overdue) -%}
 {%- set mood_top = {"rising": 58, "peak": 42, "ok": 48, "past": 58, "hungry": 65}.get(mood) -%}
 {%- set was_top = fill_top -%}
 {%- if mood_top is not none -%}
@@ -70,10 +80,12 @@
     keeps a white cap readable are all worked out in app.css, and all of them
     theme with the page. -#}
 <span class="jar-fig {{ art_class or '' }}" title="{{ jar.name }}{% if caption %} — {{ caption }}{% endif %}">
-<svg class="jar-art {{ art_class or '' }} state-{{ state }}{% if mood %} mood-{{ mood }}{% endif %}{% if jar.cap_color %} has-cap{% endif %}"
+{#- `--j` staggers one jar against the next, so a shelf of them does not
+    bubble in step. -#}
+<svg class="jar-art {{ art_class or '' }} state-{{ state }}{% if mood %} mood-{{ mood }}{% endif %} life-{{ life }}{% if jar.cap_color %} has-cap{% endif %}"
      viewBox="0 0 72 103"
-     {%- if jar.cap_color %} style="--cap: {{ jar.cap_color }}"{% endif %}
-     data-fill="{{ fill_top }}" role="img"
+     style="--j: {{ (jar.id or 0) % 5 }}{% if jar.cap_color %}; --cap: {{ jar.cap_color }}{% endif %}"
+     data-fill="{{ fill_top }}" data-life="{{ life }}" role="img"
      aria-label="{{ jar.name }} — {{ jar.state.label.lower() }}">
   <defs>
     <clipPath id="jarbody-{{ jar.id }}">
@@ -130,24 +142,35 @@
     {%- elif state == "active" %}
     <!-- a crown of foam at the surface, and bubbles all through it -->
     <g class="jar-foam">
-      <circle class="jar-bubble" cx="21" cy="{{ fill_top + 0.8 }}" r="2.6"/>
-      <circle class="jar-bubble" cx="28" cy="{{ fill_top - 0.9 }}" r="1.9"/>
-      <circle class="jar-bubble" cx="36" cy="{{ fill_top + 0.4 }}" r="3"/>
-      <circle class="jar-bubble" cx="44" cy="{{ fill_top - 1.1 }}" r="2.2"/>
-      <circle class="jar-bubble" cx="51" cy="{{ fill_top + 1 }}" r="2.4"/>
+      <circle class="jar-bubble" style="--i: 0" cx="21" cy="{{ fill_top + 0.8 }}" r="2.6"/>
+      <circle class="jar-bubble" style="--i: 3" cx="28" cy="{{ fill_top - 0.9 }}" r="1.9"/>
+      <circle class="jar-bubble" style="--i: 1" cx="36" cy="{{ fill_top + 0.4 }}" r="3"/>
+      <circle class="jar-bubble" style="--i: 4" cx="44" cy="{{ fill_top - 1.1 }}" r="2.2"/>
+      <circle class="jar-bubble" style="--i: 2" cx="51" cy="{{ fill_top + 1 }}" r="2.4"/>
     </g>
-    <circle class="jar-bubble" cx="24" cy="{{ fill_top + 11 }}" r="3.1"/>
-    <circle class="jar-bubble" cx="43" cy="{{ fill_top + 17 }}" r="2.2"/>
-    <circle class="jar-bubble" cx="50" cy="{{ fill_top + 8 }}" r="1.6"/>
-    <circle class="jar-bubble" cx="31" cy="{{ fill_top + 24 }}" r="1.9"/>
-    <circle class="jar-bubble" cx="20" cy="{{ fill_top + 21 }}" r="1.3"/>
-    <circle class="jar-bubble" cx="38" cy="{{ fill_top + 31 }}" r="1.5"/>
+    <g class="jar-fizz">
+      <circle class="jar-bubble" style="--i: 0" cx="24" cy="{{ fill_top + 11 }}" r="3.1"/>
+      <circle class="jar-bubble" style="--i: 3" cx="43" cy="{{ fill_top + 17 }}" r="2.2"/>
+      <circle class="jar-bubble" style="--i: 5" cx="50" cy="{{ fill_top + 8 }}" r="1.6"/>
+      <circle class="jar-bubble" style="--i: 1" cx="31" cy="{{ fill_top + 24 }}" r="1.9"/>
+      <circle class="jar-bubble" style="--i: 4" cx="20" cy="{{ fill_top + 21 }}" r="1.3"/>
+      <circle class="jar-bubble" style="--i: 2" cx="38" cy="{{ fill_top + 31 }}" r="1.5"/>
+    </g>
     {%- elif state == "fridge" %}
     <circle class="jar-bubble" cx="24" cy="{{ fill_top + 9 }}" r="1.7"/>
     <circle class="jar-bubble" cx="45" cy="{{ fill_top + 15 }}" r="1.2"/>
     <circle class="jar-bubble" cx="33" cy="{{ fill_top + 22 }}" r="1"/>
     {%- elif state == "dormant" %}
     <circle class="jar-bubble" cx="27" cy="{{ fill_top + 13 }}" r="1.2"/>
+    {%- endif %}
+
+    {%- if life == "overdue" %}
+    <!-- gone too long without a feed: a grey haze hanging over the starter -->
+    <g class="jar-haze">
+      <ellipse style="--i: 0" cx="27" cy="{{ fill_top - 6 }}" rx="9" ry="3.2"/>
+      <ellipse style="--i: 1" cx="43" cy="{{ fill_top - 11 }}" rx="10" ry="3.6"/>
+      <ellipse style="--i: 2" cx="34" cy="{{ fill_top - 17 }}" rx="8" ry="2.8"/>
+    </g>
     {%- endif %}
 
     {%- if state in ("active", "fridge", "dormant") and fill_top < 67.5 %}

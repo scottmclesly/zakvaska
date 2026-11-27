@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+{#- Step two of a restore. The file has been read right through and found
+    sound; nothing has been changed. This page is the confirmation: what is
+    in the file, set against what it would replace. -#}
+{% with tab = "backup" %}{% include "partials/settings_tabs.html" %}{% endwith %}
+<h2 class="sr-only">Restore</h2>
+<div class="tab-narrow">
+
+<section class="card">
+  <h2 class="section-title">This file checks out</h2>
+  <p class="muted">
+    <strong>{{ filename }}</strong>, exported {{ checked.manifest.exported_at | local_dt }}
+    by zakvaska {{ checked.manifest.app_version }}.
+    {% if checked.upgraded_from %}
+    It is from an older version; it has been brought up to this one's
+    schema and will go in that way.
+    {% endif %}
+  </p>
+
+  <table class="restore-compare">
+    <thead>
+      <tr><th scope="col"></th><th scope="col">Here now</th><th scope="col">In the file</th></tr>
+    </thead>
+    <tbody>
+      {% for name, here, theirs in compare %}
+      <tr>
+        <th scope="row" class="muted">{{ name }}</th>
+        <td>{{ here }}</td>
+        <td><strong>{{ theirs }}</strong></td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <th scope="row" class="muted">photo files</th>
+        <td>{{ photos_here }}</td>
+        <td><strong>{{ checked.photos }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2 class="section-title">Replace what is here?</h2>
+  <p class="muted">
+    {% if rows_here or photos_here %}
+    Everything in the <em>Here now</em> column goes and the file takes its
+    place. A copy of the notebook as it stands is saved first, so this can
+    be undone by restoring that copy.
+    {% else %}
+    This notebook is empty, so there is nothing to lose.
+    {% endif %}
+  </p>
+  <div class="row-actions">
+    <form method="post" action="/backup/restore">
+      <input type="hidden" name="pending" value="{{ token }}">
+      <button class="btn btn-danger" type="submit" name="confirm" value="replace">
+        Replace everything with this file
+      </button>
+    </form>
+    <form method="post" action="/backup/restore/cancel">
+      <input type="hidden" name="pending" value="{{ token }}">
+      <button class="btn btn-secondary" type="submit">Cancel</button>
+    </form>
+  </div>
+</section>
+</div>
+{% endblock %}

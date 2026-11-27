@@ -27,7 +27,8 @@
           {% set made = plans.get(jar.id) if plans is defined and plans else none %}
           {% set ready = made.readiness_at(now) if made else none %}
           {% with rise_pct = card.rise_pct, art_class = "jar-art-shelf",
-                  mood = ready.band.value if ready else none %}
+                  mood = ready.band.value if ready else none,
+                  overdue = card.status.is_overdue %}
             {% include "partials/jar_art.html" %}
           {% endwith %}
         </a>

@@ -2163,6 +2163,13 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 
 /* --- Backup ------------------------------------------------------------ */
 
+/* A restore, before it happens: what is here against what is in the file. */
+.restore-compare { width: 100%; border-collapse: collapse; margin-top: var(--s-3); }
+.restore-compare th,
+.restore-compare td { padding: var(--s-1) var(--s-2); text-align: right; font-variant-numeric: tabular-nums; }
+.restore-compare th[scope="row"] { text-align: left; font-weight: 400; }
+.restore-compare thead th { font-size: var(--text-sm); color: var(--ink-soft); font-weight: 400; border-bottom: 1px solid var(--line); }
+
 .ok-notice { border-left: 3px solid var(--ok); }
 .ok-notice p { margin: 0; }
 
@@ -2344,6 +2351,61 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .jar-art.state-active.mood-hungry { --contents: var(--starter-hungry); }
 .jar-art.state-active.mood-past { --contents: color-mix(in srgb, var(--starter-active) 60%, var(--starter-hungry)); }
 .jar-art.mood-peak .jar-dome { opacity: 0.8; }
+
+/* --- The jar, alive ------------------------------------------------------
+
+   One value moves the drawing: `life-*` on the <svg>, from services/jars.py.
+
+     active    bubbles come up through the starter and the foam breathes
+     hungry    the same bubbles, slower and fainter, under a still surface
+     overdue   nothing comes up; a grey haze drifts in the glass above it
+     resting   in the cold, dormant or dried: nothing moves at all
+
+   Only `transform` and `opacity` are ever animated, on a dozen small shapes
+   a jar, so a shelf full of them costs the page next to nothing. `--i`
+   staggers the bubbles within a jar and `--j` one jar against the next.
+
+   Everything that moves is inside `no-preference`. A reader who has asked
+   for less motion therefore gets the drawing exactly as it was before any
+   of this: the same state, standing still. */
+.jar-haze ellipse { fill: color-mix(in srgb, var(--ink-soft) 34%, transparent); }
+.jar-art.life-hungry .jar-fizz { opacity: 0.8; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .jar-art.life-active { --beat: 3.6s; --lift: -9px; }
+  .jar-art.life-hungry { --beat: 9s; --lift: -5px; }
+
+  .jar-art.life-active .jar-fizz .jar-bubble,
+  .jar-art.life-hungry .jar-fizz .jar-bubble {
+    animation: jar-fizz calc(var(--beat) * (1 + var(--i) * 0.13)) linear infinite;
+    animation-delay: calc(var(--beat) * (var(--i) * -0.31 + var(--j, 0) * -0.17));
+  }
+  .jar-art.life-active .jar-foam .jar-bubble {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: jar-foam 2.8s ease-in-out infinite alternate;
+    animation-delay: calc(var(--i) * -0.6s + var(--j, 0) * -0.4s);
+  }
+  .jar-art.life-overdue .jar-haze ellipse {
+    animation: jar-haze 11s ease-in-out infinite;
+    animation-delay: calc(var(--i) * -3.7s + var(--j, 0) * -1.3s);
+  }
+}
+
+@keyframes jar-fizz {
+  0% { transform: translateY(3px); opacity: 0; }
+  18%, 78% { opacity: 1; }
+  100% { transform: translateY(var(--lift)); opacity: 0; }
+}
+@keyframes jar-foam {
+  from { transform: scale(0.9); }
+  to { transform: scale(1.1); }
+}
+@keyframes jar-haze {
+  0% { transform: translate(-2px, 5px); opacity: 0; }
+  35% { opacity: 1; }
+  100% { transform: translate(3px, -9px); opacity: 0; }
+}
 
 .jar-flake { fill: var(--contents); opacity: 0.9; }
 .jar-hooch { fill: color-mix(in srgb, var(--hooch) 62%, transparent); }

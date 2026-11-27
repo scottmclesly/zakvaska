@@ -15,6 +15,7 @@ from app.config import get_settings
 from app import buildinfo
 from app.services import alerts as alert_service
 from app.services import hints as hint_service
+from app.services import jars as jar_service
 from app.services import settings_store
 from app.services import measures
 from app.services import bakeplan
@@ -234,6 +235,11 @@ templates.env.filters["ratio_label"] = timing.ratio_label
 # The planner's slider labels its own ends, which needs arithmetic on `now`.
 templates.env.globals["timedelta_minutes"] = lambda minutes: timedelta(
     minutes=minutes
+)
+# How lively a jar is drawn, said once and in Python: the drawing takes
+# the one value and the stylesheet does the rest (services/jars.py).
+templates.env.globals["jar_life"] = lambda jar, band=None, overdue=False: (
+    jar_service.life_of(jar, band, bool(overdue)).value
 )
 # The silhouette of a jar, said once. Three templates draw it — the jar
 # itself, the outline on an empty shelf, and the ghost slot that adds one —

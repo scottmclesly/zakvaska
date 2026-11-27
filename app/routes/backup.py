@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import logging
-import tempfile
 from pathlib import Path
 from typing import Annotated
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
@@ -46,6 +46,8 @@ def _page(
             "photos": len(backup_service.photo_files()),
             "photo_bytes": backup_service.photo_bytes(),
             "suggested_name": backup_service.export_filename(ctx.now),
+            "safety_copies": backup_service.safety_copies(),
+            "safety_dir": backup_service.SAFETY_DIR,
             "errors": errors or [],
             "done": done,
         },
@@ -73,13 +75,79 @@ def export(ctx: Ctx) -> FileResponse:
     )
 
 
+async def _save_upload(archive: UploadFile, path: Path) -> None:
+    with path.open("wb") as handle:
+        size = 0
+        while chunk := await archive.read(1024 * 1024):
+            size += len(chunk)
+            if size > MAX_ARCHIVE_BYTES:
+                raise HTTPException(status_code=413, detail="That archive is too large.")
+            handle.write(chunk)
+
+
+@router.post("/inspect")
+async def inspect(
+    request: Request,
+    ctx: Ctx,
+    archive: Annotated[UploadFile | None, File()] = None,
+):
+    """Step one of a restore: read the file and show what is in it.
+
+    Nothing in the notebook changes here. The upload is kept, under a token,
+    for the page this renders to say yes or no to.
+    """
+    if archive is None or not archive.filename:
+        return _page(request, ctx, errors=["Choose an export to restore."], status_code=400)
+
+    token, path = backup_service.new_pending(ctx.now)
+    try:
+        await _save_upload(archive, path)
+        checked = backup_service.inspect(ctx.session, path)
+    except backup_service.BackupError as exc:
+        path.unlink(missing_ok=True)
+        return _page(request, ctx, errors=[str(exc)], status_code=400)
+    except BaseException:
+        path.unlink(missing_ok=True)
+        raise
+
+    here = backup_service.current_counts(ctx.session)
+    names = [n for n in checked.tables if checked.tables[n] or here.get(n)]
+    return render(
+        request=request,
+        ctx=ctx,
+        name="backup/confirm.html",
+        context={
+            "title": "Restore",
+            "token": token,
+            "filename": archive.filename,
+            "checked": checked,
+            "compare": [(n, here.get(n, 0), checked.tables[n]) for n in names],
+            "rows_here": sum(here.values()),
+            "photos_here": len(backup_service.photo_files()),
+        },
+    )
+
+
+@router.post("/restore/cancel")
+def cancel(pending: Annotated[str, Form()] = ""):
+    backup_service.discard_pending(pending)
+    return RedirectResponse("/backup", status_code=303)
+
+
 @router.post("/restore")
 async def restore(
     request: Request,
     ctx: Ctx,
     archive: Annotated[UploadFile | None, File()] = None,
+    pending: Annotated[str, Form()] = "",
     confirm: Annotated[str, Form()] = "",
 ):
+    """Step two: replace the notebook with an export.
+
+    Takes the token of a file `inspect` has already read, or — for a script,
+    and for anything that still posts the old one-step form — the file
+    itself. Either way it must come with `confirm=replace`.
+    """
     if confirm != "replace":
         return _page(
             request,
@@ -87,34 +155,36 @@ async def restore(
             errors=["Tick the box: restoring replaces everything that is here now."],
             status_code=400,
         )
-    if archive is None or not archive.filename:
+
+    uploaded = archive is not None and bool(archive.filename)
+    if not uploaded and not pending:
         return _page(request, ctx, errors=["Choose an export to restore."], status_code=400)
 
-    handle = tempfile.NamedTemporaryFile(
-        prefix="zakvaska-restore-", suffix=".zip", delete=False
-    )
-    path = Path(handle.name)
     try:
-        with handle:
-            size = 0
-            while chunk := await archive.read(1024 * 1024):
-                size += len(chunk)
-                if size > MAX_ARCHIVE_BYTES:
-                    raise HTTPException(
-                        status_code=413, detail="That archive is too large."
-                    )
-                handle.write(chunk)
-
+        if uploaded:
+            _, path = backup_service.new_pending(ctx.now)
+            await _save_upload(archive, path)
+        else:
+            path = backup_service.pending_path(pending)
+            if not path.is_file():
+                raise backup_service.BackupError(
+                    "That restore has expired. Choose the export again."
+                )
         try:
-            report = backup_service.restore(ctx.session, path)
-        except backup_service.BackupError as exc:
-            ctx.session.rollback()
-            return _page(request, ctx, errors=[str(exc)], status_code=400)
-    finally:
-        path.unlink(missing_ok=True)
+            report = backup_service.restore(ctx.session, path, now=ctx.now)
+        finally:
+            path.unlink(missing_ok=True)
+    except backup_service.BackupError as exc:
+        ctx.session.rollback()
+        return _page(request, ctx, errors=[str(exc)], status_code=400)
 
     log.info("restored %d rows and %d photos", report.rows, report.photos)
-    return RedirectResponse(
-        f"/backup?done={report.rows} rows and {report.photos} photos restored",
-        status_code=303,
-    )
+    done = f"{report.rows} rows and {report.photos} photos restored"
+    if report.upgraded_from:
+        done += ", brought up to this version's schema on the way in"
+    if report.safety_copy is not None:
+        done += (
+            ". What was here before is saved as "
+            f"{backup_service.SAFETY_DIR}/{report.safety_copy.name}"
+        )
+    return RedirectResponse(f"/backup?{urlencode({'done': done})}", status_code=303)
