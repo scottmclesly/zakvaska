@@ -128,3 +128,68 @@ class TestThePhotograph:
         assert 'class="showcase-standin"' in page
         assert "No photo of this one yet" in page
         assert "loaf-art" in page.split('class="showcase-standin"')[1][:600]
+
+
+class TestTheStripUnderIt:
+    def test_every_photo_is_in_a_strip_under_the_cover(self, client, session):
+        """Where a post with several pictures puts them: small, right under
+        the large one, not in a section further down the page."""
+        bake_id = start(client, seed_recipe(session))
+        first = photo_service.attach(
+            session, owner_type=PhotoOwner.BAKE, owner_id=bake_id, data=make_image()
+        )
+        second = photo_service.attach(
+            session, owner_type=PhotoOwner.BAKE, owner_id=bake_id,
+            data=make_image(), caption="the crumb",
+        )
+        session.commit()
+        _finish(client, bake_id)
+
+        page = client.get(f"/bakes/{bake_id}").text
+        hero = page.split('class="showcase-cover"')[1].split('class="showcase-words"')[0]
+
+        assert 'class="gallery-block photo-strip"' in hero
+        # Each is a tile that takes the frame rather than opening.
+        assert hero.count("data-photo-pick") == 2
+        assert 'data-caption="the crumb"' in hero
+        # The one in the frame to begin with is marked, and only that one.
+        assert hero.count('class="photo-tile is-shown"') == 1
+        # Adding another is the last square of the same strip.
+        assert 'class="photo-tile photo-add"' in hero
+        # And there is one gallery on the page, not two.
+        assert page.count('class="gallery-block') == 1
+        for photo in (first, second):
+            assert page.count(f'<dialog class="photo-view" id="photo-{photo.id}"') == 1
+
+    def test_a_loaf_with_no_photo_still_has_the_square_to_add_one(self, client, session):
+        bake_id = start(client, seed_recipe(session))
+        _finish(client, bake_id)
+
+        page = client.get(f"/bakes/{bake_id}").text
+        hero = page.split('class="showcase-cover"')[1].split('class="showcase-words"')[0]
+
+        assert 'class="photo-tile photo-add"' in hero
+        assert "data-photo-pick" not in hero
+
+    def test_a_working_bake_keeps_its_ordinary_gallery(self, client, session):
+        bake_id = start(client, seed_recipe(session))
+
+        page = client.get(f"/bakes/{bake_id}").text
+
+        assert "photo-strip" not in page
+        assert "Photos of this loaf</h2>" in page
+
+
+class TestNoWayBackThatTheMenuAlreadyGives:
+    def test_pages_do_not_carry_a_button_to_their_own_section(self, client, session):
+        """Bakes and Recipes are in the header on every page, highlighted
+        when you are inside them, so a second link there was only noise."""
+        recipe = seed_recipe(session)
+        bake_id = start(client, recipe)
+
+        for path in (f"/bakes/{bake_id}", "/plan", "/photos/compare",
+                     f"/recipes/{recipe.id}/v/1", "/equipment"):
+            actions = client.get(path).text.split('<nav class="topnav"')[1].split("</nav>")[0]
+            assert "All bakes" not in actions, path
+            assert "All recipes" not in actions, path
+            assert 'href="/recipes">Recipes<' not in actions, path

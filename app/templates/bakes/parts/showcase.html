@@ -1,8 +1,9 @@
 {# A finished bake: the loaf, shown off.
    Included by bakes/detail.html; expects everything that page was given.
 
-   The photograph leads, with the name, the stars and the verdict beside it.
-   Then the bake in figures, the rest of the photos, and two columns: what
+   The photograph leads, with every other photo of the loaf in a strip under
+   it, and the name, the stars and the verdict beside it. Then the bake in
+   figures and two columns: what
    went into it, and how the day went — the timeline and the running sheet,
    which are history now rather than instruments. #}
 {% from "partials/icons.html" import icon %}
@@ -16,7 +17,7 @@
          data-photo-open="photo-{{ cover.id }}">
         <img src="{{ cover.url }}"
              alt="{{ cover.caption or 'The loaf: ' ~ bake.recipe.name }}">
-        {% if cover.caption %}<span class="photo-caption">{{ cover.caption }}</span>{% endif %}
+        <span class="photo-caption"{% if not cover.caption %} hidden{% endif %}>{{ cover.caption or "" }}</span>
       </a>
       {% else %}
       {#- No photograph yet: the drawing stands in, and says so. -#}
@@ -27,6 +28,13 @@
         <p class="muted small">No photo of this one yet. Add one below.</p>
       </div>
       {% endif %}
+
+      {#- Every photo of the loaf, small, right under the large one: pick
+          one and it takes the frame. The last square adds another. -#}
+      {% with owner_type = "bake", owner_id = bake.id, gallery_strip = true,
+              gallery_title = "Photos of this loaf" %}
+      {% include "partials/photo_gallery.html" %}
+      {% endwith %}
     </div>
 
     <div class="showcase-words">
@@ -76,10 +84,6 @@
   </header>
 
   {% include "bakes/parts/figures.html" %}
-
-  {% with owner_type = "bake", owner_id = bake.id, gallery_title = "Photos of this loaf" %}
-  {% include "partials/photo_gallery.html" %}
-  {% endwith %}
 
   <div class="split split--even showcase-record">
     <div class="stack">
