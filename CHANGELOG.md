@@ -63,7 +63,17 @@ extra step each system asks for.
   loaf you baked from it, or the loaf drawn on a board in the shape it
   really is (a baguette is no longer a boule, and a tin loaf shows its
   crumb), with hydration, time and how often you have made it.
-- "Compare with" on a finished loaf now sits under what went into it.
+- **The feeding chart says where you are and what comes next**: the
+  current time is flagged in red, the curve is thickest when the starter
+  is at its best, each planned feed projects a dashed rise forward, and the
+  hours a jar sits spent and hungry are drawn rather than left blank.
+- **Compare jars on request**: "Add to comparison" on a jar's page, and a
+  page that sets the jars you picked head to head on one clock.
+- **A calmer header**: the three sections stand centred with the current
+  one in the middle, Settings is an icon, and a jar is edited from the jar
+  itself.
+- A finished bake's day runs the full width under its figures, and
+  "Compare with" sits under what went into the loaf.
 
 ### Known limits
 
