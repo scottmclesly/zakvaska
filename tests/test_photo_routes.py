@@ -327,6 +327,8 @@ class TestComparing:
         chosen = re.search(r'<option value="(\d+)" selected>([^<]*)', form)
 
         assert 'action="/photos/compare"' in page
+        # Under what went into the loaf, not up beside the photograph.
+        assert page.index("showcase-record") < page.index('class="compare-with"')
         assert "The same recipe" in form
         assert "last time" in chosen.group(2)
         assert chosen.group(1) != mine

@@ -1755,7 +1755,7 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .photo-strip .photo-add-label svg { width: 24px; height: 24px; }
 .photo-caption[hidden] { display: none; }
 
-/* "Compare with…": one quiet line under the strip. */
+/* "Compare with…": one quiet line under the table of what went in. */
 .compare-with {
   display: flex;
   flex-wrap: wrap;
