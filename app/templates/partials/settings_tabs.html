@@ -1,5 +1,5 @@
-{# The two pages of Settings, as tabs. Expects `tab`: "general" or
-   "equipment". Each is its own address — a tab here is a link, not a
+{# The pages of Settings, as tabs. Expects `tab`: "general", "equipment" or
+   "backup". Each is its own address — a tab here is a link, not a
    script — so either can be bookmarked and the back button works. #}
 <section class="hero">
   <h1>Settings</h1>
@@ -9,4 +9,6 @@
      {%- if tab == 'general' %} aria-current="page"{% endif %}>General</a>
   <a class="tab{% if tab == 'equipment' %} is-current{% endif %}" href="/equipment"
      {%- if tab == 'equipment' %} aria-current="page"{% endif %}>Equipment</a>
+  <a class="tab{% if tab == 'backup' %} is-current{% endif %}" href="/backup"
+     {%- if tab == 'backup' %} aria-current="page"{% endif %}>Backup</a>
 </nav>

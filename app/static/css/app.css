@@ -799,6 +799,10 @@ input[type="file"]::file-selector-button {
 .tab:hover { color: var(--ink); }
 .tab.is-current { color: var(--ink); border-bottom-color: var(--accent); }
 .tab-sub { margin: 0 0 var(--s-4); max-width: var(--measure); }
+/* A tab whose contents are a form to read down, in a page as wide as its
+   neighbours so the tab strip stays where it is. */
+.tab-narrow { max-width: 760px; display: flex; flex-direction: column; gap: var(--s-4); }
+.tab-narrow > * { margin-block: 0; }
 
 /* --- Hints --------------------------------------------------------------
    A folded aside of short notes (partials/hints.html; the words are in
