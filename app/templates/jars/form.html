@@ -10,6 +10,12 @@
 {% block content %}
 <section class="hero">
   <h1>{{ "Edit jar" if jar else "New jar" }}</h1>
+  {% if jar and not jar.archived %}
+  {% from "partials/icons.html" import icon %}
+  {% with compare_next = "/jars/%d/edit" % jar.id %}
+    {% include "partials/compare_toggle.html" %}
+  {% endwith %}
+  {% endif %}
 </section>
 
 {% if errors %}

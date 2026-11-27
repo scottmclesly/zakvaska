@@ -114,15 +114,9 @@
     </div>
     {% endif %}
 
-    {#- The two comparisons, side by side once the window is wide enough
-        for each to stay readable. -#}
+    {#- Setting jars head to head is something you ask for, about jars you
+        pick: "Add to comparison" on a jar's page, and /compare draws it. -#}
     <div class="dash-pair">
-    {% if duel %}
-    <div id="home-duel" {{ live("/", "#home-duel") }}>
-      {% include "partials/head_to_head.html" %}
-    </div>
-    {% endif %}
-
     {% if rise_chart %}
     {% with chart = rise_chart, chart_title = "How they rise",
             chart_caption = "Each dot is one observation. The line that keeps reaching higher is the jar that is working." %}

@@ -4351,3 +4351,41 @@ table.steps tr.is-clash td {
 }
 .next-feed > * { white-space: nowrap; }
 .next-feed-clock { font-weight: 400; }
+
+/* "Add to comparison" on a jar's page, and the chips on the comparison. */
+.compare-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+  margin-top: var(--s-3);
+}
+.compare-toggle form { margin: 0; }
+.compare-toggle .btn .icon { margin-right: var(--s-1); }
+.badge-compare { display: inline-flex; align-items: center; gap: var(--s-1); }
+.badge-compare .icon { width: 14px; height: 14px; margin: 0; }
+.compare-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0 0 var(--s-4);
+}
+.compare-chips li { padding: 0; border: 0; }
+.compare-chips form { margin: 0; display: inline-flex; }
+.compare-chip { gap: var(--s-2); padding-right: var(--s-1); }
+.compare-chip a { color: var(--ink); text-decoration: none; font-weight: 600; }
+.compare-chip a:hover { text-decoration: underline; }
+.compare-chip-x {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--text-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+.compare-chip-x:hover { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }

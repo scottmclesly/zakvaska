@@ -30,6 +30,7 @@ from app.models.enums import (
 )
 from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
+from app.services import compare as compare_service
 from app.services import alerts as alert_service
 from app.services import (
     bakes as bake_service,
@@ -112,8 +113,19 @@ def _cap_color(chosen: str, custom: str) -> str | None:
     return f.opt_color(chosen, field="Lid colour")
 
 
+def _compare_context(ctx: ViewContext, jar) -> dict:
+    """What the "add to comparison" control needs to draw itself for a jar."""
+    ids = compare_service.chosen_ids(ctx.session)
+    return {
+        "compare_chosen": jar is not None and jar.id in ids,
+        "compare_count": len(ids),
+        "compare_full": len(ids) >= compare_service.MOST,
+    }
+
+
 def _jar_form_context(ctx: ViewContext, jar=None, errors=None, values=None) -> dict:
     return {
+        **_compare_context(ctx, jar),
         "jar": jar,
         "cap_presets": CAP_PRESETS,
         "custom_cap": CUSTOM_CAP,
@@ -257,6 +269,7 @@ def jar_detail(request: Request, ctx: Ctx, jar_id: int) -> HTMLResponse:
         context={
             "title": jar.name,
             "jar": jar,
+            **_compare_context(ctx, jar),
             "rise_pct": latest_rise,
             "ribbon": feeding_ribbon,
             "plan": made,

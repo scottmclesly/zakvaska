@@ -1,0 +1,29 @@
+{# "Add to comparison" for one jar. Expects `jar`, `compare_chosen` (is this
+   jar on the list), `compare_count` (how many are) and `compare_full`.
+   Optionally `compare_next`, where to come back to; the jar's page if not.
+
+   On the list already, it offers the way off it and the way to the page. #}
+{%- set back = compare_next or ("/jars/%d" % jar.id) -%}
+<div class="compare-toggle">
+  {% if compare_chosen %}
+  <span class="badge badge-compare">{{ icon("scale") }}in the comparison</span>
+  <a class="btn btn-small" href="/compare">
+    {%- if compare_count >= 2 %}Open comparison ({{ compare_count }}){% else %}Open comparison{% endif -%}
+  </a>
+  <form method="post" action="/compare/{{ jar.id }}/remove">
+    <input type="hidden" name="next" value="{{ back }}">
+    <button class="btn btn-small btn-secondary" type="submit">Take out</button>
+  </form>
+  {% elif compare_full %}
+  <span class="muted small">The comparison is full.
+    <a href="/compare">Open it</a> to take one out.</span>
+  {% else %}
+  <form method="post" action="/compare/{{ jar.id }}/add">
+    <input type="hidden" name="next" value="{{ back }}">
+    <button class="btn btn-small btn-secondary" type="submit">{{ icon("scale") }}Add to comparison</button>
+  </form>
+  {% if compare_count %}
+  <a class="small" href="/compare">{{ compare_count }} in it already</a>
+  {% endif %}
+  {% endif %}
+</div>
