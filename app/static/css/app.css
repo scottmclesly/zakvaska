@@ -3648,12 +3648,12 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .chart-zoom {
   display: inline-flex;
   align-items: center;
-  gap: var(--s-1);
-  min-height: var(--tap-sm);
-  padding: 0 var(--s-3);
+  justify-content: center;
+  /* Just the icon, in a round button big enough for a thumb. */
+  width: var(--tap-sm);
+  height: var(--tap-sm);
+  padding: 0;
   font: inherit;
-  font-size: var(--text-sm);
-  font-weight: 600;
   color: var(--ink-soft);
   background: transparent;
   border: 1px solid var(--line);
@@ -3661,7 +3661,7 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   cursor: pointer;
 }
 .chart-zoom:hover { color: var(--ink); border-color: var(--accent); }
-.chart-zoom svg { width: 14px; height: 14px; }
+.chart-zoom svg { width: 16px; height: 16px; }
 .chart-zoom--float { position: absolute; top: var(--card-pad); right: var(--card-pad); z-index: 1; }
 
 .has-zoom { overflow: hidden; }
