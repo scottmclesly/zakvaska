@@ -21,6 +21,7 @@ DEFAULTS = {
     "ZAKVASKA_PORT": "8420",
     "ZAKVASKA_TZ": "America/New_York",
     "ZAKVASKA_SCHEDULER": "1",
+    "ZAKVASKA_MIGRATE": "1",
 }
 
 # This app used to be called jar-log. An .env written then still works.
@@ -73,6 +74,8 @@ class Settings:
     tz_name: str
     # Off in tests, which drive the alert pass themselves.
     scheduler_enabled: bool = True
+    # Off in tests, which build the schema straight from the models.
+    migrate_on_start: bool = True
 
     @property
     def tz(self) -> ZoneInfo:
@@ -136,6 +139,7 @@ def build_settings() -> Settings:
         port=int(_env("ZAKVASKA_PORT")),
         tz_name=tz_name,
         scheduler_enabled=_env("ZAKVASKA_SCHEDULER") not in ("0", "false", "no"),
+        migrate_on_start=_env("ZAKVASKA_MIGRATE") not in ("0", "false", "no"),
     )
 
 

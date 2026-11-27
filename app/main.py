@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from app import __version__
+from app import __version__, migrate
 from app.config import get_settings
 from app.logging_config import setup_logging
 from app.routes import (
@@ -35,7 +35,14 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
-    get_settings().ensure_dirs()
+    settings = get_settings()
+    settings.ensure_dirs()
+    # Before anything reads a row: bring the schema up to date, copying the
+    # notebook first if there is anything to do. A failure here stops the
+    # app starting, which is right — the alternative is serving pages
+    # against a schema the code does not match.
+    if settings.migrate_on_start:
+        migrate.migrate()
     # Alert state is rebuilt from the database here, so nothing is lost
     # across a restart.
     scheduler.start()

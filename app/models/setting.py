@@ -25,6 +25,12 @@ from app.models.base import Base
 #   preheat_oven_min        the same heads-up for a bake on a tray or in a
 #                           tin, where only the air has to come up to
 #                           temperature. Much shorter, so it is its own key.
+#   fold_sets               how many sets of stretch-and-folds a bulk
+#                           ferment gets a reminder for. 0 turns them off.
+#   fold_every_min          how far apart the sets are, counted from when
+#                           the bulk began.
+#   lid_off_after_min       how long the lid stays on a pot bake before the
+#                           reminder to take it off. 0 turns it off.
 DEFAULT_SETTINGS = {
     "temp_unit": "F",
     "weight_unit": "g",
@@ -33,6 +39,9 @@ DEFAULT_SETTINGS = {
     "ribbon_span_h": "48",
     "preheat_pot_min": "45",
     "preheat_oven_min": "20",
+    "fold_sets": "4",
+    "fold_every_min": "30",
+    "lid_off_after_min": "20",
 }
 
 #: Offered in the settings form. One or two feeds a day; more is a levain.
@@ -43,6 +52,12 @@ RIBBON_SPAN_CHOICES = (24, 48, 72)
 PREHEAT_POT_CHOICES = (30, 45, 60)
 #: The same for a plain oven bake, where there is no mass to heat.
 PREHEAT_OVEN_CHOICES = (10, 15, 20, 30)
+#: Sets of stretch-and-folds to be reminded of. 0 is "do not remind me".
+FOLD_SETS_CHOICES = (0, 1, 2, 3, 4, 5, 6)
+#: Minutes between one set and the next.
+FOLD_EVERY_CHOICES = (20, 30, 45, 60)
+#: Minutes the lid stays on a pot bake. 0 is "do not remind me".
+LID_OFF_CHOICES = (0, 15, 20, 25, 30)
 
 
 class Setting(Base):

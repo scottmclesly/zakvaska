@@ -32,7 +32,12 @@ settings = get_settings()
 settings.ensure_dirs()
 settings.adopt_legacy_db()
 settings.ensure_dirs()
-config.set_main_option("sqlalchemy.url", settings.db_url)
+# A caller may point the migrations at another file: restoring an export from
+# an older schema rebuilds it in a scratch database and brings *that*
+# forward (services/backup.py). Left unset, it is always the notebook.
+config.set_main_option(
+    "sqlalchemy.url", config.attributes.get("db_url") or settings.db_url
+)
 
 target_metadata = Base.metadata
 

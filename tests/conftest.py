@@ -18,6 +18,10 @@ os.environ.setdefault("ZAKVASKA_TZ", "America/New_York")
 # No background ticking in tests: every test drives reconcile itself, so
 # timing is explicit rather than a race with a real clock.
 os.environ["ZAKVASKA_SCHEDULER"] = "0"
+# The schema here comes from the models (create_all), not from migrations,
+# so there is nothing for the startup runner to do and no version to read.
+# tests/test_migrate_on_start.py starts the app for real, in a subprocess.
+os.environ["ZAKVASKA_MIGRATE"] = "0"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

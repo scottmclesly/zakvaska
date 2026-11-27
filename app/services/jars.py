@@ -6,6 +6,7 @@ Jars are never deleted — archiving keeps the lab-notebook history intact
 
 from __future__ import annotations
 
+import enum
 from dataclasses import dataclass
 from datetime import datetime
 from collections.abc import Sequence
@@ -21,6 +22,7 @@ from app.models.jar import Jar
 from app.models.jar_state_change import JarStateChange
 from app.models.observation import Observation
 from app.services import alerts as alert_service, charts, derived
+from app.services.timing import Band
 from app.services.schedule import FeedStatus, feed_status, last_feeding
 
 EventKind = Literal["feeding", "observation", "state_change"]
@@ -228,6 +230,43 @@ def rise_series(
         for jar in jars
         if by_jar[jar.id]
     ]
+
+
+class Life(enum.StrEnum):
+    """How lively a jar looks this minute: the one value its drawing moves by.
+
+    Read off the clock from what is already known about the jar, and never
+    stored. Deliberately coarser than `timing.Band`: a drawing has room for
+    three speeds and a stillness, not five shades of readiness.
+    """
+
+    #: Rising, or at its peak: bubbles coming up briskly.
+    ACTIVE = "active"
+    #: Over the top and on its way to the next feed: the bubbles slow.
+    HUNGRY = "hungry"
+    #: The feed is due, or it has sat twice as long as it needed: nothing
+    #: comes up any more, and a grey haze gathers over the starter.
+    OVERDUE = "overdue"
+    #: In the fridge, dormant, dried or put away. Asleep is not dying, so
+    #: it is drawn still and without the haze.
+    RESTING = "resting"
+
+
+def life_of(jar: Jar, band: Band | str | None = None, overdue: bool = False) -> Life:
+    """The jar's `Life`, from its state, its readiness band and its feed status.
+
+    `band` is where the planner puts the jar between feeds, or None for a jar
+    with no cycle to read (never fed, or fed with no starter carried over).
+    Templates hand the band over as its string value, so both are taken.
+    """
+    if jar.archived or jar.state is not JarState.ACTIVE:
+        return Life.RESTING
+    band = Band(band) if band else None
+    if overdue or band is Band.HUNGRY:
+        return Life.OVERDUE
+    if band in (Band.OK, Band.PAST):
+        return Life.HUNGRY
+    return Life.ACTIVE
 
 
 @dataclass(frozen=True)

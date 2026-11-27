@@ -58,23 +58,25 @@
   <h2 class="section-title">Restore</h2>
   <p class="muted">
     Reading an export back <strong>replaces everything</strong> that is in
-    this notebook now — rows and photos alike. Download first if you are not
-    sure.
+    this notebook now — rows and photos alike. Choosing a file changes
+    nothing yet: you are shown what is in it first, and asked.
   </p>
-  <form class="form" method="post" action="/backup/restore"
+  <form class="form" method="post" action="/backup/inspect"
         enctype="multipart/form-data">
     <label>
       <span>Export file</span>
       <input type="file" name="archive" accept=".zip,application/zip" required>
     </label>
-    <label class="check">
-      <input type="checkbox" name="confirm" value="replace">
-      <span>Yes, replace what is here with this file.</span>
-    </label>
     <div class="row-actions">
-      <button class="btn btn-danger" type="submit">Restore</button>
+      <button class="btn btn-secondary" type="submit">Check this file</button>
     </div>
   </form>
+  <p class="hint muted small">
+    An export from an older zakvaska is brought up to date as it is read.
+    Before a restore replaces anything, the notebook as it stands is saved
+    to <code>{{ safety_dir }}/</code> in the data folder{% if safety_copies %}
+    — newest there now: <code>{{ safety_copies[0].name }}</code>{% endif %}.
+  </p>
 </section>
 
 <section class="card">

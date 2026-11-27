@@ -149,6 +149,17 @@ class BakeStageLog(Base):
     #: straight from a recipe, and every bake made before this existed —
     #: including one that already carries a preheat step by hand.
     preheat_lead_min: Mapped[int | None] = mapped_column(Integer)
+    #: Stretch-and-folds during a bulk ferment: how many sets, and how far
+    #: apart, counted from when the bulk began. Set on a bulk step from the
+    #: settings when the bake is written down; null means no reminders.
+    #: Not steps of their own for the reason the preheat is not: a fold is
+    #: something done *during* the bulk, not something the bulk waits for.
+    fold_sets: Mapped[int | None] = mapped_column(Integer)
+    fold_every_min: Mapped[int | None] = mapped_column(Integer)
+    #: How long the lid stays on, for a bake in a lidded pot. Set on the
+    #: bake step of a pot bake; null everywhere else, including a recipe
+    #: that already splits its bake into covered and uncovered stages.
+    lid_off_after_min: Mapped[int | None] = mapped_column(Integer)
 
     #: Needs doing, so it is worth an alert at its start.
     hands_on: Mapped[bool] = mapped_column(

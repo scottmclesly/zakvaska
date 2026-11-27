@@ -200,6 +200,28 @@ def _reconcile_stages(
                 grace=grace,
                 result=result,
             )
+            # And the two that come part-way through a step. Again a kind
+            # each, so a fold coming due cannot sweep away the alert for
+            # the bulk it is part of.
+            _reconcile_moments(
+                session,
+                log,
+                AlertKind.FOLD_DUE,
+                followalong.fold_moments(log),
+                now=now,
+                grace=grace,
+                result=result,
+            )
+            lid_off = followalong.lid_off_moment(log)
+            _reconcile_moments(
+                session,
+                log,
+                AlertKind.LID_OFF_DUE,
+                (lid_off,) if lid_off is not None else (),
+                now=now,
+                grace=grace,
+                result=result,
+            )
 
 
 def _reconcile_moments(
@@ -256,11 +278,28 @@ def headline(alert: Alert, temp_unit: str = "F") -> str:
     and it needs the display unit to say the first of them, which is why
     this takes the unit rather than living on the model.
     """
-    if not alert.kind.is_preheat:
-        return alert.subject
-
     log = alert.stage_log
     if log is None:
+        return alert.subject
+
+    if alert.kind is AlertKind.FOLD_DUE:
+        # Which set, when that can still be read off the step. A fold whose
+        # step has since been restarted or finished just says what it is.
+        sets = followalong.fold_moments(log)
+        if alert.due_at in sets:
+            return (
+                f"Stretch and fold — set {sets.index(alert.due_at) + 1} "
+                f"of {len(sets)}"
+            )
+        return alert.subject
+
+    if alert.kind is AlertKind.LID_OFF_DUE:
+        left = (log.planned_min or 0) - (log.lid_off_after_min or 0)
+        return (
+            f"Take the lid off — {left} min to go" if left > 0 else alert.subject
+        )
+
+    if not alert.kind.is_preheat:
         return alert.subject
 
     what = "the oven and pot" if _uses_a_pot(log) else "the oven"

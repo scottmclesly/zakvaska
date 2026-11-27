@@ -140,6 +140,10 @@ class AlertKind(enum.StrEnum):
     #: because the two say different things and the banner, the phone
     #: notification and the JSON all have to tell them apart.
     PREHEAT_DUE = "preheat_due"
+    #: A set of stretch-and-folds is due, part-way through a bulk ferment.
+    FOLD_DUE = "fold_due"
+    #: The lid comes off the pot, part-way through the bake.
+    LID_OFF_DUE = "lid_off_due"
 
     @property
     def label(self) -> str:
@@ -147,11 +151,13 @@ class AlertKind(enum.StrEnum):
             AlertKind.FEED_DUE: "Feed due",
             AlertKind.STAGE_DUE: "Bake step due",
             AlertKind.PREHEAT_DUE: "Preheat due",
+            AlertKind.FOLD_DUE: "Fold due",
+            AlertKind.LID_OFF_DUE: "Lid off",
         }[self]
 
     @property
     def is_about_a_bake(self) -> bool:
-        return self in (AlertKind.STAGE_DUE, AlertKind.PREHEAT_DUE)
+        return self is not AlertKind.FEED_DUE
 
     @property
     def is_preheat(self) -> bool:

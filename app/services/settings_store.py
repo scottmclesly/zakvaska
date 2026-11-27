@@ -9,6 +9,9 @@ from app.models.enums import BakeMethod
 from app.models.setting import (
     DEFAULT_SETTINGS,
     FEEDS_PER_DAY_CHOICES,
+    FOLD_EVERY_CHOICES,
+    FOLD_SETS_CHOICES,
+    LID_OFF_CHOICES,
     PREHEAT_OVEN_CHOICES,
     PREHEAT_POT_CHOICES,
     RIBBON_SPAN_CHOICES,
@@ -92,6 +95,28 @@ def preheat_pot_min(session: Session) -> int:
 def preheat_oven_min(session: Session) -> int:
     """The same heads-up for a bake with no pot to bring up to temperature."""
     return _int_setting(session, "preheat_oven_min", PREHEAT_OVEN_CHOICES)
+
+
+def fold_sets(session: Session) -> int:
+    """How many sets of stretch-and-folds to remind about. 0 is none."""
+    return _int_setting(session, "fold_sets", FOLD_SETS_CHOICES)
+
+
+def fold_every_min(session: Session) -> int:
+    """Minutes from one set of folds to the next."""
+    return _int_setting(session, "fold_every_min", FOLD_EVERY_CHOICES)
+
+
+def lid_stays_on_min(session: Session) -> int:
+    """The setting itself: minutes the lid stays on a pot. 0 is no reminder."""
+    return _int_setting(session, "lid_off_after_min", LID_OFF_CHOICES)
+
+
+def lid_off_after_min(session: Session, method: BakeMethod) -> int | None:
+    """The same for one bake. None where there is no lid to lift."""
+    if method is not BakeMethod.DUTCH_OVEN:
+        return None
+    return lid_stays_on_min(session) or None
 
 
 def preheat_lead_min(session: Session, method: BakeMethod) -> int | None:

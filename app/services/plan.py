@@ -18,11 +18,12 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta, tzinfo
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.models.enums import JarState
 from app.models.feeding import Feeding
 from app.models.jar import Jar
@@ -216,10 +217,34 @@ def cycle_for_feeding(
     )
 
 
-def _next_planned_from_anchor(
-    anchor: datetime, cycle: timedelta, after: datetime
+def cycles_on(
+    moment: datetime, cycle: timedelta, steps: int = 1, *, tz: tzinfo | None = None
 ) -> datetime:
-    """The first anchor-aligned feed at or after `after`.
+    """`moment` plus whole cycles, **counted on the kitchen clock**.
+
+    A feeding rhythm is a pattern on the wall clock, the same as a busy block
+    is (services/busy.py): eight and eight means eight and eight, including
+    the week the clocks change. Adding twelve real hours to an instant would
+    move every later feed to seven and seven after the autumn change and
+    leave it there until somebody noticed.
+
+    So the arithmetic is done on the naive local reading and the zone is put
+    back afterwards. The night of a change is then an hour short or long in
+    real time, which is true, and which the rise curve — real elapsed hours,
+    always — shows honestly beside it. A slot that lands in the hour that
+    does not exist is rung at the instant the old clock would have reached
+    it; one that lands in the hour that comes twice is rung the first time.
+    """
+    if steps == 0:
+        return moment
+    zone = tz or get_settings().tz
+    naive = moment.astimezone(zone).replace(tzinfo=None)
+    return (naive + cycle * steps).replace(tzinfo=zone, fold=0).astimezone(UTC)
+
+
+def _steps_from_anchor(anchor: datetime, cycle: timedelta, after: datetime) -> int:
+    """How many whole cycles on from the anchor the first feed at or after
+    `after` is.
 
     Counted in whole cycles from the anchor, so every planned feed stays on
     the same grid however long ago the anchor was set. The walk only ever
@@ -229,10 +254,22 @@ def _next_planned_from_anchor(
     and completely the wrong answer to what was asked.
     """
     if cycle <= timedelta(0):
-        return anchor
-    elapsed = (after - anchor) / cycle
-    steps = max(math.ceil(elapsed - 1e-9), 0)
-    return anchor + cycle * steps
+        return 0
+    # A first guess in real hours, then put right on the clock: across a
+    # clock change the two can disagree by one slot.
+    steps = max(math.ceil((after - anchor) / cycle - 1e-9), 0)
+    while steps > 0 and cycles_on(anchor, cycle, steps - 1) >= after:
+        steps -= 1
+    while cycles_on(anchor, cycle, steps) < after:
+        steps += 1
+    return steps
+
+
+def _next_planned_from_anchor(
+    anchor: datetime, cycle: timedelta, after: datetime
+) -> datetime:
+    """The first anchor-aligned feed at or after `after`."""
+    return cycles_on(anchor, cycle, _steps_from_anchor(anchor, cycle, after))
 
 
 def planned_feeds(
@@ -252,13 +289,18 @@ def planned_feeds(
         return (), False
 
     cycle = timedelta(hours=cycle_hours(session, jar))
+    if cycle <= timedelta(0):
+        return (), False
     anchor = jar.schedule_anchor_utc
     anchored = anchor is not None
 
     if anchor is None:
         if last_fed_at is None:
             return (), False
-        anchor = last_fed_at + cycle
+        anchor = cycles_on(last_fed_at, cycle)
+
+    def slot(n: int) -> datetime:
+        return cycles_on(anchor, cycle, n)
 
     # The first feed still owed: the earliest slot on the grid after the
     # last actual feed. It may well be in the past, and when it is, that is
@@ -266,30 +308,28 @@ def planned_feeds(
     # forward to the next future slot would mean a jar fed twenty hours ago
     # on a twelve-hour cycle was never reported as due at all.
     if last_fed_at is None:
-        first = anchor
+        first = 0
     else:
-        first = _next_planned_from_anchor(anchor, cycle, last_fed_at)
-        if first <= last_fed_at:
-            first = first + cycle
+        first = _steps_from_anchor(anchor, cycle, last_fed_at)
+        if slot(first) <= last_fed_at:
+            first += 1
 
     feeds: list[PlannedFeed] = []
     index = 1
-    if first <= now:
+    if slot(first) <= now:
         # One missed feed is worth naming; a week of them is just history,
         # so the rest of the list picks up from the present.
-        feeds.append(PlannedFeed(at=first, index=index))
+        feeds.append(PlannedFeed(at=slot(first), index=index))
         index += 1
-        at = _next_planned_from_anchor(anchor, cycle, now)
-        if at <= first:
-            at = first + cycle
+        n = max(_steps_from_anchor(anchor, cycle, now), first + 1)
     else:
-        at = first
+        n = first
 
     # The bound keeps a short cycle from filling the page; a 24 h ribbon at a
     # 12 h cycle wants two, and nothing sane wants more than this.
-    while at <= until and index <= 64:
-        feeds.append(PlannedFeed(at=at, index=index))
-        at += cycle
+    while slot(n) <= until and index <= 64:
+        feeds.append(PlannedFeed(at=slot(n), index=index))
+        n += 1
         index += 1
     return tuple(feeds), anchored
 
@@ -468,7 +508,7 @@ def keep_usual_times(
     drift this is here to prevent.
     """
     cycle = timedelta(hours=cycle_hours(session, jar))
-    jar.schedule_anchor_utc = late.planned_at + cycle
+    jar.schedule_anchor_utc = cycles_on(late.planned_at, cycle)
     session.flush()
     return jar.schedule_anchor_utc
 
@@ -476,7 +516,7 @@ def keep_usual_times(
 def shift_schedule(session: Session, jar: Jar, *, late: LateFeed) -> datetime:
     """Move the whole schedule to suit the time the feed actually happened."""
     cycle = timedelta(hours=cycle_hours(session, jar))
-    jar.schedule_anchor_utc = late.fed_at + cycle
+    jar.schedule_anchor_utc = cycles_on(late.fed_at, cycle)
     session.flush()
     return jar.schedule_anchor_utc
 

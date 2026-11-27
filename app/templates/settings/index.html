@@ -163,6 +163,58 @@
   </form>
 </section>
 
+{# --- Part-way through a step --------------------------------------- #}
+<section class="card">
+  <h2 class="section-title">{{ icon("clock") }}During a step</h2>
+  <p class="muted small">
+    Two things happen in the middle of a step rather than at either end:
+    stretch-and-folds during a bulk ferment, and the lid coming off a pot
+    bake. Each gets its own reminder, counted from when the step actually
+    began. They apply to the next bake you start, not one already underway.
+  </p>
+  <form class="form" method="post" action="/settings/reminders">
+    <div class="field-row">
+      <label>
+        <span>Sets of folds</span>
+        <select name="fold_sets">
+          {% for choice in fold_sets_choices %}
+          <option value="{{ choice }}" {% if choice == fold_sets %}selected{% endif %}>
+            {{ "No reminders" if choice == 0 else choice }}
+          </option>
+          {% endfor %}
+        </select>
+        <em class="muted small">Only as many as leave the dough a rest before the bulk ends.</em>
+      </label>
+
+      <label>
+        <span>Folds every</span>
+        <select name="fold_every_min">
+          {% for choice in fold_every_choices %}
+          <option value="{{ choice }}" {% if choice == fold_every_min %}selected{% endif %}>
+            {{ choice }} minutes
+          </option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label>
+        <span>Lid off after</span>
+        <select name="lid_off_after_min">
+          {% for choice in lid_off_choices %}
+          <option value="{{ choice }}" {% if choice == lid_off_after_min %}selected{% endif %}>
+            {{ "No reminder" if choice == 0 else choice ~ " minutes" }}
+          </option>
+          {% endfor %}
+        </select>
+        <em class="muted small">Cast-iron pot bakes only.</em>
+      </label>
+    </div>
+    <div class="row-actions">
+      <button class="btn" type="submit">Save reminders</button>
+    </div>
+  </form>
+</section>
+
 {# --- Busy blocks --------------------------------------------------- #}
 <section class="card settings-wide">
   <h2 class="section-title">{{ icon("moon") }}When you are busy</h2>

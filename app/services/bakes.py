@@ -145,6 +145,8 @@ def start_bake(
     status: BakeStatus = BakeStatus.PLANNED,
 ) -> Bake:
     """Create a bake and copy the version's stages in as its plan."""
+    from app.services import followalong
+
     bake = Bake(
         recipe_version_id=version.id,
         jar_id=jar_id,
@@ -171,6 +173,12 @@ def start_bake(
                 name=stage.name,
                 planned_min=stage.duration_min,
                 planned_temp_c=stage.temp_c,
+                # No planned times here, so these wait for the step to be
+                # tapped started and count from then.
+                **followalong.midway_reminders(
+                    session, key=None, name=stage.name, method=method,
+                    minutes=stage.duration_min,
+                ),
             )
         )
     session.flush()
