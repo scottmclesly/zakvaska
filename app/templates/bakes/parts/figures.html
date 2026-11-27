@@ -1,0 +1,64 @@
+{# A bake in figures: started, took, stages, flour, oven, machine.
+   Expects `bake`, `elapsed_min`, `planned_total_min`, `progress`. #}
+{% from "partials/icons.html" import icon %}
+{#- The bake in figures. Each has a small glyph, so the one you want can be
+    found by shape from across the kitchen, and the card fills the tile
+    beside the Now panel rather than sitting short in it. -#}
+<section class="card bake-figures">
+  <dl class="stats stats-wide">
+    <div>
+      <dt>{{ icon("clock") }}Started</dt>
+      <dd>
+        {% if bake.started_at %}
+          {{ bake.started_at | local_time }}
+          <span class="muted stat-sub">{{ bake.started_at | local_day }}</span>
+        {% else %}
+          <span class="muted">not yet</span>
+        {% endif %}
+      </dd>
+    </div>
+    <div>
+      <dt>{{ icon("hourglass") }}{{ "Took" if bake.finished_at else "Elapsed" }}</dt>
+      <dd>
+        {% if elapsed_min is not none %}
+          {{ elapsed_min }} min
+          {% if planned_total_min %}
+          <span class="muted stat-sub">planned {{ planned_total_min }} min</span>
+          {% endif %}
+        {% elif planned_total_min %}
+          <span class="muted">{{ planned_total_min }} min planned</span>
+        {% else %}
+          <span class="muted">—</span>
+        {% endif %}
+      </dd>
+    </div>
+    <div>
+      <dt>{{ icon("checklist") }}Stages</dt>
+      <dd>{{ progress.done }} of {{ progress.total }}</dd>
+    </div>
+    {% if bake.total_flour_g %}
+    <div>
+      <dt>{{ icon("wheat") }}Flour</dt>
+      <dd>{{ bake.total_flour_g | weigh_total(weight_unit, flour=true) }}</dd>
+    </div>
+    {% endif %}
+    {% if bake.oven_temp_c is not none %}
+    <div>
+      <dt>{{ icon("flame") }}Oven</dt>
+      <dd>
+        {{ bake.oven_temp_c | temp(temp_unit) }}
+        {% if bake.bake_min %}<span class="muted stat-sub">{{ bake.bake_min }} min</span>{% endif %}
+      </dd>
+    </div>
+    {% endif %}
+    {% if bake.crust_setting or bake.loaf_size %}
+    <div>
+      <dt>{{ icon("machine") }}Machine</dt>
+      <dd>
+        {{ bake.loaf_size or "—" }}
+        {% if bake.crust_setting %}<span class="muted stat-sub">{{ bake.crust_setting }} crust</span>{% endif %}
+      </dd>
+    </div>
+    {% endif %}
+  </dl>
+</section>

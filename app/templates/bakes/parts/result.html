@@ -1,0 +1,31 @@
+{# How it turned out, or the way to say so. Expects `bake`. #}
+{% from "partials/icons.html" import icon %}
+<h2 class="section-title">Result</h2>
+{% if bake.result %}
+<section class="card result">
+  {% if bake.result.rating %}
+  <p class="result-rating">{% include "partials/stars.html" with context %}</p>
+  {% endif %}
+  <dl class="stats stats-wide">
+    {% for label, value in [("Crust", bake.result.crust), ("Crumb", bake.result.crumb),
+                            ("Taste", bake.result.taste), ("Rise", bake.result.rise)] %}
+    {% if value %}
+    <div><dt>{{ icon(label | lower) }}{{ label }}</dt><dd>{{ value }}</dd></div>
+    {% endif %}
+    {% endfor %}
+  </dl>
+  {% if bake.result.next_time %}
+  <p class="next-time"><strong>Next time:</strong> {{ bake.result.next_time }}</p>
+  {% endif %}
+  <div class="row-actions">
+    <a class="btn btn-secondary" href="/bakes/{{ bake.id }}/result">Edit the result</a>
+  </div>
+</section>
+{% else %}
+<section class="card">
+  <p class="muted">Nothing written up yet.</p>
+  <div class="row-actions">
+    <a class="btn btn-big" href="/bakes/{{ bake.id }}/result">Record the result</a>
+  </div>
+</section>
+{% endif %}
