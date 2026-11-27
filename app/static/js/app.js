@@ -481,6 +481,9 @@ document.addEventListener("input", (event) => {
     pick.closest(".photo-grid").querySelectorAll(".photo-tile").forEach(function (tile) {
       tile.classList.toggle("is-shown", tile.contains(pick));
     });
+    // "Compare with…" sets the framed photo beside another: keep it in step.
+    var left = document.querySelector("[data-compare-a]");
+    if (left) left.value = pick.getAttribute("data-photo-open").replace("photo-", "");
     return true;
   }
 

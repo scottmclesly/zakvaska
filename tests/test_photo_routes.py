@@ -311,8 +311,58 @@ class TestComparing:
 
         assert "Pick a photo for this side." in page.text
 
-    def test_the_bakes_page_links_to_it(self, client):
-        assert "/photos/compare" in client.get("/bakes").text
+    def test_a_finished_loaf_offers_to_be_set_beside_the_last_one(self, client, session):
+        """The way in is the loaf itself, not a button in the header: its
+        framed photo on the left, and the menu open on the previous bake of
+        the same recipe."""
+        recipe = seed_recipe(session)
+        first, second = start(client, recipe), start(client, recipe)
+        upload(client, "bake", first, caption="last time")
+        upload(client, "bake", second, caption="this time")
+        client.post(f"/bakes/{second}/finish", data={"status": "done"})
+
+        page = client.get(f"/bakes/{second}").text
+        form = page.split('class="compare-with"')[1].split("</form>")[0]
+        mine = re.search(r'name="a" value="(\d+)"', form).group(1)
+        chosen = re.search(r'<option value="(\d+)" selected>([^<]*)', form)
+
+        assert 'action="/photos/compare"' in page
+        assert "The same recipe" in form
+        assert "last time" in chosen.group(2)
+        assert chosen.group(1) != mine
+
+        both = client.get(f"/photos/compare?a={mine}&b={chosen.group(1)}").text
+        assert "this time" in both and "last time" in both
+
+    def test_a_loaf_with_nothing_to_be_compared_with_does_not_offer(self, client, session):
+        recipe = seed_recipe(session)
+        only = start(client, recipe)
+        upload(client, "bake", only)
+        client.post(f"/bakes/{only}/finish", data={"status": "done"})
+
+        assert 'class="compare-with"' not in client.get(f"/bakes/{only}").text
+
+    def test_a_loaf_s_photo_can_be_carried_into_the_comparison(self, client, session):
+        """From the large preview: this exact photo, on the left."""
+        recipe = seed_recipe(session)
+        bake_id = start(client, recipe)
+        upload(client, "bake", bake_id)
+
+        page = client.get(f"/bakes/{bake_id}").text
+
+        assert re.search(r'href="/photos/compare\?a=\d+">Compare<', page)
+
+    def test_a_jar_s_photo_has_no_such_link(self, client):
+        jar_id = create_jar(client)
+        upload(client, "jar", jar_id)
+
+        assert "/photos/compare" not in client.get(f"/jars/{jar_id}").text
+
+    def test_there_is_no_button_for_it_in_the_header(self, client, session):
+        bake_id = start(client, seed_recipe(session))
+        for path in ("/bakes", f"/bakes/{bake_id}"):
+            actions = client.get(path).text.split('<nav class="topnav"')[1].split("</nav>")[0]
+            assert "/photos/compare" not in actions, path
 
     def test_jar_photos_are_not_offered(self, client, session):
         recipe = seed_recipe(session)

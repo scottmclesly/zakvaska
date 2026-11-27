@@ -323,6 +323,13 @@ def bake_detail(request: Request, ctx: Ctx, bake_id: int) -> HTMLResponse:
             "elapsed_min": bake_service.elapsed_min(bake, ctx.now),
             "statuses": list(BakeStatus),
             "photos": photo_service.list_for(ctx.session, PhotoOwner.BAKE, bake.id),
+            # What this loaf's photos can be set beside. Read-only, and only
+            # asked for once there is a finished loaf to compare.
+            "compare": (
+                photo_service.compare_partners(ctx.session, bake)
+                if bake.status.is_finished
+                else None
+            ),
             **_follow_context(ctx, bake),
         },
     )

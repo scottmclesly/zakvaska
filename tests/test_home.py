@@ -119,3 +119,69 @@ def test_the_planner_is_a_button_on_the_bakes_page(client):
     top = page.split('class="bakes-top"')[1].split("</div>")[0]
     assert 'class="form card filters"' in top
     assert 'class="card plan-cta" href="/plan"' in page
+
+
+# --- The kitchen clock ----------------------------------------------------
+
+
+def _bake_underway(client, session, *, with_a_jar=True):
+    from app.models.enums import JarOrigin
+    from app.services import jars as jar_service
+    from tests.test_bake_routes import seed_recipe, start
+
+    if with_a_jar:
+        jar_service.create_jar(session, name="Rye", origin=JarOrigin.HOMEMADE)
+        session.commit()
+    return start(client, seed_recipe(session))
+
+
+def test_a_loaf_underway_shows_its_clock_even_with_no_jars(client, session):
+    """A yeasted loaf has no starter behind it; its clock still matters."""
+    bake_id = _bake_underway(client, session, with_a_jar=False)
+
+    assert f'class="card bake-clock" href="/bakes/{bake_id}"' in client.get("/").text
+
+
+def test_a_loaf_underway_puts_a_clock_above_the_slate(client, session):
+    bake_id = _bake_underway(client, session)
+
+    page = client.get("/").text
+    side = page.split('id="dash-now"')[1]
+
+    assert f'class="card bake-clock" href="/bakes/{bake_id}"' in side
+    assert 'class="clock-art"' in side
+    # Above the chalkboard, not written on it.
+    assert side.index('class="card bake-clock') < side.index('class="chalkboard"')
+    assert "bake-clock" not in side.split('class="chalkboard"')[1].split("</aside>")[0]
+
+
+def test_no_loaf_underway_no_clock(client, session):
+    from app.models.enums import JarOrigin
+    from app.services import jars as jar_service
+
+    jar_service.create_jar(session, name="Rye", origin=JarOrigin.HOMEMADE)
+    session.commit()
+
+    page = client.get("/").text
+
+    assert "bake-clock" not in page
+    assert 'class="chalkboard"' in page
+
+
+def test_the_clock_refreshes_with_the_rest_of_right_now(client, session):
+    """Its hands are worked out by the server, so it has to be inside the
+    region that asks the server again."""
+    _bake_underway(client, session)
+
+    page = client.get("/").text
+    region = page.split('id="dash-now"')[1].split('<div class="dash-charts"')[0]
+
+    assert 'hx-select="#dash-now"' in page
+    assert "bake-clock" in region
+
+
+def test_a_finished_loaf_takes_the_clock_down(client, session):
+    bake_id = _bake_underway(client, session)
+    client.post(f"/bakes/{bake_id}/finish", data={"status": "done"})
+
+    assert "bake-clock" not in client.get("/").text
