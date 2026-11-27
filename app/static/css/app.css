@@ -2027,7 +2027,8 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .showcase > .bake-figures .stats { grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
 .showcase .gallery-block { margin: 0; }
 .showcase .section-title { margin-top: 0; }
-.showcase-record .ribbon-card { margin: 0; }
+.showcase-record .ribbon-card,
+.showcase > .ribbon-card { margin: 0; }
 
 /* The top of a bake's page: the day, as wide as it can be, and where the
    bake has got to standing beside it. One live region, so the `now` line on
