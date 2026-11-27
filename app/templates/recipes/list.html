@@ -7,10 +7,9 @@
 {% block page_class %}page--wide{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <h1>Recipes</h1>
-  <p class="sub">Baker's percentages, versioned. Editing writes a new version.</p>
-</section>
+{#- No visible title: the highlighted section in the header is the heading.
+    This one is for screen readers and the document outline. -#}
+<h1 class="sr-only">Recipes</h1>
 
 {% if recipes %}
 {#- Finding one of thirty-odd. The whole list is on the page, so this only

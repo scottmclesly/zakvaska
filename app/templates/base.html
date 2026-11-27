@@ -19,12 +19,21 @@
   {#- Which section this page belongs to, worked out from the address so no
       page has to say. The dashboard is the jars' page. -#}
   {%- set path = request.url.path -%}
+  {#- Name, address, label, and the line that used to sit under the page's
+      title. The highlighted section is the page's heading now, so that line
+      is its tooltip — and each section's own page carries its <h1> for
+      screen readers only (see `.sr-only` in the section templates). -#}
   {%- set sections = [
-        ("jars", "/", "Jars"),
-        ("recipes", "/recipes", "Recipes"),
-        ("bakes", "/bakes", "Bakes"),
-        ("plan", "/plan", "Plan"),
-        ("equipment", "/equipment", "Equipment"),
+        ("jars", "/", "Jars",
+         "Starter jars: feedings, observations and bakes, logged properly."),
+        ("recipes", "/recipes", "Recipes",
+         "Baker's percentages, versioned. Editing writes a new version."),
+        ("bakes", "/bakes", "Bakes",
+         "Every loaf, the version it came from and how it turned out."),
+        ("plan", "/plan", "Plan",
+         "Plan a bake: when does each step happen, and does it fit your day? Scrub the start and watch the times move."),
+        ("equipment", "/equipment", "Equipment",
+         "The bread maker's programs, typed in from the manual, so a bake can record which one was used."),
       ] -%}
   {%- if path.startswith("/recipes") %}{% set here = "recipes" -%}
   {%- elif path.startswith("/bakes") or path.startswith("/photos") %}{% set here = "bakes" -%}
@@ -41,8 +50,9 @@
     {#- One list, placed twice by the stylesheet: along the header on a
         laptop, and as a tab bar under the thumb on a phone. -#}
     <nav class="sectionnav" aria-label="Sections">
-      {%- for section, href, label in sections %}
+      {%- for section, href, label, blurb in sections %}
       <a class="navlink{% if section == here %} is-here{% endif %}" href="{{ href }}"
+         title="{{ blurb }}"
          {%- if section == here %} aria-current="page"{% endif %}>
         {%- include "partials/nav_icon.html" %}<span>{{ label }}</span></a>
       {%- endfor %}

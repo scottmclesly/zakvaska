@@ -7,21 +7,9 @@
 {% block page_class %}page--wide{% endblock %}
 
 {% block content %}
-<section class="hero hero-art">
-  <div class="hero-machine">
-    {% with art_class = "machine-art-lg" %}
-      {% include "partials/breadmaker_art.html" %}
-    {% endwith %}
-    <div class="shelf-plank shelf-plank-sm" aria-hidden="true"></div>
-  </div>
-  <div>
-    <h1>Equipment programs</h1>
-    <p class="sub">
-      The bread maker's programs, typed in from the manual, so a bake can
-      record which one was used.
-    </p>
-  </div>
-</section>
+{#- No visible title: the highlighted section in the header is the heading.
+    This one is for screen readers and the document outline. -#}
+<h1 class="sr-only">Equipment programs</h1>
 
 {% if errors %}
 <div class="card errors" role="alert">
@@ -102,6 +90,14 @@
 </section>
 {% endif %}
 
+{#- The bread maker itself, which used to stand by the page's title, now
+    stands by the way to add one of its programs. -#}
+<div class="program-add">
+<div class="hero-machine" aria-hidden="true">
+  {% with art_class = "machine-art" %}
+    {% include "partials/breadmaker_art.html" %}
+  {% endwith %}
+</div>
 <details class="card disclosure">
 <summary>Add a program</summary>
 <form class="form" method="post" action="/equipment/new">
@@ -129,6 +125,7 @@
   </div>
 </form>
 </details>
+</div>
 
 {% if archived %}
 <section class="archived-list">

@@ -7,13 +7,9 @@
 {% block page_class %}page--wide{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <h1>Plan a bake</h1>
-  <p class="sub">
-    When does each step happen, and does it fit your day? Scrub the start and
-    watch the times move.
-  </p>
-</section>
+{#- No visible title: the highlighted section in the header is the heading.
+    This one is for screen readers and the document outline. -#}
+<h1 class="sr-only">Plan a bake</h1>
 
 {% if notes %}
 <div class="card errors" role="alert">
