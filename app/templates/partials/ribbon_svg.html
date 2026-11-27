@@ -175,8 +175,8 @@
   {#- Now, over the top of everything: a line the full height, and the
       time on the axis under it, on a flag that covers whatever tick label
       it lands on. "Where am I on this" is the first thing the chart has to
-      answer. -#}
-  {%- set flag_w = 78 %}
+      answer. Just the time: the red line and the flag already say "now". -#}
+  {%- set flag_w = 46 %}
   {%- set flag_x = [[ribbon.now_x - flag_w / 2, plot.x] | max, plot.right - flag_w] | min %}
   <g class="ribbon-now">
     <line x1="{{ ribbon.now_x | round(2) }}" y1="{{ plot.y - 3 }}"
@@ -185,7 +185,7 @@
     <rect class="ribbon-now-flag" x="{{ flag_x | round(2) }}" y="{{ ribbon.axis_y + 5 }}"
           width="{{ flag_w }}" height="16" rx="8"/>
     <text class="ribbon-now-label" x="{{ (flag_x + flag_w / 2) | round(2) }}"
-          y="{{ ribbon.axis_y + 16.5 }}" text-anchor="middle">now {{ ribbon.now | local_time }}</text>
+          y="{{ ribbon.axis_y + 16.5 }}" text-anchor="middle">{{ ribbon.now | local_time }}</text>
     <title>Now, {{ ribbon.now | local_dt }}</title>
   </g>
 </svg>
