@@ -13,6 +13,7 @@
 {#- Finding one of thirty-odd. The whole list is on the page, so this only
     hides cards: no request, and without JavaScript the bar is hidden and
     the list is simply all there. -#}
+<div class="recipe-top">
 <form class="recipe-find" role="search" data-recipe-find hidden
       onsubmit="return false">
   <label class="sr-only" for="recipe-q">Find a recipe</label>
@@ -28,91 +29,108 @@
     {% endfor %}
   </div>
 </form>
+{#- Outside the form on purpose: the form stays hidden until the script
+    wakes it, and the way to add a recipe must not wait on a script. -#}
+<a class="recipe-add-link" href="/recipes/new">
+  <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+       stroke-width="1.8" stroke-linecap="round">
+    <path d="M12 5v14M5 12h14"/>
+  </svg>
+  <span>New recipe</span>
+</a>
+</div>
 <p class="card muted recipe-none" data-recipe-none hidden>No recipe matches that.</p>
-<ul class="recipe-grid" data-recipe-list>
-  {#- The empty slot: a recipe that is not there yet, like the jar-shaped gap
-      on the shelf and the dashed square in a gallery. It leads the grid
-      because the grid is long — thirty-odd cards — and a way to add one
-      should not be at the bottom of them. It is not a recipe, so the search
-      and the family chips leave it alone. -#}
-  <li class="recipe-add">
-    <a class="recipe-add-link" href="/recipes/new">
-      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
-           stroke-width="1.8" stroke-linecap="round">
-        <path d="M12 5v14M5 12h14"/>
-      </svg>
-      <span>New recipe</span>
-    </a>
-  </li>
-  {% for card in cards %}
-  {% set recipe = card.recipe %}
-  {% set latest = card.latest %}
-  {#- A card is the link to its recipe: the name's anchor is stretched over
-      all of it. The bread leads, drawn as the bread it is, or photographed
-      if you have baked it; then the two numbers a baker reads a formula by,
-      and what has come of it so far. -#}
-  <li class="card recipe-card" data-family="{{ recipe.category.value }}"
-      data-find="{{ (recipe.name ~ ' ' ~ (recipe.source or '') ~ ' ' ~ (latest.default_program.name if latest and latest.default_program else '')) | lower }}">
-    <div class="recipe-loaf{% if card.cover %} has-photo{% endif %}">
-      {% if card.cover %}
-      <img src="{{ card.cover.thumb_url }}" decoding="async"
-           alt="{{ card.cover.caption or 'A loaf baked from this recipe' }}">
-      {% else %}
-      {% with shape = card.shape %}{% include "partials/loaf_art.html" %}{% endwith %}
-      {% endif %}
-      <span class="recipe-family">{{ recipe.category.label }}</span>
-      {% if latest and latest.default_program %}
-      <span class="recipe-machine-tag" title="Bread maker">{{ icon("machine") }}</span>
-      {% endif %}
-    </div>
-    <div class="recipe-head-text">
-      <h2><a class="recipe-link" href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h2>
-      <ul class="recipe-stats">
-        {% if card.hydration is not none %}
-        <li><strong>{{ card.hydration }}%</strong> water</li>
-        {% endif %}
-        {% if card.total_min %}
-        <li><strong>{{ recipe_time_label(card.total_min) }}</strong></li>
-        {% endif %}
-        {% if latest %}
-        <li><strong>{{ latest.ingredients | length }}</strong> ingredients</li>
-        {% endif %}
-      </ul>
-      {% if latest and latest.default_program %}
-      <p class="recipe-machine muted small">
-        Bread maker: {{ latest.default_program.name }}{% if latest.default_loaf_size %},
-        {{ latest.default_loaf_size }}{% endif %}{% if latest.default_crust %},
-        {{ latest.default_crust }} crust{% endif %}
-      </p>
-      {% endif %}
-      <div class="recipe-foot small">
-        {% if card.baked %}
-        <p class="recipe-baked">
-          Baked {{ card.baked }}&times;
-          {%- if card.best_rating %}
-          <span class="stars" title="Best so far: {{ card.best_rating }} out of 5">
-            <span aria-hidden="true">{{ "★" * card.best_rating }}{{ "☆" * (5 - card.best_rating) }}</span>
+
+{#- The recipes as shelves to browse along: what you have baked first, with
+    your own photographs, then a shelf for each family of bread. Each shelf
+    scrolls sideways and snaps card to card; the arrows are for a mouse.
+    Finding one (the box and the chips above) hides cards and then any
+    shelf left with none. -#}
+<div class="recipe-shelves" data-recipe-list>
+  {% for shelf in shelves %}
+  <section class="recipe-shelf" data-shelf="{{ shelf.key }}">
+    <header class="recipe-shelf-head">
+      <div>
+        <h2 class="recipe-shelf-title">{{ shelf.label }}
+          <span class="recipe-shelf-count">{{ shelf.cards | length }}</span></h2>
+        {% if shelf.blurb %}<p class="recipe-shelf-blurb muted small">{{ shelf.blurb }}</p>{% endif %}
+      </div>
+      <div class="recipe-shelf-arrows" aria-hidden="true">
+        <button type="button" class="recipe-shelf-arrow" data-shelf-step="-1" tabindex="-1" title="Back">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3 5 8l5 5"/></svg>
+        </button>
+        <button type="button" class="recipe-shelf-arrow" data-shelf-step="1" tabindex="-1" title="Along">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>
+        </button>
+      </div>
+    </header>
+    <ul class="recipe-row" data-shelf-row>
+      {% for card in shelf.cards %}
+      {% set recipe = card.recipe %}
+      {% set latest = card.latest %}
+      {#- A card is the link to its recipe: the name's anchor is stretched
+          over all of it. The bread fills the top: your photograph of the
+          best loaf, or the loaf drawn on a board until there is one. -#}
+      <li class="card recipe-card" data-family="{{ recipe.category.value }}"
+          data-find="{{ (recipe.name ~ ' ' ~ (recipe.source or '') ~ ' ' ~ (latest.default_program.name if latest and latest.default_program else '')) | lower }}">
+        <div class="recipe-loaf{% if card.cover %} has-photo{% endif %}">
+          {% if card.cover %}
+          <img src="{{ card.cover.thumb_url }}" decoding="async"
+               alt="{{ card.cover.caption or 'A loaf baked from this recipe' }}">
+          {% else %}
+          <span class="recipe-board" aria-hidden="true"></span>
+          {% with shape = card.shape %}{% include "partials/loaf_art.html" %}{% endwith %}
+          {% endif %}
+          <span class="recipe-family">{{ recipe.category.label }}</span>
+          {% if latest and latest.default_program %}
+          <span class="recipe-machine-tag" title="Bread maker: {{ latest.default_program.name }}">{{ icon("machine") }}</span>
+          {% endif %}
+          {% if card.best_rating %}
+          <span class="recipe-rating" title="Best so far: {{ card.best_rating }} out of 5">
+            <span aria-hidden="true">★ {{ card.best_rating }}</span>
             <span class="sr-only">best so far {{ card.best_rating }} out of 5</span>
           </span>
-          {%- endif %}
-        </p>
-        {% endif %}
-        {% if recipe.versions | length > 1 %}
-        <p class="recipe-facts muted">
-          {{ latest.label }} of {{ recipe.versions | length }}
-          · <a class="recipe-more" href="/recipes/{{ recipe.id }}/diff">Compare versions</a>
-        </p>
-        {% endif %}
-        {% if recipe.source %}
-        <p class="source muted" title="{{ recipe.source }}{% if recipe.source_ref %} · {{ recipe.source_ref }}{% endif %}">
-          {{ recipe.source }}
-        </p>
-        {% endif %}
-      </div>
-    </div>
-  </li>
+          {% endif %}
+        </div>
+        <div class="recipe-head-text">
+          <h3><a class="recipe-link" href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h3>
+          <ul class="recipe-stats">
+            {% if card.hydration is not none %}
+            <li><strong>{{ card.hydration }}%</strong> water</li>
+            {% endif %}
+            {% if card.total_min %}
+            <li><strong>{{ recipe_time_label(card.total_min) }}</strong></li>
+            {% endif %}
+            {% if latest %}
+            <li><strong>{{ latest.ingredients | length }}</strong> ingredients</li>
+            {% endif %}
+          </ul>
+          <div class="recipe-foot small muted">
+            {% if card.baked %}
+            <p class="recipe-baked">Baked {{ card.baked }}&times;</p>
+            {% endif %}
+            {% if latest and latest.default_program %}
+            <p class="recipe-machine">
+              Bread maker: {{ latest.default_program.name }}{% if latest.default_loaf_size %},
+              {{ latest.default_loaf_size }}{% endif %}{% if latest.default_crust %},
+              {{ latest.default_crust }} crust{% endif %}
+            </p>
+            {% endif %}
+            {% if recipe.source %}
+            <p class="source" title="{{ recipe.source }}{% if recipe.source_ref %} · {{ recipe.source_ref }}{% endif %}">{{ recipe.source }}</p>
+            {% endif %}
+            {% if recipe.versions | length > 1 %}
+            <p>{{ latest.label }} of {{ recipe.versions | length }}
+              · <a class="recipe-more" href="/recipes/{{ recipe.id }}/diff">Compare versions</a></p>
+            {% endif %}
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
   {% endfor %}
-</ul>
+</div>
 {% else %}
 <section class="empty card">
   <h2>No recipes yet</h2>

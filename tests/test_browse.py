@@ -168,3 +168,50 @@ class TestPages:
         page = client.get("/bakes").text
         assert 'class="bake-shot"' in page
         assert 'aria-label="a baguette"' in page
+
+
+class TestShelves:
+    def test_what_you_have_baked_comes_first_best_loaf_first(self, session, frozen_now):
+        plain = _recipe(session, "Plain")
+        better = _recipe(session, "Better")
+        _recipe(session, "Untried")
+        _baked(session, plain, frozen_now, rating=3)
+        _baked(session, better, frozen_now, rating=5)
+        cards = browse.recipe_cards(session, recipe_service.list_recipes(session))
+
+        shelves = browse.recipe_shelves(cards)
+
+        assert shelves[0].key == "baked"
+        assert [c.recipe.name for c in shelves[0].cards] == ["Better", "Plain"]
+
+    def test_then_a_shelf_for_each_family_that_has_any(self, session):
+        _recipe(session, "Boule")
+        _recipe(session, "Borodinsky", RecipeCategory.RYE)
+        cards = browse.recipe_cards(session, recipe_service.list_recipes(session))
+
+        shelves = browse.recipe_shelves(cards)
+
+        # Nothing baked, so no shelf for it; and no empty shelves.
+        assert [shelf.key for shelf in shelves] == ["rye", "wheat"]
+        assert all(shelf.cards and shelf.label and shelf.blurb for shelf in shelves)
+
+    def test_a_baked_recipe_is_also_on_its_own_family_s_shelf(self, session, frozen_now):
+        recipe = _recipe(session, "Boule")
+        _baked(session, recipe, frozen_now, rating=4)
+        cards = browse.recipe_cards(session, [recipe])
+        shelves = {shelf.key: shelf for shelf in browse.recipe_shelves(cards)}
+        assert [c.recipe.name for c in shelves["baked"].cards] == ["Boule"]
+        assert [c.recipe.name for c in shelves["wheat"].cards] == ["Boule"]
+
+    def test_the_page_is_shelves_with_arrows_and_a_row_each(self, client, session):
+        demo.load_library(session)
+        session.commit()
+        page = client.get("/recipes").text
+
+        shelves = page.count('<section class="recipe-shelf"')
+        assert shelves >= 3
+        assert page.count("data-shelf-row") == shelves
+        assert page.count('data-shelf-step="1"') == shelves
+        # The drawn loaf stands on a board, and a loaf from a tin shows its crumb.
+        assert 'class="recipe-board"' in page
+        assert 'class="loaf-crumb"' in page
