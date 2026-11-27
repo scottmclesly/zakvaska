@@ -31,8 +31,10 @@
     {% endwith %}
     {% endfor %}
 
+  {#- "Right meow" is on purpose: the owner's own joke, chalked on the board.
+      The label a screen reader hears stays plain. -#}
   <aside class="chalkboard" aria-label="Right now">
-    <h2 class="section-title">Right now</h2>
+    <h2 class="section-title">Right meow</h2>
 
     <ul class="jar-grid" id="jar-cards">
       {% for card in cards %}

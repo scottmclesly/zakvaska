@@ -238,3 +238,14 @@ def test_settings_is_an_icon_that_names_itself_when_pointed_at():
     ).read_text(encoding="utf-8")
     assert ".nav-settings > span {\n    max-width: 0;" in css
     assert ".nav-settings:focus-visible > span { max-width: 6rem; opacity: 1; }" in css
+
+
+def test_the_chalkboard_says_right_meow(client):
+    """Not a typo. Leave it."""
+    client.post(
+        "/jars/new", data={"name": "Old Rye", "origin": "homemade", "state": "active"}
+    )
+    page = client.get("/").text
+    board = page.split('<aside class="chalkboard"')[1].split("</aside>")[0]
+    assert '<h2 class="section-title">Right meow</h2>' in board
+    assert 'aria-label="Right now"' in page
