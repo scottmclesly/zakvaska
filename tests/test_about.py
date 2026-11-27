@@ -156,3 +156,12 @@ class TestTheBuild:
             assert buildinfo.build() is None
         finally:
             buildinfo.build.cache_clear()
+
+
+def test_created_by_links_to_the_coffee_page_and_the_art_has_no_labels(client):
+    page = client.get("/about").text
+    by = page.split('class="card about-by"')[1].split("</section>")[0]
+    assert 'href="https://buymeacoffee.com/mcleslie"' in by
+    assert "obviously needed a software stack" not in page
+    art = page.split('class="scene-art"')[1].split("</svg>")[0]
+    assert "<text" not in art
