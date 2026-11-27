@@ -22,50 +22,17 @@
 
   {# The numbers are the part that goes stale, so this is the part that
      refreshes itself. Overdue turns a card red here too, without a reload. #}
-  <aside class="dash-now chalkboard" id="dash-now" aria-label="Right now" {{ live("/", "#dash-now") }}>
-    <h2 class="section-title">Right now</h2>
-
-    {#- A loaf underway comes first: it has a clock on it. -#}
+  <div class="dash-now" id="dash-now" {{ live("/", "#dash-now") }}>
+    {#- A loaf underway comes first and gets the wall clock: its hands show
+        when the next thing is due. Then the slate, with the jars. -#}
     {% for one in underway %}
-    {% set bake = one.bake %}{% set view = one.view %}
-    <a class="card bake-live" href="/bakes/{{ bake.id }}">
-      <span class="now-label">
-        {%- if bake.status.value == "in_progress" %}Baking{% else %}Planned{% endif -%}
-      </span>
-      <strong class="bake-live-name">{{ bake.recipe.name }}</strong>
-      {% if view and not view.is_done %}
-        {% set current = view.current %}
-        {% if view.running %}
-        <span class="bake-live-step">{{ view.running.name }}
-          {%- if view.running.planned_end %}
-          <span class="muted">· ends {{ view.running.planned_end | local_time }}
-            ({{ view.running.planned_end | until(now) }})</span>
-          {%- endif %}</span>
-        {% elif view.due_now %}
-        <span class="bake-live-step">{{ view.due_now.name }}
-          <span class="muted">· due now</span></span>
-        {% elif current %}
-        <span class="bake-live-step"><span class="muted">Next:</span> {{ current.name }}
-          {%- if current.planned_start %}
-          <span class="muted">· {{ current.planned_start | local_time }}
-            ({{ current.planned_start | until(now) }})</span>
-          {%- endif %}</span>
-        {% endif %}
-        {% if view.next_hands_on and view.next_hands_on is not sameas current
-              and view.next_hands_on.planned_start %}
-        <span class="muted small">Then {{ view.next_hands_on.name }} at
-          {{ view.next_hands_on.planned_start | local_time }}</span>
-        {% endif %}
-        {% if view.is_behind %}
-        <span class="now-behind small">About {{ hours_label(view.behind_min / 60) }} behind the plan</span>
-        {% endif %}
-      {% elif view %}
-        <span class="bake-live-step">Every step is ticked off — write up the result.</span>
-      {% else %}
-        <span class="muted small">Open the running sheet</span>
-      {% endif %}
-    </a>
+    {% with bake = one.bake, view = one.view %}
+      {% include "partials/bake_clock.html" %}
+    {% endwith %}
     {% endfor %}
+
+  <aside class="chalkboard" aria-label="Right now">
+    <h2 class="section-title">Right now</h2>
 
     <ul class="jar-grid" id="jar-cards">
       {% for card in cards %}
@@ -135,6 +102,7 @@
       {% endfor %}
     </ul>
   </aside>
+  </div>
 
   <div class="dash-charts">
     {% if ribbon %}
@@ -167,6 +135,13 @@
 </div>
 {% else %}
 <h1 class="sr-only">Starter jars</h1>
+{#- No jars, but a loaf may still be underway — a yeasted one, say. Its
+    clock does not wait for a starter. -#}
+{% for one in underway %}
+{% with bake = one.bake, view = one.view %}
+  {% include "partials/bake_clock.html" %}
+{% endwith %}
+{% endfor %}
 {#- An empty shelf is still the shelf: the ghost slot is on it, and with no
     jars to hide behind it is simply there, which is the way in. -#}
 {% with shelf_ghost = true, shelf_label = "The shelf, with no jars on it yet" %}

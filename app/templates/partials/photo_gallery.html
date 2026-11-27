@@ -82,6 +82,11 @@
         {% if photo.has_original %}
         <a href="{{ photo.original_url }}" download>Original</a>
         {% endif %}
+        {#- A loaf's photo can be set beside another loaf's: this exact one
+            goes on the left of the comparison page. -#}
+        {% if owner_type == "bake" %}
+        <a href="/photos/compare?a={{ photo.id }}">Compare</a>
+        {% endif %}
         <button class="linkish" type="submit" form="delete-photo-{{ photo.id }}">Delete</button>
         <button class="btn btn-small btn-secondary photo-close" type="button"
                 data-photo-close>Close</button>

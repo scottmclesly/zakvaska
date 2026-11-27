@@ -35,6 +35,37 @@
               gallery_title = "Photos of this loaf" %}
       {% include "partials/photo_gallery.html" %}
       {% endwith %}
+
+      {#- Setting this loaf beside another: the question a loaf just out of
+          the oven is asked. The photo in the frame goes on the left, and the
+          menu opens on the last bake of the same recipe. A plain GET form to
+          the comparison page, so it works without a script; the script only
+          keeps `a` in step with whichever photo is in the frame. -#}
+      {% if cover and compare %}
+      <form class="compare-with" method="get" action="/photos/compare">
+        <input type="hidden" name="a" value="{{ cover.id }}" data-compare-a>
+        <label for="compare-b">{{ icon("scale") }}Compare with</label>
+        <select id="compare-b" name="b">
+          {% macro option(photo, owner) -%}
+          <option value="{{ photo.id }}"{% if photo.id == compare.suggested %} selected{% endif %}>
+            {{- owner.label }} · {{ owner.at | local_day }}
+            {%- if photo.caption %} — {{ photo.caption }}{% endif -%}
+          </option>
+          {%- endmacro %}
+          {% if compare.same %}
+          <optgroup label="The same recipe">
+            {% for photo, owner in compare.same %}{{ option(photo, owner) }}{% endfor %}
+          </optgroup>
+          {% endif %}
+          {% if compare.other %}
+          <optgroup label="Other loaves">
+            {% for photo, owner in compare.other %}{{ option(photo, owner) }}{% endfor %}
+          </optgroup>
+          {% endif %}
+        </select>
+        <button class="btn btn-small btn-secondary" type="submit">Side by side</button>
+      </form>
+      {% endif %}
     </div>
 
     <div class="showcase-words">

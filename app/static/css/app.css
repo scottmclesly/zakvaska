@@ -586,7 +586,9 @@ code {
     0 0 0 1px var(--wood-edge),
     var(--lift-2);
 }
+.chalkboard { display: flex; flex-direction: column; gap: var(--s-3); }
 .chalkboard > .section-title {
+  margin: 0;
   color: var(--chalk);
   font-family: var(--hand);
   font-size: var(--text-lg);
@@ -633,6 +635,44 @@ code {
 .jar-card .stats .band-text { font-size: var(--text-lg); }
 .jar-card .row-actions { margin-top: var(--s-1); gap: var(--s-2); }
 .jar-card .row-actions form { display: contents; }
+
+/* --- The kitchen clock -----------------------------------------------------
+   partials/bake_clock.html: a loaf underway, above the slate. A wall clock
+   in the shelf's pine with a cream face — an object, so the same in either
+   theme — whose hands show when the next thing is due. */
+.bake-clock {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  color: var(--ink);
+  text-decoration: none;
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--line));
+}
+.bake-clock:hover { border-color: var(--warn); }
+.clock-art { flex: 0 0 auto; width: clamp(92px, 30%, 124px); height: auto; overflow: visible; }
+.clock-shadow { fill: var(--shade-deep); opacity: 0.35; }
+.clock-rim { fill: var(--wood); stroke: var(--wood-edge); stroke-width: 2; }
+.clock-face { fill: var(--tape); stroke: var(--tape-edge); stroke-width: 1; }
+.clock-ticks line { stroke: var(--tape-ink); stroke-width: 1.4; stroke-linecap: round; opacity: 0.55; }
+.clock-ticks line.is-quarter { stroke-width: 2.4; opacity: 0.9; }
+/* How long there is: a band of crust colour round the rim, from now to
+   the hands. Red, and run the other way, once the moment has passed. */
+.clock-band { fill: none; stroke: var(--stage-bake); stroke-width: 7; opacity: 0.38; }
+.bake-clock.is-late .clock-band { stroke: var(--tag-ink); opacity: 0.5; }
+.clock-now { fill: var(--stage-bake); stroke: var(--tape); stroke-width: 1.2; }
+.clock-hand { stroke: var(--tape-ink); stroke-linecap: round; }
+.clock-hour { stroke-width: 4.4; }
+.clock-minute { stroke-width: 2.6; }
+.clock-cap { fill: var(--tape-ink); }
+
+.clock-words { display: flex; flex-direction: column; gap: var(--s-1); min-width: 0; }
+.clock-what { font-family: var(--display); font-size: var(--text-lg); line-height: var(--leading-tight); }
+.clock-verb { color: var(--accent); }
+.clock-when { display: flex; align-items: baseline; gap: var(--s-2); flex-wrap: wrap; }
+.clock-time { font-family: var(--display); font-size: var(--text-2xl); font-variant-numeric: tabular-nums; line-height: 1; }
+.clock-away { color: var(--ink-soft); font-weight: 600; }
+.bake-clock.is-late .clock-away { color: var(--danger); }
 
 /* A loaf underway, at the top of the list. The whole card is the link. */
 .bake-live {
@@ -1714,6 +1754,27 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .photo-strip .photo-add-label { border-radius: var(--r-sm); border-width: 2px; }
 .photo-strip .photo-add-label svg { width: 24px; height: 24px; }
 .photo-caption[hidden] { display: none; }
+
+/* "Compare with…": one quiet line under the strip. */
+.compare-with {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2) var(--s-3);
+}
+.compare-with label { display: inline-flex; align-items: center; color: var(--ink-soft); font-size: var(--text-sm); font-weight: 600; white-space: nowrap; }
+.compare-with select {
+  flex: 1 1 12rem;
+  min-width: 0;
+  min-height: var(--tap-sm);
+  padding: 0 var(--s-3);
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
 .showcase-standin p { margin: 0; }
 
 .showcase-words { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }

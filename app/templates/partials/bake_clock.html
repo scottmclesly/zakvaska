@@ -1,0 +1,112 @@
+{# The kitchen clock: what a loaf underway wants next, and when.
+   Expects `bake`, `view` (services.followalong.NowView, or none for a bake
+   started without a plan) and `now`.
+
+   A wall clock in the shelf's own pine, its hands set to the time of the
+   next thing to do — not to the time it is. The time it is now is the small
+   dot on the rim, and the band from the dot to the hand is how long there
+   is: read on the minutes when it is under an hour, on the hours beyond. So
+   the picture answers "when?" at a glance from across the kitchen, and the
+   words beside it say what. Drawn here, in the page's own colours for
+   objects, like the jars: cream face and pine rim in either theme.
+
+   The whole card is the link to the bake. #}
+{%- set running = view.running if view else none -%}
+{%- set due = view.due_now if view else none -%}
+{%- set nxt = view.next_up if view else none -%}
+{#- What the next action is, and the moment it falls due. -#}
+{%- if view and view.is_done -%}
+  {%- set what, target, verb = "Write up the result", none, "Done" -%}
+{%- elif running and running.planned_end -%}
+  {%- set what, target, verb = running.name, running.planned_end, "Finish" -%}
+{%- elif running -%}
+  {%- set what, target, verb = running.name, none, "On now" -%}
+{%- elif due -%}
+  {%- set what, target, verb = due.name, now, "Start now" -%}
+{%- elif nxt and nxt.planned_start -%}
+  {%- set what, target, verb = nxt.name, nxt.planned_start, "Next" -%}
+{%- elif nxt -%}
+  {%- set what, target, verb = nxt.name, none, "Next" -%}
+{%- else -%}
+  {%- set what, target, verb = "Open the running sheet", none, "" -%}
+{%- endif -%}
+{#- Where a moment sits on a twelve-hour dial, as the hour hand points. -#}
+{%- macro dial(moment) -%}
+  {%- set hm = (moment | local_time).split(":") -%}
+  {{- ((hm[0] | int) % 12) * 30 + (hm[1] | int) * 0.5 -}}
+{%- endmacro -%}
+{%- set now_deg = dial(now) | float -%}
+{%- if target -%}
+  {%- set hm = (target | local_time).split(":") -%}
+  {%- set hour_deg = dial(target) | float -%}
+  {%- set minute_deg = (hm[1] | int) * 6 -%}
+  {%- set away_min = (target - now).total_seconds() / 60 -%}
+  {%- set late = away_min < -1 -%}
+  {#- The band on the rim, from now to then. Within the hour it is read on
+      the minutes, the way the long hand will travel it — six degrees a
+      minute, so twenty minutes is a third of the dial and not a sliver.
+      Further off than that it is read on the hours, half a degree a
+      minute, a full turn at most. -#}
+  {%- set near = (away_min | abs) <= 60 -%}
+  {%- if near -%}
+    {%- set now_deg = ((now | local_time).split(":")[1] | int) * 6 -%}
+    {%- set then_deg = minute_deg -%}
+    {%- set sweep = (away_min | abs) * 6 -%}
+  {%- else -%}
+    {%- set then_deg = hour_deg -%}
+    {%- set sweep = [away_min | abs, 720] | min * 0.5 -%}
+  {%- endif -%}
+  {%- set ring = 2 * 3.14159265 * 43 -%}
+{%- endif -%}
+<a class="card bake-clock{% if target and late %} is-late{% endif %}" href="/bakes/{{ bake.id }}">
+  <svg class="clock-art" viewBox="0 0 120 120" role="img"
+       aria-label="{% if target %}Clock showing {{ target | local_time }}{% else %}Clock{% endif %}">
+    <circle class="clock-shadow" cx="60" cy="63" r="56"/>
+    <circle class="clock-rim" cx="60" cy="60" r="56"/>
+    <circle class="clock-face" cx="60" cy="60" r="49"/>
+    {%- if target and sweep > 0.5 %}
+    {#- From now to then; or, when it is overdue, from then to now. -#}
+    <circle class="clock-band" cx="60" cy="60" r="43"
+            stroke-dasharray="{{ (ring * sweep / 360) | round(2) }} {{ ring | round(2) }}"
+            transform="rotate({{ ((then_deg if late else now_deg) - 90) | round(2) }} 60 60)"/>
+    {%- endif %}
+    <g class="clock-ticks">
+      {%- for i in range(12) %}
+      <line x1="60" y1="{{ 14 if i % 3 == 0 else 15.5 }}" x2="60" y2="{{ 21 if i % 3 == 0 else 19 }}"
+            {%- if i % 3 == 0 %} class="is-quarter"{% endif %} transform="rotate({{ i * 30 }} 60 60)"/>
+      {%- endfor %}
+    </g>
+    {#- Now: a dot on the rim, so the hands are free to say "then". -#}
+    <circle class="clock-now" cx="60" cy="17" r="3.4" transform="rotate({{ now_deg | round(2) }} 60 60)">
+      <title>Now, {{ now | local_time }}</title>
+    </circle>
+    {%- if target %}
+    <line class="clock-hand clock-hour" x1="60" y1="64" x2="60" y2="34"
+          transform="rotate({{ hour_deg | round(2) }} 60 60)"/>
+    <line class="clock-hand clock-minute" x1="60" y1="66" x2="60" y2="22"
+          transform="rotate({{ minute_deg }} 60 60)"/>
+    {%- endif %}
+    <circle class="clock-cap" cx="60" cy="60" r="3.6"/>
+  </svg>
+
+  <span class="clock-words">
+    <span class="now-label">
+      {%- if bake.status.value == "in_progress" %}Baking{% else %}Planned{% endif %} · {{ bake.recipe.name -}}
+    </span>
+    <strong class="clock-what">{% if verb %}<span class="clock-verb">{{ verb }}</span> {% endif %}{{ what }}</strong>
+    {% if target %}
+    <span class="clock-when">
+      <span class="clock-time">{{ target | local_time }}</span>
+      <span class="clock-away">{{ target | until(now) }}</span>
+    </span>
+    {% endif %}
+    {% if view and view.next_hands_on and view.next_hands_on.name != what
+          and view.next_hands_on.planned_start %}
+    <span class="muted small">Then {{ view.next_hands_on.name }} at
+      {{ view.next_hands_on.planned_start | local_time }}</span>
+    {% endif %}
+    {% if view and view.is_behind %}
+    <span class="now-behind small">About {{ hours_label(view.behind_min / 60) }} behind the plan</span>
+    {% endif %}
+  </span>
+</a>

@@ -296,6 +296,37 @@ def bake_photos(session: Session) -> list[Photo]:
     )
 
 
+def compare_partners(session: Session, bake) -> dict | None:
+    """What a loaf's photos can be set beside, and the likeliest of them.
+
+    Every photo of every other bake, newest first, each with the bake it is
+    of — and one suggestion: the newest photo of the most recent other bake
+    of the same recipe, because "better than last time?" is the question a
+    loaf just out of the oven is asked. None when there is nothing to
+    compare it with.
+    """
+    others = [photo for photo in bake_photos(session) if photo.owner_id != bake.id]
+    if not others:
+        return None
+    owners = bake_photo_owners(session, others)
+    paired = [(photo, owners[photo.owner_id]) for photo in others if photo.owner_id in owners]
+    if not paired:
+        return None
+
+    recipe_id = bake.version.recipe_id
+    same = [(photo, owner) for photo, owner in paired if owner.version.recipe_id == recipe_id]
+    suggested = None
+    if same:
+        # The bake nearest in time to this one, and its newest photo.
+        nearest = max(same, key=lambda pair: (pair[1].at, pair[0].taken_at))[1]
+        suggested = next(photo for photo, owner in same if owner.id == nearest.id)
+    return {
+        "same": same,
+        "other": [pair for pair in paired if pair not in same],
+        "suggested": suggested.id if suggested else paired[0][0].id,
+    }
+
+
 # --- Writing ---------------------------------------------------------------
 
 
