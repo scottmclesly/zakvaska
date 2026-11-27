@@ -85,3 +85,39 @@ class TestItIsReachable:
 
     def test_it_links_on_to_backup(self, client):
         assert 'href="/backup"' in client.get("/about").text
+
+
+class TestWhoAndWhy:
+    def test_the_illustration_is_served_from_the_app_itself(self, client):
+        """No CDN (CLAUDE.md): the picture is a static file of ours."""
+        text = client.get("/about").text
+        assert "/static/img/about-hobby-1672.webp" in text
+        assert "/static/img/about-hobby-836.webp" in text
+        for size in ("1672", "836"):
+            image = client.get(f"/static/img/about-hobby-{size}.webp")
+            assert image.status_code == 200
+            assert image.headers["content-type"] == "image/webp"
+
+    def test_the_illustration_says_what_it_shows(self, client):
+        """It carries words; someone who cannot see it should get them."""
+        text = client.get("/about").text
+        assert 'alt="A cartoon of a bearded baker' in text
+        assert "Hold my beer" in text
+
+    def test_it_says_who_made_it(self, client):
+        text = client.get("/about").text
+        assert "Created by" in text
+        assert "Scott McLeslie" in text
+
+    def test_it_no_longer_describes_things_as_they_used_to_be(self, client):
+        """Units moved from header chips to settings; rise curves and
+        planning backwards were built."""
+        text = client.get("/about").text
+        assert "chips in the header" not in text
+        assert "Rise curves drawn from the feeding log" not in text
+        assert 'href="/settings"' in text
+
+    def test_it_covers_what_was_added_since(self, client):
+        text = client.get("/about").text
+        for word in ("Plan", "Hints", "Counter mode", "head to head", "Enlarge"):
+            assert word in text, word

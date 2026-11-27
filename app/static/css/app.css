@@ -2366,6 +2366,20 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   stroke-linecap: round;
 }
 
+/* A sentence that should have the line to itself. */
+.hero .sub.sub-line { max-width: none; text-wrap: pretty; }
+
+/* The picture at the head of About: the card's own width, nothing cropped. */
+.about-hero { padding: var(--s-2); overflow: hidden; }
+.about-hero img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--r-lg) - var(--s-2));
+}
+.about-hero figcaption { padding: var(--s-2) var(--s-2) var(--s-1); text-align: center; }
+.about-by-name { margin: 0 0 var(--s-1); font-family: var(--display); font-size: var(--text-xl); }
+
 .about-why { display: flex; align-items: center; gap: var(--s-5); }
 .about-why > div { min-width: 0; }
 .about-art { flex: 0 0 auto; }
