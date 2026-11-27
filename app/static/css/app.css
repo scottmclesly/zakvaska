@@ -390,6 +390,60 @@ h2:not(.section-title),
 .nav-settings.is-here { font-size: var(--text-md); padding: 0 var(--s-3); }
 .nav-settings.is-here .nav-icon { width: 20px; height: 20px; }
 
+/* Wider than a phone, the three sections stand dead centre in the header,
+   the name at one end and Settings at the other, and the section you are
+   in takes the middle place with the other two either side of it. The
+   header is a grid of five tracks for this: the outer two share what is
+   left equally, which is what makes the middle the middle.
+
+   The links keep their order in the page (the tab bar on a phone, and the
+   Tab key, still go Jars, Recipes, Bakes); only where they are drawn moves.
+   Settings is given a fixed width so the page's own actions can sit beside
+   it in the same track without the two having to know each other's size. */
+@media (min-width: 640px) {
+  .topbar {
+    --settings-w: 7.25rem;
+    display: grid;
+    /* The two beside the middle are the same width, wide enough for the
+       longest name, so the middle one is centred on the page and not just
+       in the group; each neighbour leans in towards it. */
+    grid-template-columns:
+      minmax(0, 1fr) var(--side-w) auto var(--side-w) minmax(0, 1fr);
+    --side-w: 8.75rem;
+    column-gap: var(--s-2);
+  }
+  .brand { grid-column: 1; grid-row: 1; justify-self: start; }
+  .sectionnav > .navlink { grid-row: 1; }
+  /* Whichever link lands left of the middle leans right, and the one that
+     lands right of it leans left. The left one is always the earlier of the
+     two in the page; the right one is the third link, or the second when
+     the third is the one in the middle. */
+  .sectionnav > .navlink:not(.nav-settings) { justify-self: end; }
+  .sectionnav > .navlink.is-here:not(.nav-settings) { justify-self: center; }
+  .sectionnav > .navlink:nth-child(3):not(.is-here),
+  .sectionnav > .navlink:nth-child(2):has(~ .is-here:nth-child(3)) { justify-self: start; }
+  /* On Settings, where no section is the current one, they stand in order. */
+  .sectionnav:not(:has(> .is-here:not(.nav-settings))) > .navlink:nth-child(2) { justify-self: center; }
+  .sectionnav > .navlink.is-here:not(.nav-settings) { grid-column: 3; }
+  .nav-settings {
+    grid-column: 5;
+    justify-self: end;
+    justify-content: flex-end;
+    width: var(--settings-w);
+  }
+  .topnav {
+    grid-column: 5;
+    grid-row: 1;
+    justify-self: end;
+    margin: 0 var(--settings-w) 0 0;
+  }
+}
+/* Where there is not room for a page's actions beside all that, they take
+   a line of their own under it. */
+@media (min-width: 640px) and (max-width: 73.7rem) {
+  .topnav { grid-column: 1 / -1; grid-row: 2; margin: 0; }
+}
+
 /* On a phone the sections are a tab bar along the bottom, where a thumb
    is, and the header keeps only the brand and this page's own action. */
 @media (max-width: 639px) {

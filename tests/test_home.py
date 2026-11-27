@@ -185,3 +185,24 @@ def test_a_finished_loaf_takes_the_clock_down(client, session):
     client.post(f"/bakes/{bake_id}/finish", data={"status": "done"})
 
     assert "bake-clock" not in client.get("/").text
+
+
+def test_the_sections_stand_centre_with_the_current_one_in_the_middle():
+    """Wider than a phone the header is five tracks, the outer two equal, and
+    the current section is placed in the third. The links' order in the page
+    does not change: the phone's tab bar and the Tab key rely on it."""
+    from pathlib import Path
+
+    css = (
+        Path(__file__).resolve().parent.parent / "app/static/css/app.css"
+    ).read_text(encoding="utf-8")
+    assert "minmax(0, 1fr) var(--side-w) auto var(--side-w) minmax(0, 1fr)" in css
+    assert ".sectionnav > .navlink.is-here:not(.nav-settings) { grid-column: 3; }" in css
+
+
+def test_nav_links_keep_their_order_in_the_page(client):
+    for path in ("/", "/recipes", "/bakes", "/settings"):
+        nav = client.get(path).text.split('<nav class="sectionnav"')[1].split("</nav>")[0]
+        order = [nav.index(f"<span>{label}</span>")
+                 for label in ("Jars", "Recipes", "Bakes", "Settings")]
+        assert order == sorted(order), path
