@@ -1,0 +1,106 @@
+{# The running sheet: every step, with what was planned and what it took.
+   Expects `bake`, and optionally `sheet_title`. #}
+{% from "partials/icons.html" import icon %}
+<section class="bake-sheet">
+<h2 class="section-title">{{ sheet_title or "Running sheet" }}</h2>
+{% if bake.stage_logs %}
+<ol class="stage-run">
+  {#- The step underway, and the first one not yet begun, are open: those
+      are the two you will tap. Everything else is one line — done steps
+      with what they took, later ones with when they are due and what they
+      ask for — and opens to the same buttons and the same note field. -#}
+  {% set seen = namespace(next=false) %}
+  {% for log in bake.stage_logs %}
+  {% set is_next = not log.actual_start and not seen.next %}
+  {% if is_next %}{% set seen.next = true %}{% endif %}
+  {% set open = log.is_running or is_next %}
+  <li class="card stage-step {% if log.is_running %}is-running{% elif log.is_done %}is-done{% elif is_next %}is-next{% else %}is-later{% endif %}">
+    {% if not open %}<details class="stage-fold"><summary>{% endif %}
+    <div class="stage-head">
+      <h3>
+        {{ icon(step_icon(log.step_key, log.name)) }}{{ log.name }}
+        {%- if log.hands_on %}<span class="badge badge-handson">hands on</span>{% endif %}
+      </h3>
+      <span class="stage-facts muted">
+        {%- if log.is_done %}
+        {{ log.actual_start | local_time }} → {{ log.actual_end | local_time }} ·
+        <strong>{{ log.actual_min }} min</strong>
+        {%- if log.drift_min is not none and log.drift_min != 0 %}
+        <span class="drift {{ 'over' if log.drift_min > 0 else 'under' }}">
+          {{ "+" if log.drift_min > 0 }}{{ log.drift_min }} min
+        </span>
+        {%- endif %}
+        {%- else %}
+        {%- if log.planned_start %}{{ log.planned_start | local_time }}{% endif -%}
+        {%- if log.planned_start and log.planned_min %} · {% endif -%}
+        {%- if log.planned_min %}{{ log.planned_min }} min planned{% endif -%}
+        {%- if log.planned_min and log.planned_temp_c is not none %} · {% endif -%}
+        {%- if log.planned_temp_c is not none %}{{ log.planned_temp_c | temp(temp_unit) }}{% endif -%}
+        {%- endif %}
+      </span>
+    </div>
+    {% if not open %}</summary>{% endif %}
+
+    {%- if log.at_peak is not none %}
+    <p class="stage-peak">
+      {{ "At its peak when it was used." if log.at_peak
+         else "Not at its peak — used anyway." }}
+    </p>
+    {%- endif %}
+
+    {% if log.is_done %}
+    <p class="stage-actual muted small">
+      Planned
+      {%- if log.planned_start %} {{ log.planned_start | local_time }}{% endif -%}
+      {%- if log.planned_min %} · {{ log.planned_min }} min{% endif -%}
+      {%- if log.planned_temp_c is not none %} · {{ log.planned_temp_c | temp(temp_unit) }}{% endif %}
+    </p>
+    {% elif log.is_running %}
+    <p class="stage-actual">
+      Started {{ log.actual_start | local_time }} ·
+      <strong>{{ log.actual_start | since(now) }}</strong>
+    </p>
+    {% endif %}
+
+    {#- What a first loaf taught about this step. Open on the two steps
+        in hand; folded inside the others. Never in the way of the button. -#}
+    {% with hint_list = hints.step(log, bake), hints_open = open,
+            hints_label = "Tips for this step" %}
+      {% include "partials/hints.html" %}
+    {% endwith %}
+
+    <div class="row-actions">
+      {% if not log.actual_start %}
+      <form method="post" action="/bakes/{{ bake.id }}/stages/{{ log.id }}/start">
+        <button class="btn {{ 'btn-big' if open else 'btn-secondary' }}" type="submit">Start {{ log.name }}</button>
+      </form>
+      {% elif log.is_running %}
+      <form method="post" action="/bakes/{{ bake.id }}/stages/{{ log.id }}/end">
+        <button class="btn btn-big" type="submit">Done with {{ log.name }}</button>
+      </form>
+      {% endif %}
+      {% if log.actual_start %}
+      <form method="post" action="/bakes/{{ bake.id }}/stages/{{ log.id }}/clear">
+        <button class="btn btn-small btn-secondary" type="submit">Undo</button>
+      </form>
+      {% endif %}
+    </div>
+
+    <form class="inline-form stage-note" method="post"
+          action="/bakes/{{ bake.id }}/stages/{{ log.id }}/note">
+      <label class="sr-only" for="note-{{ log.id }}">Note on {{ log.name }}</label>
+      <textarea id="note-{{ log.id }}" name="notes" rows="2"
+                placeholder="How did it go?">{{ log.notes or '' }}</textarea>
+      <button class="btn btn-small btn-secondary" type="submit">Save note</button>
+    </form>
+    {% if not open %}</details>
+    {#- What the step asks for, readable without opening it. -#}
+    {% if log.notes %}<p class="stage-brief muted small">{{ log.notes }}</p>{% endif %}
+    {% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="card muted">This recipe version had no stages, so there is nothing to tick off.</p>
+{% endif %}
+</section>

@@ -1,0 +1,60 @@
+{# A bake that is planned or underway: the layout for doing it.
+   Included by bakes/detail.html; expects everything that page was given. #}
+{% from "partials/icons.html" import icon %}
+<section class="hero">
+  <div class="jar-title">
+    <h1>{{ bake.recipe.name }}</h1>
+    <span class="badge badge-status status-{{ bake.status.value }}">{{ bake.status.label }}</span>
+    {% if bake.archived %}<span class="badge">archived</span>{% endif %}
+  </div>
+  <p class="sub">
+    <a href="/recipes/{{ bake.recipe.id }}/v/{{ bake.version.version }}">{{ bake.version.label }}</a>
+    · {{ bake.method.label }}
+    {%- if bake.jar %} · <a href="/jars/{{ bake.jar.id }}">{{ bake.jar.name }}</a>{% endif %}
+    {%- if bake.program %} · {{ bake.program.name }}{% endif %}
+  </p>
+</section>
+
+{#- Across the top, where the bake has got to: the day drawn out, as wide as
+    it can be because it is the picture you steer by, with the Now panel
+    standing beside it. Under that, two columns: what to weigh and what came
+    of it on the left, the running sheet you tap on the right. On a phone it
+    is one column — now, the day, then the sheet. -#}
+
+{#- Everything on this page that answers "where am I?" — the elapsed
+    minutes, the Now panel's countdowns, the `now` line down the day —
+    refreshes together. The running sheet below is deliberately outside it:
+    its rows carry a note field apiece, and a refresh that wiped a
+    half-written note would cost more than a stale minute count.
+    Nothing in here takes typing. -#}
+<div id="bake-live" {{ live("/bakes/" ~ bake.id, "#bake-live") }}>
+<div class="bake-top">
+<div class="bake-top-side">
+{% include "bakes/parts/figures.html" %}
+
+{% if now_view and not bake.status.is_finished %}
+{% include "partials/bake_now.html" %}
+{% endif %}
+
+</div>
+
+{% include "bakes/parts/day.html" %}
+</div>
+</div>
+
+<div class="split bake-page">
+<div class="stack">
+
+{% include "bakes/parts/weigh_out.html" %}
+
+{% with owner_type = "bake", owner_id = bake.id, gallery_title = "Photos of this loaf" %}
+{% include "partials/photo_gallery.html" %}
+{% endwith %}
+
+{% include "bakes/parts/result.html" %}
+
+{% include "bakes/parts/manage.html" %}
+</div>
+
+{% include "bakes/parts/sheet.html" %}
+</div>

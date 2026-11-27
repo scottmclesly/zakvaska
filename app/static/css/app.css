@@ -1624,6 +1624,94 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .bake-page .section-title { margin: 0; }
 .bake-page .ribbon-card,
 .bake-page .gallery-block { margin: 0; }
+/* --- A finished bake, shown off ------------------------------------------
+   bakes/parts/showcase.html. The photograph leads, big, with the name, the
+   stars and the verdict beside it; the figures, the other photos and the
+   record of the day follow. */
+.showcase { display: flex; flex-direction: column; gap: var(--s-5); }
+.showcase-hero {
+  display: grid;
+  gap: var(--s-5);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+}
+@media (min-width: 900px) {
+  .showcase-hero { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: var(--s-6); }
+  .showcase-hero.has-no-photo { grid-template-columns: minmax(180px, 280px) minmax(0, 1fr); }
+}
+.showcase-cover { min-width: 0; }
+.showcase-photo {
+  position: relative;
+  display: block;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--card);
+  box-shadow: var(--lift-2);
+  /* A print on the counter, not a tile in a grid. */
+  outline: 6px solid var(--card);
+  outline-offset: 0;
+  rotate: -0.6deg;
+}
+.showcase-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  transition: transform 260ms ease-out;
+}
+.showcase-photo:hover img { transform: scale(1.02); }
+.showcase-photo .photo-caption { font-size: var(--text-sm); padding: var(--s-6) var(--s-4) var(--s-3); }
+.showcase-standin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  border: 2px dashed var(--line);
+  border-radius: var(--r-lg);
+  text-align: center;
+}
+.showcase-standin .loaf-art { width: min(100%, 200px); }
+.showcase-standin p { margin: 0; }
+
+.showcase-words { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }
+.showcase-words > * { margin: 0; }
+.showcase-when {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.showcase-words h1 { margin: 0; font-size: var(--text-2xl); line-height: 1.1; text-wrap: balance; }
+.showcase-words .sub { color: var(--ink-soft); }
+.showcase-stars { font-size: var(--text-2xl); line-height: 1; }
+.showcase-stars .stars { letter-spacing: 3px; }
+.showcase-verdict {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--s-3) var(--s-5);
+}
+.showcase-verdict > div { min-width: 0; }
+.showcase-verdict dt {
+  display: flex;
+  align-items: center;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+.showcase-verdict dt .icon { width: 16px; height: 16px; margin-right: var(--s-2); }
+.showcase-verdict dd { margin: var(--s-1) 0 0; font-weight: 600; }
+.showcase-next { max-width: none; }
+.showcase-words .row-actions { margin-top: var(--s-1); }
+
+/* In the showcase the figures always take the row in one line. */
+.showcase > .bake-figures .stats { grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
+.showcase .gallery-block { margin: 0; }
+.showcase .section-title { margin-top: 0; }
+.showcase-record .ribbon-card { margin: 0; }
+
 /* The top of a bake's page: the day, as wide as it can be, and where the
    bake has got to standing beside it. One live region, so the `now` line on
    the picture and the countdown in the panel cannot disagree. */

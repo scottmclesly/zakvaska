@@ -1,0 +1,11 @@
+{# The bake's day drawn out. Expects `timeline` (may be none). #}
+{% from "partials/icons.html" import icon %}
+{% if timeline %}
+<section class="card ribbon-card bake-day" data-chart="bake-day">
+  <h2 class="section-title">The day</h2>
+  {% include "partials/bake_timeline.html" %}
+  <p class="ribbon-key muted">
+    Thicker bars need you in the kitchen; shaded bands are where you are busy.
+  </p>
+</section>
+{% endif %}

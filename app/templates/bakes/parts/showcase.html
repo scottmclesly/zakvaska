@@ -1,0 +1,99 @@
+{# A finished bake: the loaf, shown off.
+   Included by bakes/detail.html; expects everything that page was given.
+
+   The photograph leads, with the name, the stars and the verdict beside it.
+   Then the bake in figures, the rest of the photos, and two columns: what
+   went into it, and how the day went — the timeline and the running sheet,
+   which are history now rather than instruments. #}
+{% from "partials/icons.html" import icon %}
+{%- set cover = photos[0] if photos else none -%}
+{%- set result = bake.result -%}
+<article class="showcase">
+  <header class="showcase-hero{% if not cover %} has-no-photo{% endif %}">
+    <div class="showcase-cover">
+      {% if cover %}
+      <a class="showcase-photo" href="{{ cover.url }}" target="_blank" rel="noopener"
+         data-photo-open="photo-{{ cover.id }}">
+        <img src="{{ cover.url }}"
+             alt="{{ cover.caption or 'The loaf: ' ~ bake.recipe.name }}">
+        {% if cover.caption %}<span class="photo-caption">{{ cover.caption }}</span>{% endif %}
+      </a>
+      {% else %}
+      {#- No photograph yet: the drawing stands in, and says so. -#}
+      <div class="showcase-standin">
+        {% with recipe = bake.recipe, art_class = "loaf-art-lg" %}
+          {% include "partials/loaf_art.html" %}
+        {% endwith %}
+        <p class="muted small">No photo of this one yet. Add one below.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="showcase-words">
+      <p class="showcase-when">
+        {{ icon({"dutch_oven": "pot", "oven": "oven", "bread_maker": "machine"}[bake.method.value]) }}
+        {{- bake.at | local_day }} · {{ bake.method.label }}
+        {%- if bake.program %} · {{ bake.program.name }}{% endif %}
+      </p>
+      <div class="jar-title">
+        <h1>{{ bake.recipe.name }}</h1>
+        <span class="badge badge-status status-{{ bake.status.value }}">{{ bake.status.label }}</span>
+        {% if bake.archived %}<span class="badge">archived</span>{% endif %}
+      </div>
+      <p class="sub">
+        <a href="/recipes/{{ bake.recipe.id }}/v/{{ bake.version.version }}">{{ bake.version.label }}</a>
+        {%- if bake.jar %} · raised by <a href="/jars/{{ bake.jar.id }}">{{ bake.jar.name }}</a>{% endif %}
+      </p>
+
+      {% if result %}
+      {% if result.rating %}
+      <p class="showcase-stars">{% include "partials/stars.html" with context %}</p>
+      {% endif %}
+      <dl class="showcase-verdict">
+        {% for label, value in [("Crust", result.crust), ("Crumb", result.crumb),
+                                ("Taste", result.taste), ("Rise", result.rise)] %}
+        {% if value %}
+        <div><dt>{{ icon(label | lower) }}{{ label }}</dt><dd>{{ value }}</dd></div>
+        {% endif %}
+        {% endfor %}
+      </dl>
+      {% if result.next_time %}
+      <p class="bake-verdict showcase-next">
+        <span class="bake-next-label">Next time</span>
+        {{ result.next_time }}
+      </p>
+      {% endif %}
+      <div class="row-actions">
+        <a class="btn btn-secondary" href="/bakes/{{ bake.id }}/result">Edit the result</a>
+      </div>
+      {% else %}
+      <p class="muted">Baked, and nothing written up yet. How did it turn out?</p>
+      <div class="row-actions">
+        <a class="btn btn-big" href="/bakes/{{ bake.id }}/result">Record the result</a>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+
+  {% include "bakes/parts/figures.html" %}
+
+  {% with owner_type = "bake", owner_id = bake.id, gallery_title = "Photos of this loaf" %}
+  {% include "partials/photo_gallery.html" %}
+  {% endwith %}
+
+  <div class="split split--even showcase-record">
+    <div class="stack">
+      {% with weigh_title = "What went into it" %}
+      {% include "bakes/parts/weigh_out.html" %}
+      {% endwith %}
+      {% include "bakes/parts/manage.html" %}
+    </div>
+    <div class="stack">
+      <h2 class="section-title">How the day went</h2>
+      {% include "bakes/parts/day.html" %}
+      {% with sheet_title = "Step by step" %}
+      {% include "bakes/parts/sheet.html" %}
+      {% endwith %}
+    </div>
+  </div>
+</article>

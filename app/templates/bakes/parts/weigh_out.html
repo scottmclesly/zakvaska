@@ -1,0 +1,33 @@
+{# What went into it, scaled to the flour it was baked with.
+   Expects `scaled` (may be none) and optionally `weigh_title`. #}
+{% from "partials/icons.html" import icon %}
+{% if scaled %}
+<h2 class="section-title">{{ weigh_title or "Weigh out" }}</h2>
+<div class="card table-card">
+  <table class="data">
+    <thead>
+      <tr>
+        <th scope="col">Ingredient</th>
+        <th scope="col" class="numeric">Baker's %</th>
+        <th scope="col" class="numeric">{{ unit_label(weight_unit) | capitalize }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for line in scaled.ingredients %}
+      <tr>
+        <td>{{ line.name }}</td>
+        <td class="numeric">{{ line.baker_pct | percent(1) }}</td>
+        <td class="numeric strong">{{ line.grams | weigh(weight_unit, line.name, line.role) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <th scope="row">Total dough</th>
+        <td class="numeric">{{ scaled.total_pct | percent(1) }}</td>
+        <td class="numeric strong">{{ scaled.total_dough_g | weigh_total(weight_unit) }}</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% endif %}

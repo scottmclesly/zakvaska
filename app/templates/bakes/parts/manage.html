@@ -1,0 +1,24 @@
+{# Setting a bake's status, and archiving it. Expects `bake`, `statuses`. #}
+{% from "partials/icons.html" import icon %}
+<details class="card disclosure">
+  <summary>Status, or put this bake away</summary>
+  <form class="inline-form" method="post" action="/bakes/{{ bake.id }}/finish">
+    <label class="sr-only" for="bake-status">Status</label>
+    <select id="bake-status" name="status">
+      {% for option in statuses %}
+      <option value="{{ option.value }}" {% if option == bake.status %}selected{% endif %}>
+        {{ option.label }}
+      </option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-secondary" type="submit">Set status</button>
+  </form>
+
+  <form class="inline-form" method="post" action="/bakes/{{ bake.id }}/archive">
+    <input type="hidden" name="archived" value="{{ '0' if bake.archived else '1' }}">
+    <button class="btn btn-secondary" type="submit">
+      {{ "Unarchive this bake" if bake.archived else "Archive this bake" }}
+    </button>
+    <span class="muted">Bakes are archived, never deleted.</span>
+  </form>
+</details>
