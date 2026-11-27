@@ -699,3 +699,69 @@ def test_a_freshly_fed_jar_s_row_does_not(client, session):
     _feed(session, jar, at=_hours_ago(1))
 
     assert 'class="ribbon-wait"' not in client.get(f"/jars/{jar.id}").text
+
+
+# --- The next feed, however far off --------------------------------------
+
+
+def test_a_feed_moved_past_the_ribbon_is_still_the_next_feed(session):
+    """At every hour of the day.
+
+    The route test above moves a feed to four in the morning two days out,
+    by the real clock. Run between midnight and four, that is more than the
+    ribbon's forty-eight hours away, and the plan used to come back empty:
+    the page said "nothing planned yet" about a feed it had just been told
+    to plan, and the test failed for four hours a night. A plan now always
+    names its next feed, and this holds it to that around the clock.
+    """
+    import zoneinfo
+
+    tz = zoneinfo.ZoneInfo("America/New_York")
+    jar = _jar(session)
+    for hour in range(24):
+        for minute in (0, 1, 59):
+            now_local = datetime(2026, 11, 27, hour, minute, tzinfo=tz)
+            now = now_local.astimezone(UTC)
+            target = (now_local + timedelta(days=2)).replace(
+                hour=4, minute=0, second=0, microsecond=0
+            ).astimezone(UTC)
+            plan_service.move_next_feed(session, jar, to=target, now=now)
+
+            feeds, anchored = plan_service.planned_feeds(
+                session, jar, now=now, until=now + timedelta(hours=48),
+                last_fed_at=now - timedelta(hours=1),
+            )
+
+            assert anchored
+            assert feeds, f"no plan at {hour:02d}:{minute:02d}"
+            assert feeds[0].at == target, f"{hour:02d}:{minute:02d}"
+
+
+def test_a_feed_inside_the_window_is_not_joined_by_one_outside_it(session):
+    """The extra feed is only ever the lone next one, never an addition."""
+    jar = _jar(session)
+    now = datetime(2026, 11, 27, 15, 0, tzinfo=UTC)
+    until = now + timedelta(hours=48)
+    feeds, _ = plan_service.planned_feeds(
+        session, jar, now=now, until=until, last_fed_at=now - timedelta(hours=1),
+    )
+    assert feeds
+    assert all(feed.at <= until for feed in feeds)
+
+
+def test_the_page_can_take_a_far_move_back(client, session):
+    """With the plan no longer empty, the panel shows the feed and the way
+    back to the usual rhythm, which is what was missing when it mattered."""
+    jar = _jar(session)
+    _feed(session, jar, at=_hours_ago(1))
+    jar_id = jar.id
+    _release(session)
+
+    far = datetime.now(UTC) + timedelta(days=5)
+    client.post(
+        f"/jars/{jar_id}/plan/move", data={"at": far.strftime("%Y-%m-%dT%H:%M")}
+    )
+    page = client.get(f"/jars/{jar_id}").text
+
+    assert "Nothing planned yet" not in page
+    assert f"/jars/{jar_id}/plan/reset" in page

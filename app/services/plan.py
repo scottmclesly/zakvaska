@@ -282,6 +282,9 @@ def planned_feeds(
 ) -> tuple[tuple[PlannedFeed, ...], bool]:
     """Every planned feed from `now` to `until`, and whether it is anchored.
 
+    Never empty for a jar with a plan: when the next feed lies past `until`
+    it is returned alone, so "what is next" always has an answer.
+
     A jar that sleeps has no plan, and nor does one that has never been fed
     and has no anchor: there is nothing to count cycles from.
     """
@@ -331,6 +334,16 @@ def planned_feeds(
         feeds.append(PlannedFeed(at=slot(n), index=index))
         n += 1
         index += 1
+    # The next feed is always worth knowing, however far off it is. `until`
+    # is how far a ribbon can draw, not how far a plan can reach: a feed
+    # moved to the day after tomorrow, or a weekly one in the fridge, lies
+    # past the edge of a 48-hour ribbon and is still the next feed. Without
+    # this the jar's page said "nothing planned yet" about a feed it had
+    # just been told to plan, and offered no way to take the move back. The
+    # ribbon only draws what falls inside its window, so one feed beyond it
+    # costs the drawing nothing.
+    if not feeds:
+        feeds.append(PlannedFeed(at=slot(n), index=index))
     return tuple(feeds), anchored
 
 
