@@ -97,5 +97,5 @@ Rise-curve charts were pulled forward out of that list. Plots are drawn
 server-side: `app/services/charts.py` works out the coordinates and the Jinja
 partials emit inline SVG. No chart library — that would mean a JS build step.
 
-The plan and acceptance checks are in `docs/TODO-v1.md`. Work through it phase by phase,
+The plan and acceptance checks are in `docs/dev/TODO-v1.md`. Work through it phase by phase,
 commit at the end of each phase, and stop to ask if anything is ambiguous.

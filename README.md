@@ -89,7 +89,7 @@ notifications work on the machine running the app and **not** on a phone over
 the LAN. The in-app banner works everywhere.
 
 Getting phone notifications means either serving over HTTPS or the ntfy push
-planned for v2 (`docs/TODO-v1.md`).
+planned for v2 (`docs/dev/TODO-v1.md`).
 
 ## Recipes
 
@@ -245,4 +245,4 @@ that directory and you have backed up the notebook.
 `GET /health` reports database connectivity and data-dir writability.
 
 Conventions and the stack decision live in [CLAUDE.md](CLAUDE.md); the build
-plan is in [docs/TODO-v1.md](docs/TODO-v1.md).
+plan is in [docs/dev/TODO-v1.md](docs/dev/TODO-v1.md).

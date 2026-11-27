@@ -44,7 +44,7 @@ class TestStoring:
         assert stored.path != stored.thumb_path
 
     def test_files_land_under_year_and_month(self, frozen_now):
-        """docs/TODO-v1.md: data/photos/YYYY/MM/."""
+        """docs/dev/TODO-v1.md: data/photos/YYYY/MM/."""
         stored = photo_service.store_bytes(make_image(), now=frozen_now)
         # frozen_now is 2026-03-15 12:00 UTC, which is 08:00 in New York.
         assert stored.path.startswith("2026/03/")

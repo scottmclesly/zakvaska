@@ -1,6 +1,6 @@
 """Photos through HTTP, the way a phone uses them.
 
-The last class is Phase 5's acceptance check from docs/TODO-v1.md: a photo
+The last class is Phase 5's acceptance check from docs/dev/TODO-v1.md: a photo
 shot on a phone uploads, displays correctly rotated, and survives restart.
 """
 
