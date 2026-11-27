@@ -833,3 +833,61 @@ def test_the_ribbon_draws_projections_dashed_and_the_duel_does_not(client, sessi
     assert 'class="ribbon-curve is-projected"' in ribbon_card
     assert "If fed as planned at" in ribbon_card
     assert page.count("is-projected") == ribbon_card.count("is-projected")
+
+
+# --- The wait between one rise and the next -------------------------------
+
+
+def test_the_gap_before_each_planned_feed_is_drawn_as_hungry(session):
+    """A rise that gives out before the next feed leaves the jar waiting.
+    That stretch is drawn, ahead of now as well as behind it, so the space
+    between a curve and the projection after it is never just blank."""
+    import zoneinfo
+
+    tz = zoneinfo.ZoneInfo("America/New_York")
+    jar = _jar(session, feeds_per_day=1)
+    now = datetime(2026, 11, 27, 15, 0, tzinfo=UTC)
+    # A quick 1:1 feed on a once-a-day rhythm: spent long before the next.
+    _feed(session, jar, at=now - timedelta(hours=2), starter=40.0, flour=40.0, water=40.0)
+
+    drawn, plans = plan_service.build_ribbon(session, [jar], now=now, tz=tz, span_h=48)
+    row = drawn.rows[0]
+
+    assert row.projections, "nothing projected, so nothing to check against"
+    assert row.waits
+    first = row.waits[0]
+    next_feed = plans[jar.id].next_feed_at
+    assert first.since >= now
+    assert first.until == next_feed
+    assert first.x1 < first.x2
+    # Each wait ends where a projection begins, or at the edge of the chart.
+    starts = {round(curve.x, 2) for curve in row.projections}
+    for wait in row.waits:
+        if wait.until is not None and wait.until <= drawn.end:
+            assert round(wait.x2, 2) in starts
+
+
+def test_a_rise_that_lasts_until_the_next_feed_has_no_wait(session):
+    """Fed often enough, the jar is never spent before it is fed again."""
+    import zoneinfo
+
+    tz = zoneinfo.ZoneInfo("America/New_York")
+    jar = _jar(session, feeds_per_day=2)
+    now = datetime(2026, 11, 27, 15, 0, tzinfo=UTC)
+    # A stiff 1:10 feed takes far longer than twelve hours to run its course.
+    _feed(session, jar, at=now - timedelta(hours=1), starter=10.0, flour=100.0, water=100.0)
+
+    drawn, _ = plan_service.build_ribbon(session, [jar], now=now, tz=tz, span_h=48)
+
+    assert drawn.rows[0].waits == ()
+
+
+def test_the_page_says_how_long_the_wait_is(client, session):
+    jar = _jar(session, feeds_per_day=1)
+    _feed(session, jar, at=_hours_ago(2), starter=40.0, flour=40.0, water=40.0)
+    _release(session)
+
+    page = client.get("/").text
+
+    assert 'class="ribbon-wait is-projected"' in page
+    assert "until the feed planned at" in page

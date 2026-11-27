@@ -3546,6 +3546,10 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   opacity: 0.7;
 }
 
+/* The same wait, still to come: a shade fainter than one already sat through. */
+.ribbon-wait.is-projected .ribbon-path { opacity: 0.75; }
+.ribbon-wait.is-projected .ribbon-wait-label { opacity: 0.8; }
+
 /* Waiting on a feed: the hungry band's own dashes, along the baseline. */
 .ribbon-wait-label { fill: var(--band-hungry); font-size: var(--text-xs); font-weight: 600; }
 .duel-wait { stroke: var(--series); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 3 4; }
