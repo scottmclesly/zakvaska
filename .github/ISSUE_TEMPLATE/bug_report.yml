@@ -1,0 +1,54 @@
+name: Something is wrong
+description: The app did something it should not have, or would not do something it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. The version is on the **About** page (footer), under "This notebook".
+        Please do not attach your export or database: they hold your whole notebook.
+  - type: dropdown
+    id: install
+    attributes:
+      label: How do you run zakvaska?
+      options:
+        - Desktop app, macOS
+        - Desktop app, Windows
+        - Docker on a Raspberry Pi
+        - Docker, somewhere else
+        - From source
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: From the About page, e.g. 1.0.0
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what you got instead.
+      placeholder: |
+        1. On a jar's page I pressed "Fed it"
+        2. I expected ...
+        3. Instead ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Anything from the log?
+      description: |
+        Desktop: tray icon, "Show notebook folder", then `logs/server.log` and `logs/app.log`.
+        Docker: `docker compose logs --tail 50`.
+        Paste the last lines around when it happened. Leave empty if there is nothing.
+      render: text
+  - type: input
+    id: system
+    attributes:
+      label: System
+      description: e.g. macOS 15.2 on an M2, Windows 11, Raspberry Pi 4 with 64-bit Pi OS

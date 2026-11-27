@@ -17,6 +17,10 @@ Comparing jars and iterating recipes is the point, so the data must be structure
 - **APScheduler** (in-process) for alerts
 - **Pillow** (+ **pillow-heif**, so iPhone HEIC opens) for photo renditions and thumbnails
 - **pytest** + **httpx2** TestClient (starlette 1.10 deprecated plain `httpx` here)
+- **tzdata** (data only): Windows and slim containers have no zone database
+- Build-time only, never imported by `app/`: **PyInstaller** (freezes the server) and
+  **Tauri 2** (Rust shell; its CLI comes from npm in `desktop/`). The app itself still
+  has no JS build step.
 - Installable **PWA** (manifest + minimal service worker) so a phone on the LAN can use it
 
 ## Conventions
@@ -88,14 +92,36 @@ An export from an older schema is rebuilt in a scratch database and brought
 forward by the real migrations, and the notebook as it stood is exported to
 `data/backups/before-restore-<stamp>.zip` first.
 
+## Shipping (v1.0.0 onwards)
+Two install paths, both built by `.github/workflows/release.yml` on a `v*.*.*` tag.
+`docs/RELEASING.md` is the checklist; `docs/SIGNING.md` is what to add for signing.
+- **Docker**: `Dockerfile` + `docker-compose.yml` must stay zero-config: every
+  `${VAR}` in the compose file has a default. Data is the named volume
+  `zakvaska-data` at `/data`. `scripts/docker-install.sh` is installer and updater.
+  `requirements.txt` is runtime only; test tools live in `requirements-dev.txt`.
+- **Desktop**: `desktop/` (see its README). The shell starts the frozen server with
+  the same `ZAKVASKA_*` variables, so nothing under `app/` may assume how it was
+  started. The one thing pages know is the `ZakvaskaDesktop` mark in the browser
+  name (`is-desktop` on `<html>`), used only to hide the browser-notification offer.
+  A link the window should save (an export) needs nothing special; a link that
+  leaves `127.0.0.1` opens in the real browser.
+- **The server never calls out.** The update check is the browser asking GitHub,
+  on a button press. Keep it that way.
+- **One version, three places**: `app/__init__.py`, `desktop/src-tauri/Cargo.toml`,
+  and the top section of `CHANGELOG.md`, which is also the release notes.
+  `tests/test_release.py` holds them together.
+- Keep `alembic.ini` plain ASCII: it is read in the system's encoding, and on
+  Windows and in the frozen server that is not UTF-8.
+- `app/services/demo.py` fills an **empty** notebook only, through the services.
+
 ## Out of scope for v1 (planned v2 — don't build yet, but don't block them)
 Back-scheduling a bake from a target time, sensor ingest API
-(`POST /api/readings` for an ESP32 temp/humidity + ToF rise sensor), ntfy phone push,
-Raspberry Pi systemd deployment.
+(`POST /api/readings` for an ESP32 temp/humidity + ToF rise sensor), ntfy phone push.
+(The Pi is served by the Docker image now, not a systemd unit.)
 
 Rise-curve charts were pulled forward out of that list. Plots are drawn
 server-side: `app/services/charts.py` works out the coordinates and the Jinja
 partials emit inline SVG. No chart library — that would mean a JS build step.
 
-The plan and acceptance checks are in `docs/dev/TODO-v1.md`. Work through it phase by phase,
-commit at the end of each phase, and stop to ask if anything is ambiguous.
+The original v1 plan and its acceptance checks are in `docs/dev/TODO-v1.md` (all done).
+Commit at the end of each piece of work, and stop to ask if anything is ambiguous.
