@@ -765,3 +765,71 @@ def test_the_page_can_take_a_far_move_back(client, session):
 
     assert "Nothing planned yet" not in page
     assert f"/jars/{jar_id}/plan/reset" in page
+
+
+# --- What the plan would bring --------------------------------------------
+
+
+def test_each_planned_feed_ahead_projects_the_last_feeds_rise(session):
+    """The same jar, fed the same way on the same rhythm, does the same
+    thing: each planned feed still to come carries the last real feed's
+    curve, and stops where the feed after it begins."""
+    jar = _jar(session, feeds_per_day=2)
+    now = datetime(2026, 11, 27, 15, 0, tzinfo=UTC)
+    _feed(session, jar, at=now - timedelta(hours=2))
+    start, end = now - timedelta(hours=6), now + timedelta(hours=48)
+
+    series, made = plan_service.jar_series(
+        session, jar, now=now, start=start, end=end
+    )
+
+    ahead = [feed for feed in made.planned if feed.at >= now]
+    assert len(ahead) >= 3
+    assert [mark.at for mark in series.projected] == [feed.at for feed in ahead]
+    real = series.feeds[-1]
+    for index, mark in enumerate(series.projected):
+        assert mark.peak_h == real.peak_h
+        assert mark.ratio_label == real.ratio_label
+        following = ahead[index + 1].at if index + 1 < len(ahead) else None
+        assert mark.ends_at == following
+    # History is untouched: the projections are not feeds.
+    assert all(mark.at <= now for mark in series.feeds)
+
+
+def test_a_missed_feed_projects_nothing_from_itself(session):
+    """A planned feed already in the past set nothing off."""
+    jar = _jar(session, feeds_per_day=2)
+    now = datetime(2026, 11, 27, 15, 0, tzinfo=UTC)
+    _feed(session, jar, at=now - timedelta(hours=20))
+    series, made = plan_service.jar_series(
+        session, jar, now=now,
+        start=now - timedelta(hours=6), end=now + timedelta(hours=48),
+    )
+
+    assert any(feed.at < now for feed in made.planned)
+    assert all(mark.at >= now for mark in series.projected)
+
+
+def test_a_jar_never_fed_projects_nothing(session):
+    jar = _jar(session)
+    now = datetime(2026, 11, 27, 15, 0, tzinfo=UTC)
+    series, _ = plan_service.jar_series(
+        session, jar, now=now,
+        start=now - timedelta(hours=6), end=now + timedelta(hours=48),
+    )
+    assert series.projected == ()
+
+
+def test_the_ribbon_draws_projections_dashed_and_the_duel_does_not(client, session):
+    first = _jar(session, name="Old Rye", flour_type="whole rye")
+    second = _jar(session, name="Soviet rye", flour_type="whole rye", is_control=True)
+    _feed(session, first, at=_hours_ago(2))
+    _feed(session, second, at=_hours_ago(2))
+    _release(session)
+
+    page = client.get("/").text
+
+    ribbon_card = page.split('data-chart="ribbon"')[1].split("</figure>")[0]
+    assert 'class="ribbon-curve is-projected"' in ribbon_card
+    assert "If fed as planned at" in ribbon_card
+    assert page.count("is-projected") == ribbon_card.count("is-projected")

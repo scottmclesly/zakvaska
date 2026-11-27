@@ -138,6 +138,12 @@ class RibbonSeries:
     name: str
     jar_id: int
     feeds: Sequence[FeedMark] = ()
+    #: The rises the planned feeds would set off, if each is made on time
+    #: and like the last one. Not feeds: nothing here has happened, and they
+    #: are kept apart from `feeds` so that nothing which reads what the jar
+    #: has actually done (the hungry line, the head-to-head) mistakes a
+    #: projection for history.
+    projected: Sequence[FeedMark] = ()
     planned: Sequence[PlannedMark] = ()
     observations: Sequence[ObservationMark] = ()
     is_control: bool = False
@@ -256,6 +262,9 @@ class RibbonRow:
     hungry_x1: float | None = None
     hungry_x2: float | None = None
     hungry_since: datetime | None = None
+    #: The rises still to come if the plan is kept, drawn dashed. See
+    #: `RibbonSeries.projected`.
+    projections: tuple[RiseCurve, ...] = ()
 
     @property
     def hungry_width(self) -> float:
@@ -560,25 +569,25 @@ def _ribbon_at(
         curve_top = top + label_h
         baseline = curve_top + curve_h
 
-        curves: list[RiseCurve] = []
-        for feed in one.feeds:
+        def lay(feed: FeedMark) -> RiseCurve:
             sampled = _curve_points(
                 feed, start=start, end=end, x_for=x_for,
                 baseline=baseline, height=curve_h,
             )
             peak_at = feed.at + timedelta(hours=feed.peak_h)
-            curves.append(
-                RiseCurve(
-                    segments=_segment(sampled),
-                    feed=feed,
-                    x=x_for(feed.at),
-                    peak_x=(
-                        x_for(peak_at) if start <= peak_at <= end else None
-                    ),
-                    peak_at=peak_at,
-                    baseline=baseline,
-                )
+            return RiseCurve(
+                segments=_segment(sampled),
+                feed=feed,
+                x=x_for(feed.at),
+                peak_x=x_for(peak_at) if start <= peak_at <= end else None,
+                peak_at=peak_at,
+                baseline=baseline,
             )
+
+        curves = [lay(feed) for feed in one.feeds]
+        projections = tuple(
+            lay(feed) for feed in one.projected if start <= feed.at < end
+        )
 
         # An observation sits at its measured rise, against the prediction:
         # 100% — a doubling — reads as the top of the band, so a jar that
@@ -622,6 +631,7 @@ def _ribbon_at(
                 label_y=label_y,
                 is_estimate=one.is_estimate,
                 note=one.note,
+                projections=projections,
                 hungry_x1=hungry_x1,
                 hungry_x2=hungry_x2,
                 hungry_since=hungry_since,
