@@ -386,10 +386,18 @@ document.addEventListener("input", (event) => {
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"' +
     ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"/></svg>';
+  var CLOSE =
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"' +
+    ' stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>';
   var open = null;
 
+  // An icon and nothing else to look at. The word is still there for a
+  // screen reader, and as the tooltip for anyone who wonders what the
+  // arrows do.
   function label(button, zoomed) {
-    button.innerHTML = ICON + "<span>" + (zoomed ? "Close" : "Enlarge") + "</span>";
+    var word = zoomed ? "Close" : "Enlarge";
+    button.innerHTML = (zoomed ? CLOSE : ICON) + '<span class="sr-only">' + word + "</span>";
+    button.title = word;
     button.setAttribute("aria-pressed", zoomed ? "true" : "false");
   }
 
