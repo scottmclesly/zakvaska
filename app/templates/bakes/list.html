@@ -71,33 +71,74 @@
 </div>
 
 {% if bakes %}
-<ul class="plain bake-list">
-  {% for bake in bakes %}
-  {#- One loaf: what it was and when on the left, how it turned out on the
-      right, and under them the note to self — which is the line you come
-      back to this page for. -#}
-  <li class="card bake-row">
-    <div class="bake-row-head">
-      <h2><a href="/bakes/{{ bake.id }}">{{ bake.label }}</a></h2>
-      <div class="bake-row-end">
-        {% if bake.result and bake.result.rating %}
-        {% include "partials/stars.html" with context %}
-        {% endif %}
-        <span class="badge badge-status status-{{ bake.status.value }}">{{ bake.status.label }}</span>
-      </div>
+{#- One line over the wall: what there is to be pleased about. -#}
+<p class="bake-tally">
+  <strong>{{ summary.loaves }}</strong> {{ "loaf" if summary.loaves == 1 else "loaves" }}
+  {%- if summary.photographed %}
+  <span class="bake-tally-sep" aria-hidden="true">·</span>
+  <strong>{{ summary.photographed }}</strong> photographed
+  {%- endif %}
+  {%- if summary.average is not none %}
+  <span class="bake-tally-sep" aria-hidden="true">·</span>
+  <span class="stars" aria-hidden="true">★</span> <strong>{{ summary.average }}</strong>
+  on average{% if summary.rated != summary.loaves %} over {{ summary.rated }}{% endif %}
+  {%- endif %}
+</p>
+{#- The newest loaf with a photograph is hung larger than the rest, unless
+    the list has been narrowed to something in particular. -#}
+{%- set ns = namespace(featured=none) -%}
+{%- if not any_filter -%}
+  {%- for card in cards if card.cover and ns.featured is none -%}
+    {%- set ns.featured = card.bake.id -%}
+  {%- endfor -%}
+{%- endif %}
+<ul class="plain bake-list bake-wall">
+  {% for card in cards %}
+  {% set bake = card.bake %}
+  {% set featured = (bake.id == ns.featured) %}
+  {#- One loaf, hung on the wall: its photograph, or the drawing of what it
+      was until there is one; what it was and when; how it turned out; and
+      the note to self, which is the line you come back to this page for.
+      The name's link is stretched over the whole card. -#}
+  <li class="card bake-row" data-family="{{ bake.recipe.category.value }}"
+      {%- if featured %} data-featured{% endif %}>
+    <div class="bake-shot{% if card.cover %} has-photo{% endif %}">
+      {% if card.cover %}
+      <img src="{{ card.cover.url if featured else card.cover.thumb_url }}"
+           loading="lazy" decoding="async"
+           alt="{{ card.cover.caption or 'The loaf: ' ~ bake.recipe.name }}">
+      {% if card.photos > 1 %}
+      <span class="bake-shot-count" title="{{ card.photos }} photos">{{ icon("camera") }}{{ card.photos }}</span>
+      {% endif %}
+      {% else %}
+      {% with recipe = bake.recipe, shape = card.shape %}
+        {% include "partials/loaf_art.html" %}
+      {% endwith %}
+      {% endif %}
     </div>
-    <p class="bake-meta muted">
-      {{ bake.at | local_day }} ·
-      {{ icon({"dutch_oven": "pot", "oven": "oven", "bread_maker": "machine"}[bake.method.value]) }}{{ bake.method.label }}
-      {%- if bake.jar %} · <a href="/jars/{{ bake.jar.id }}">{{ bake.jar.name }}</a>{% endif -%}
-      {%- if bake.total_flour_g %} · {{ bake.total_flour_g | weigh_total(weight_unit, flour=true) }} flour{% endif -%}
-    </p>
-    {% if bake.result and bake.result.next_time %}
-    <p class="bake-verdict">
-      <span class="bake-next-label">Next time</span>
-      {{ bake.result.next_time }}
-    </p>
-    {% endif %}
+    <div class="bake-row-body">
+      <div class="bake-row-head">
+        <h2><a class="bake-row-link" href="/bakes/{{ bake.id }}">{{ bake.label }}</a></h2>
+        <div class="bake-row-end">
+          {% if bake.result and bake.result.rating %}
+          {% include "partials/stars.html" with context %}
+          {% endif %}
+          <span class="badge badge-status status-{{ bake.status.value }}">{{ bake.status.label }}</span>
+        </div>
+      </div>
+      <p class="bake-meta muted">
+        {{ bake.at | local_day }} ·
+        {{ icon({"dutch_oven": "pot", "oven": "oven", "bread_maker": "machine"}[bake.method.value]) }}{{ bake.method.label }}
+        {%- if bake.jar %} · <a href="/jars/{{ bake.jar.id }}">{{ bake.jar.name }}</a>{% endif -%}
+        {%- if bake.total_flour_g %} · {{ bake.total_flour_g | weigh_total(weight_unit, flour=true) }} flour{% endif -%}
+      </p>
+      {% if bake.result and bake.result.next_time %}
+      <p class="bake-verdict">
+        <span class="bake-next-label">Next time</span>
+        {{ bake.result.next_time }}
+      </p>
+      {% endif %}
+    </div>
   </li>
   {% endfor %}
 </ul>

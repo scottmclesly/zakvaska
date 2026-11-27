@@ -1,0 +1,29 @@
+[package]
+name = "zakvaska-desktop"
+# The one place the desktop app's version is written. tests/test_release.py
+# holds it equal to app.__version__ and the top of CHANGELOG.md.
+version = "1.0.0"
+description = "A lab notebook for sourdough starters and bakes"
+authors = ["Scott McLeslie"]
+license = "MIT"
+edition = "2021"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-notification = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-opener = "2"
+# Talks to the server on localhost only, so no TLS and none of its weight.
+ureq = { version = "2", default-features = false, features = ["json"] }
+serde_json = "1"
+iana-time-zone = "0.1"
+
+[profile.release]
+strip = true
+lto = true
+opt-level = "s"

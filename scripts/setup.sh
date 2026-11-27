@@ -44,7 +44,7 @@ VENV_PY="$ROOT/.venv/bin/python"
 
 echo "==> Installing dependencies"
 "$VENV_PY" -m pip install --quiet --upgrade pip
-"$VENV_PY" -m pip install --quiet -r "$ROOT/requirements.txt"
+"$VENV_PY" -m pip install --quiet -r "$ROOT/requirements-dev.txt"
 
 if [ ! -f "$ROOT/.env" ]; then
   echo "==> Creating .env from .env.example"

@@ -136,7 +136,7 @@ def _taken_at(image: Image.Image, fallback: datetime) -> datetime:
 
 
 def _folder(when: datetime) -> tuple[Path, str]:
-    """data/photos/YYYY/MM, as the plan asks (docs/TODO-v1.md)."""
+    """data/photos/YYYY/MM, as the plan asks (docs/dev/TODO-v1.md)."""
     local = when.astimezone(get_settings().tz)
     relative = f"{local:%Y/%m}"
     directory = photos_root() / relative

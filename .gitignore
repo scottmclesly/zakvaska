@@ -13,3 +13,23 @@ backups/
 # Third-party manuals: keep local, do not commit
 docs/reference/*.pdf
 docs/facelift/shots/
+
+# Editors: yours, not the project's.
+.vscode/
+.idea/
+
+# A notebook or a log must never be committed, wherever it turns up.
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+*.log
+
+# Desktop app: tools and build output. Cargo.lock and package-lock.json
+# ARE committed, so a release builds from the versions that were tested.
+desktop/node_modules/
+desktop/.venv-build/
+desktop/build/
+desktop/dist/
+desktop/src-tauri/target/
+desktop/src-tauri/gen/

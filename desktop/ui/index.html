@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>zakvaska</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: grid; place-items: center;
+      font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: #f6efe4; color: #3b2a17;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #1f1711; color: #eadfce; }
+    }
+    main { text-align: center; max-width: 32rem; padding: 2rem; }
+    h1 { font-size: 1.6rem; margin: 0 0 .5rem; letter-spacing: .02em; }
+    p { margin: .25rem 0; opacity: .8; }
+    code { font-size: .85em; word-break: break-all; }
+    #problem { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>zakvaska</h1>
+    <p id="starting">Opening the notebook…</p>
+    <div id="problem">
+      <p>The notebook did not open.</p>
+      <p>Quit zakvaska from its tray icon and start it again. If it keeps
+        happening, the reason is written in this file:</p>
+      <p><code id="log"></code></p>
+    </div>
+  </main>
+  <script>
+    // Called by the shell if the server never answers.
+    window.zakvaskaFailed = function (logPath) {
+      document.getElementById("starting").style.display = "none";
+      document.getElementById("log").textContent = logPath;
+      document.getElementById("problem").style.display = "block";
+    };
+  </script>
+</body>
+</html>

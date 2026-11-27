@@ -1,0 +1,38 @@
+# zakvaska with Docker. Nothing here needs editing:
+#
+#     docker compose up -d        then open  http://<this machine>:8420
+#
+# Two optional settings, either in a file called .env beside this one or in
+# the shell. Leave them out and the defaults below are used.
+#
+#     ZAKVASKA_PORT=8420               the port you open in the browser
+#     ZAKVASKA_TZ=America/New_York     your time zone, so feeds ring on your clock
+#
+# Updating:   docker compose pull && docker compose up -d
+# The notebook (database and photos) lives in the volume `zakvaska-data` and
+# survives updates, restarts and `docker compose down`.
+services:
+  zakvaska:
+    image: ghcr.io/scottmclesly/zakvaska:latest
+    container_name: zakvaska
+    restart: unless-stopped
+    ports:
+      - "${ZAKVASKA_PORT:-8420}:8420"
+    environment:
+      ZAKVASKA_TZ: "${ZAKVASKA_TZ:-America/New_York}"
+    volumes:
+      - zakvaska-data:/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8420/health', timeout=4).status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+volumes:
+  zakvaska-data:
+    name: zakvaska-data

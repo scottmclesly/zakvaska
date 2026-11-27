@@ -135,7 +135,7 @@ class BakeStageLog(Base):
     #: correction already in force.
     model_min: Mapped[int | None] = mapped_column(Integer)
     planned_temp_c: Mapped[float | None] = mapped_column(Float)
-    # Back-scheduling fills this in; v1 leaves it null (docs/TODO-v1.md).
+    # Back-scheduling fills this in; v1 leaves it null (docs/dev/TODO-v1.md).
     planned_start: Mapped[datetime | None] = mapped_column(UtcDateTime)
     #: How long before this step the oven wants turning on. Set on a bake
     #: step whose method needs it, from the settings, when the plan is

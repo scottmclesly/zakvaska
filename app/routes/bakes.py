@@ -20,6 +20,7 @@ from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
 from app.services import alerts as alert_service
 from app.services import bakes as bake_service
+from app.services import browse
 from app.services import followalong
 from app.services import jars as jar_service
 from app.services import measures
@@ -80,6 +81,9 @@ def list_bakes(
         context={
             "title": "Bakes",
             "bakes": found,
+            # Each loaf with its photograph, and the line that sums them up.
+            "cards": (cards := browse.bake_cards(ctx.session, found)),
+            "summary": browse.bake_summary(cards),
             "options": bake_service.filter_options(ctx.session),
             "filters": {
                 "recipe": recipe,

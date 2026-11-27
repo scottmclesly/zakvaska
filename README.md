@@ -1,54 +1,184 @@
 # zakvaska
 
-A local, single-user **baking lab notebook**: sourdough starter jars, feedings,
-feeding alerts, recipes (versioned, baker's %), bakes and their results, with photos.
+**A lab notebook for sourdough starters and the bread that comes of them.**
 
-Built to compare a homemade whole-rye starter against a purchased Soviet rye
-culture (the control) on the way to a decent Borodinsky.
+*Zakvaska* (закваска) is Russian for a sourdough starter. This is the notebook
+that sits beside the jar: when it was fed and with what, how high it rose, the
+recipe as it stood the day you baked, and what you would change next time.
 
-The **About** page, linked in the footer, says what each section is for and what
-this particular install is holding.
+![Two starter jars on a shelf, their feeding plan and their rise, side by side](docs/screenshots/jars.png)
 
-> Renamed from **jar-log**. An existing install needs nothing done to it: the old
-> `JARLOG_*` environment keys are still read, and a `jarlog.db` is renamed to
-> `zakvaska.db` the first time the app or a migration opens it.
+It runs on your own computer or a Raspberry Pi. There is no account, no cloud
+and nothing to pay; everything you write stays in one folder that is yours.
 
-## Requirements
+## Why
 
-- Python 3.12 or newer
-- Nothing else — no Node, no build step, no external services
+A starter is an experiment that runs for months, and bread is what you learn
+from it. Free-text notes cannot tell you whether the jar that peaks sooner
+makes the better loaf, or what you changed between the dense one and the good
+one. So this keeps the record as data:
 
-## Setup
+- **Jars** are fed, measured and photographed on a timeline, and two jars on
+  the same flour are drawn against each other. It was built to compare a
+  homemade whole-rye starter with a purchased rye culture, the control, on the
+  way to a proper Borodinsky.
+- **Recipes** are baker's percentages, and versioned: editing one writes a new
+  version, so last month's loaf still means what it meant.
+- **Bakes** are planned against the clock and followed step by step, with a
+  ring for each step, the preheat, the folds and the lid. Then the result is
+  written up, and two loaves can be set side by side.
+- **Alerts** tell you when a jar wants feeding, on your wall clock, around the
+  hours you are asleep.
+
+| A jar | A finished loaf | On a phone |
+|---|---|---|
+| ![A jar's page](docs/screenshots/jar.png) | ![A finished bake](docs/screenshots/bake.png) | ![The dashboard at phone width](docs/screenshots/phone.png) |
+
+## Install
+
+Two ways. Pick the **desktop app** if you want to double-click something and
+bake. Pick **Docker** if you have a Raspberry Pi or a home server and want the
+notebook on every phone and laptop in the house.
+
+| | Desktop app | Docker |
+|---|---|---|
+| For | one computer | a Pi or server, used from any device on your network |
+| Alerts | native notifications, even with the window closed | a banner on every page |
+| Needs | macOS 11+ or Windows 10+ | Docker, on a 64-bit system |
+
+### Desktop app (macOS, Windows)
+
+1. Go to the [latest release](https://github.com/scottmclesly/zakvaska/releases/latest)
+   and download the file for your computer:
+
+   | Your computer | File |
+   |---|---|
+   | Mac with Apple Silicon (M1 and later) | `Zakvaska_x.y.z_aarch64.dmg` |
+   | Mac with an Intel processor | `Zakvaska_x.y.z_x64.dmg` |
+   | Windows | `Zakvaska_x.y.z_x64-setup.exe` |
+
+   Not sure which Mac? Apple menu → About This Mac: "Chip: Apple M…" is Apple
+   Silicon, "Processor: Intel" is Intel.
+
+2. **Mac:** open the `.dmg` and drag Zakvaska onto Applications.
+   **Windows:** run the installer.
+
+3. Open it. **The first time, your system will stop you**, because the app is
+   not yet signed with a paid developer certificate. It is safe to go on; here
+   is how.
+
+   **macOS 15 (Sequoia) and later**
+   1. Double-click Zakvaska. A message says Apple could not verify it. Press **Done**.
+   2. Open **System Settings → Privacy & Security** and scroll down to *Security*.
+   3. Beside "Zakvaska was blocked…", press **Open Anyway**, and confirm.
+   4. Press **Open Anyway** once more in the message that follows.
+
+   **macOS 11 to 14**
+   1. In Applications, hold Control and click Zakvaska (or right-click), and choose **Open**.
+   2. In the message, press **Open**.
+
+   **Windows**
+   1. A blue box says "Windows protected your PC". Press **More info**.
+   2. Press **Run anyway**.
+
+   This is needed once. After that it opens like any other app.
+
+4. Allow notifications when asked, so a feed that is due can tell you.
+
+**Closing the window does not quit.** zakvaska stays in the system tray (the
+menu bar on a Mac, beside the clock on Windows) so alerts keep coming. The tray
+icon's menu opens the window again, checks for updates, shows the folder the
+notebook is kept in, sets whether it starts when you log in, and quits.
+
+Your notebook is kept in your own app-data folder, and updating or reinstalling
+the app never touches it:
+
+- macOS: `~/Library/Application Support/io.github.scottmclesly.zakvaska`
+- Windows: `%APPDATA%\io.github.scottmclesly.zakvaska`
+
+**Updating:** tray icon → *Check for updates…*. If there is a newer one,
+download it and install it over the old.
+
+### Docker (Raspberry Pi, or any Linux box)
+
+On the Pi, one line installs Docker if it is missing, fetches zakvaska, works
+out your time zone, starts it and tells you the address to open:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/scottmclesly/zakvaska/main/scripts/docker-install.sh | sh
+```
+
+That is all. It starts again by itself after a reboot. Open the address it
+prints, `http://<the Pi's address>:8420`, on any phone or computer on your
+network; on a phone, "Add to Home Screen" gives it an icon of its own.
+
+**To update, run the same line again.** Your notebook is kept in a Docker
+volume called `zakvaska-data`, and updating does not touch it.
+
+It needs a 64-bit system: Raspberry Pi OS (64-bit) on a Pi 3 or newer.
+[The script](scripts/docker-install.sh) is short and says what it does at the
+top, if you would like to read it before running it.
+
+<details>
+<summary>Already use Docker? The two files, by hand</summary>
+
+Save [`docker-compose.yml`](docker-compose.yml) into a folder and, in it:
+
+```bash
+docker compose up -d
+```
+
+Nothing needs editing. Two settings are optional, in a file called `.env`
+beside it:
+
+```bash
+ZAKVASKA_PORT=8420            # the port you open in the browser
+ZAKVASKA_TZ=America/New_York  # your time zone, so feeds ring on your clock
+```
+
+| To | Run |
+|---|---|
+| update | `docker compose pull && docker compose up -d` |
+| see the log | `docker compose logs --tail 50` |
+| stop it (the notebook is kept) | `docker compose down` |
+| build from this repository instead | `docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build` |
+
+The image is `ghcr.io/scottmclesly/zakvaska`, built for `amd64` and `arm64`.
+It runs as a non-root user, reports its health, and restarts unless you stop
+it.
+
+</details>
+
+### From source
+
+For working on it. Needs Python 3.12 or newer and nothing else.
 
 ```bash
 ./scripts/setup.sh    # creates .venv, installs pinned deps, runs migrations
 ./scripts/run.sh      # http://127.0.0.1:8420
 ```
 
-`setup.sh` copies `.env.example` to `.env` on first run. Both scripts are safe
-to re-run.
+Settings go in `.env` (see [`.env.example`](.env.example)); set
+`ZAKVASKA_HOST=0.0.0.0` to reach it from a phone.
 
-## Configuration
+## First run
 
-Set in `.env` (see `.env.example`):
+An empty notebook offers a **demo**: two rye jars with a few days of feedings
+and rise measurements, the recipe library, and one finished loaf. Load it to
+look around. Everything it adds has "(demo)" in its name; archive the jars
+when you are ready to start your own.
 
-| Key | Default | Notes |
-|---|---|---|
-| `ZAKVASKA_DATA_DIR` | `./data` | SQLite database and photos. Gitignored. |
-| `ZAKVASKA_HOST` | `127.0.0.1` | Use `0.0.0.0` to reach it from a phone. |
-| `ZAKVASKA_PORT` | `8420` | |
-| `ZAKVASKA_TZ` | `America/New_York` | Timestamps are stored in UTC, shown in this zone. |
+Starting for real is one button: **Add a jar**. The recipes page offers the
+library on its own (33 reference recipes and a West Bend bread maker's
+programs) without the pretend jars.
 
-## Using it from your phone
-
-Set `ZAKVASKA_HOST=0.0.0.0` in `.env`, restart, then open
-`http://<this-machine's-IP>:8420` on a phone on the same network. It is an
-installable PWA — "Add to Home Screen" gives it an icon and a standalone window.
+Before you trust it with months of feedings, look at **Settings → Backup**:
+*Download everything* gives you one zip you can keep anywhere.
 
 ## Units
 
-Weights are stored in grams, always. The chip in the header cycles what you
-*read* them as:
+Weights are stored in grams, always. **Settings** chooses what you read and
+type them as:
 
 | Shown as | Good for |
 |---|---|
@@ -63,9 +193,11 @@ They are approximate on purpose: how hard you pack a cup of flour moves it by
 a fifth, which is exactly why grams are what gets stored. Totals never show as
 cups, because cups of mixed dough would be a made-up number.
 
-The `°F` chip beside it does the same for temperatures.
+Temperatures are set beside it: Fahrenheit or Celsius.
 
-Typing a weight in is still grams — that is what a kitchen scale reads.
+What is shown is also what a bare number is read as when you type one, and a
+written-out unit always wins: "250 g", "1 lb 2 oz" and "1 ½ cups" mean what
+they say whatever the setting.
 
 ## Feeding alerts
 
@@ -80,7 +212,7 @@ restarting the app never loses one — anything that came due while it was down
 fires immediately on the next start. Set `ZAKVASKA_SCHEDULER=0` to run without
 the job.
 
-### Browser notifications only work on this machine
+### Browser notifications only work on the machine running it
 
 While a tab is open, the page can also raise a desktop notification. The
 browser Notification API is restricted to *secure contexts*, and
@@ -89,7 +221,8 @@ notifications work on the machine running the app and **not** on a phone over
 the LAN. The in-app banner works everywhere.
 
 Getting phone notifications means either serving over HTTPS or the ntfy push
-planned for v2 (`docs/TODO-v1.md`).
+planned for a later version. The desktop app does not have this limit: it
+raises native notifications itself.
 
 ## Recipes
 
@@ -190,6 +323,9 @@ starting a bake from it opens the form with all three already set.
 
 ## Seeding
 
+The recipes page has a button for this; from a source install it is also a
+script:
+
 ```bash
 ./scripts/seed.sh --dry-run   # say what would happen, change nothing
 ./scripts/seed.sh             # do it
@@ -208,13 +344,14 @@ Two ways out, for two different jobs.
 **The export**, from the Backup page in the footer, is one zip holding every
 table as JSON, the same rows again as CSV, and the photo files. The JSON is
 what restores; the CSV is for whoever opens this in ten years without the app.
-The same page reads an export back, which replaces everything currently in the
-notebook — rows and photos alike. An export only restores into the schema it
-came from, so run the migrations that match it first; it says so if they do not
-agree.
+The same page reads an export back, in two steps: it checks the file right
+through and shows it against what is here, and only then replaces. An export
+from an older version is brought up to date on the way in, and the notebook as
+it stood is saved to `backups/before-restore-<stamp>.zip` in the data folder
+first, so a restore can itself be undone.
 
-**The script** takes a straight snapshot instead, and is the one to put on a
-timer:
+**The script**, for an install from source, takes a straight snapshot instead,
+and is the one to put on a timer:
 
 ```bash
 ./scripts/backup.sh                 # into ./backups
@@ -237,12 +374,26 @@ that directory and you have backed up the notebook.
 
 ```bash
 .venv/bin/python -m pytest              # tests
-.venv/bin/alembic upgrade head          # apply migrations
 .venv/bin/alembic revision --autogenerate -m "what changed"
 ./scripts/run.sh --reload               # needs: .venv/bin/pip install watchfiles
 ```
 
 `GET /health` reports database connectivity and data-dir writability.
 
-Conventions and the stack decision live in [CLAUDE.md](CLAUDE.md); the build
-plan is in [docs/TODO-v1.md](docs/TODO-v1.md).
+The stack is deliberately small: FastAPI, SQLite through SQLAlchemy, Jinja
+templates with HTMX, and no JavaScript build step. Conventions and the
+reasons for them are in [CLAUDE.md](CLAUDE.md).
+
+| To | Read |
+|---|---|
+| build the desktop app yourself | [desktop/README.md](desktop/README.md) |
+| cut a release | [docs/RELEASING.md](docs/RELEASING.md) |
+| set up code signing | [docs/SIGNING.md](docs/SIGNING.md) |
+| see what changed | [CHANGELOG.md](CHANGELOG.md) |
+
+Bugs and ideas are welcome as
+[issues](https://github.com/scottmclesly/zakvaska/issues/new/choose).
+
+## Licence
+
+[MIT](LICENSE). Use it, change it, bake with it.

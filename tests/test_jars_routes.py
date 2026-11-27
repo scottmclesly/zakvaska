@@ -1,6 +1,6 @@
 """The pages, end to end through HTTP.
 
-The final class is Phase 1's acceptance check from docs/TODO-v1.md, written
+The final class is Phase 1's acceptance check from docs/dev/TODO-v1.md, written
 out as Scott's actual setup: his homemade rye and the Soviet control.
 """
 
@@ -227,7 +227,7 @@ class TestObservation:
 
 
 class TestPhase1Acceptance:
-    """docs/TODO-v1.md: both jars, feedings and observations, on the timeline."""
+    """docs/dev/TODO-v1.md: both jars, feedings and observations, on the timeline."""
 
     def test_scotts_two_jars_side_by_side(self, client):
         homemade = create_jar(

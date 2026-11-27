@@ -1,6 +1,6 @@
 """Photos through HTTP, the way a phone uses them.
 
-The last class is Phase 5's acceptance check from docs/TODO-v1.md: a photo
+The last class is Phase 5's acceptance check from docs/dev/TODO-v1.md: a photo
 shot on a phone uploads, displays correctly rotated, and survives restart.
 """
 
@@ -327,6 +327,8 @@ class TestComparing:
         chosen = re.search(r'<option value="(\d+)" selected>([^<]*)', form)
 
         assert 'action="/photos/compare"' in page
+        # Under what went into the loaf, not up beside the photograph.
+        assert page.index("showcase-record") < page.index('class="compare-with"')
         assert "The same recipe" in form
         assert "last time" in chosen.group(2)
         assert chosen.group(1) != mine

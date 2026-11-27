@@ -1,6 +1,6 @@
 """Alert lifecycle.
 
-Phase 2's acceptance check in docs/TODO-v1.md: an alert fires, snooze delays
+Phase 2's acceptance check in docs/dev/TODO-v1.md: an alert fires, snooze delays
 it, a feeding clears it, and a restart mid-countdown still fires.
 """
 

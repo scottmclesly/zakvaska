@@ -1,6 +1,6 @@
 """Exporting the notebook and reading it back.
 
-The last class is Phase 6's acceptance check from docs/TODO-v1.md: export,
+The last class is Phase 6's acceptance check from docs/dev/TODO-v1.md: export,
 wipe the data dir, restore, and find everything where it was.
 """
 

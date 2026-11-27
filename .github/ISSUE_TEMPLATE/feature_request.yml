@@ -1,0 +1,30 @@
+name: An idea
+description: Something the notebook could do, or do better.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The baking problem, rather than the feature. "I keep two jars in the fridge and forget which I fed" says more than "add a column".
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How might the notebook help?
+      description: If you have a picture of it in mind, describe it. If not, leave it.
+  - type: textarea
+    id: now
+    attributes:
+      label: What do you do today instead?
+      description: Paper, a spreadsheet, memory?
+  - type: dropdown
+    id: install
+    attributes:
+      label: How do you run zakvaska?
+      options:
+        - Desktop app
+        - Docker / Raspberry Pi
+        - From source
+        - Not yet

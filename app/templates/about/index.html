@@ -196,6 +196,33 @@
   </p>
 </section>
 
+<section class="card" id="updates" data-update-check
+         data-current="{{ version }}"
+         data-api="https://api.github.com/repos/scottmclesly/zakvaska/releases/latest">
+  <h2 class="section-title">Updates</h2>
+  <p>
+    This is version <strong>{{ version }}</strong>.
+    <span data-update-status class="muted" role="status" aria-live="polite"></span>
+  </p>
+  <p>
+    <button class="btn btn-secondary" type="button" data-update-button hidden>Check for a newer version</button>
+    <a class="btn" data-update-link href="https://github.com/scottmclesly/zakvaska/releases/latest"
+       rel="noopener" hidden>See what is new and download</a>
+  </p>
+  <noscript>
+    <p class="muted">
+      Releases are listed at
+      <a href="https://github.com/scottmclesly/zakvaska/releases" rel="noopener">github.com/scottmclesly/zakvaska/releases</a>.
+    </p>
+  </noscript>
+  <p class="hint muted small">
+    Checking asks GitHub which release is newest, and only when you press the
+    button. Nothing about your notebook is sent. Updating never touches your
+    records: with Docker, <code>docker compose pull &amp;&amp; docker compose up -d</code>;
+    with the desktop app, install the new one over the old.
+  </p>
+</section>
+
 <section class="card about-by">
   <h2 class="section-title">Created by</h2>
   <p class="about-by-name">Scott McLeslie</p>
