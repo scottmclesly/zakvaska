@@ -4327,3 +4327,15 @@ table.steps tr.is-clash td {
 @media (prefers-reduced-motion: no-preference) and (hover: none) {
   .jar-edit-pencil { transform: none; }
 }
+
+/* A jar card's next feed: "in 18h 59m" and the clock time it lands on, side
+   by side. Kept together on one line; if a card is ever too narrow for
+   both, the clock time is what drops under, whole. */
+.next-feed {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--s-2);
+}
+.next-feed > * { white-space: nowrap; }
+.next-feed-clock { font-weight: 400; }

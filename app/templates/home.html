@@ -58,10 +58,14 @@
         <dt>{{ icon("clock") }}Next feed</dt>
         <dd>
           {% if card.status.next_due_at %}
-            <span class="{% if card.status.is_overdue %}overdue-text{% endif %}">
-              {{ card.status.next_due_at | until(now) }}
+            {#- How long, and the clock time it comes to, on the one line:
+                they are one answer. -#}
+            <span class="next-feed">
+              <span class="{% if card.status.is_overdue %}overdue-text{% endif %}">
+                {{- card.status.next_due_at | until(now) -}}
+              </span>
+              <span class="muted small next-feed-clock">{{ card.status.next_due_at | local_time }}</span>
             </span>
-            <br><span class="muted small">{{ card.status.next_due_at | local_time }}</span>
           {% elif jar.state.wants_feeding %}
             <span class="muted">after first feed</span>
           {% else %}
