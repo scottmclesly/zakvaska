@@ -206,3 +206,35 @@ def test_nav_links_keep_their_order_in_the_page(client):
         order = [nav.index(f"<span>{label}</span>")
                  for label in ("Jars", "Recipes", "Bakes", "Settings")]
         assert order == sorted(order), path
+
+
+def test_a_jar_is_edited_from_the_jar_itself_not_the_header(client):
+    """Settings has the far end of the header to itself. The way to a jar's
+    edit page is the jar: a link around the drawing, with a pencil and a
+    caption that the stylesheet shows when it is pointed at."""
+    made = client.post(
+        "/jars/new",
+        data={"name": "Old Rye", "origin": "homemade", "state": "active"},
+        follow_redirects=False,
+    )
+    jar_url = made.headers["location"]
+    page = client.get(jar_url).text
+
+    header = page.split('<header class="topbar">')[1].split("</header>")[0]
+    assert "/edit" not in header
+
+    link = page.split('<a class="jar-edit"')[1].split("</a>")[0]
+    assert f'href="{jar_url}/edit"' in link
+    assert 'aria-label="Edit Old Rye"' in link
+    assert 'data-tip="Edit this jar"' in link
+    assert "jar-edit-pencil" in link and "<svg" in link
+
+
+def test_settings_is_an_icon_that_names_itself_when_pointed_at():
+    from pathlib import Path
+
+    css = (
+        Path(__file__).resolve().parent.parent / "app/static/css/app.css"
+    ).read_text(encoding="utf-8")
+    assert ".nav-settings > span {\n    max-width: 0;" in css
+    assert ".nav-settings:focus-visible > span { max-width: 6rem; opacity: 1; }" in css
