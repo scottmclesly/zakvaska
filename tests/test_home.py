@@ -103,10 +103,13 @@ def test_the_header_is_set_in_one_typeface():
 
 
 def test_settings_and_equipment_are_tabs_of_one_another(client):
-    for path, current in (("/settings", "General"), ("/equipment", "Equipment")):
+    for path, current in (
+        ("/settings", "General"), ("/equipment", "Equipment"), ("/backup", "Backup"),
+    ):
         page = client.get(path).text
         tabs = page.split('<nav class="tabs"')[1].split("</nav>")[0]
-        assert 'href="/settings"' in tabs and 'href="/equipment"' in tabs
+        for href in ("/settings", "/equipment", "/backup"):
+            assert f'href="{href}"' in tabs, (path, href)
         on = tabs.split('class="tab is-current"')[1].split("</a>")[0]
         assert on.rstrip().endswith(current), path
 

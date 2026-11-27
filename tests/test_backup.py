@@ -349,8 +349,27 @@ class TestThePage:
     def test_an_empty_notebook_says_so(self, client):
         assert "Nothing logged yet" in client.get("/backup").text
 
-    def test_every_page_links_to_it(self, client):
-        assert '/backup' in client.get("/").text
+    def test_it_is_two_steps_from_anywhere(self, client):
+        """Backup is a tab of Settings now, not a link at the foot of every
+        page: Settings is in the header everywhere, and the tab is on it."""
+        assert 'href="/settings"' in client.get("/").text
+        tabs = client.get("/settings").text.split('<nav class="tabs"')[1].split("</nav>")[0]
+        assert 'href="/backup"' in tabs
+
+    def test_it_is_a_tab_of_settings(self, client):
+        page = client.get("/backup").text
+        tabs = page.split('<nav class="tabs"')[1].split("</nav>")[0]
+
+        assert "<h1>Settings</h1>" in page
+        assert tabs.split('class="tab is-current"')[1].split("</a>")[0].rstrip().endswith("Backup")
+        # And the header marks Settings as where you are.
+        marked = page.split(' is-here"')[1].split("</a>")[0]
+        assert "<span>Settings</span>" in marked
+
+    def test_the_footer_no_longer_links_to_it(self, client):
+        footer = client.get("/").text.split('<footer class="footer">')[1].split("</footer>")[0]
+        assert "/backup" not in footer
+        assert 'href="/about"' in footer
 
     def test_downloading(self, client, session):
         seed(session)

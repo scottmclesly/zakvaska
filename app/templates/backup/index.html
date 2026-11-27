@@ -1,15 +1,17 @@
 {% extends "base.html" %}
 
-{% block page_class %}page--read{% endblock %}
-
 {% block content %}
-<section class="hero">
-  <h1>Backup</h1>
-  <p class="sub">
-    Everything in one zip: the rows as JSON, the same rows as CSV, and the
-    photo files.
-  </p>
-</section>
+{#- A tab of Settings: taking a copy of the notebook, and putting one back,
+    is upkeep, not something done in the course of a bake. The page is the
+    same width as the other tabs, so the tab strip does not jump as you move
+    between them, and its contents keep to a reading column inside it. -#}
+{% with tab = "backup" %}{% include "partials/settings_tabs.html" %}{% endwith %}
+<h2 class="sr-only">Backup</h2>
+<p class="tab-sub muted">
+  Everything in one zip: the rows as JSON, the same rows as CSV, and the
+  photo files.
+</p>
+<div class="tab-narrow">
 
 {% if done %}
 <div class="card ok-notice" role="status">
@@ -84,4 +86,5 @@
     one to put on a timer.
   </p>
 </section>
+</div>
 {% endblock %}

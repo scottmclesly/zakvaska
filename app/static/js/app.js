@@ -465,11 +465,34 @@ document.addEventListener("input", (event) => {
     show(next);
   }
 
+  // Under a large picture, a small one does not open: it takes the frame.
+  // The frame then opens whichever photo it is showing.
+  function frame(pick) {
+    var cover = document.querySelector(".showcase-photo");
+    if (!cover) return false;
+    cover.href = pick.href;
+    cover.setAttribute("data-photo-open", pick.getAttribute("data-photo-open"));
+    cover.querySelector("img").src = pick.href;
+    var caption = cover.querySelector(".photo-caption");
+    if (caption) {
+      caption.textContent = pick.getAttribute("data-caption") || "";
+      caption.hidden = !caption.textContent;
+    }
+    pick.closest(".photo-grid").querySelectorAll(".photo-tile").forEach(function (tile) {
+      tile.classList.toggle("is-shown", tile.contains(pick));
+    });
+    return true;
+  }
+
   document.addEventListener("click", function (event) {
     var opener = event.target.closest("[data-photo-open]");
     if (opener) {
       // A modifier means "in a new tab", which the plain link already does.
       if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+      if (opener.hasAttribute("data-photo-pick") && frame(opener)) {
+        event.preventDefault();
+        return;
+      }
       if (show(document.getElementById(opener.getAttribute("data-photo-open")))) {
         event.preventDefault();
       }

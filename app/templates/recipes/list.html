@@ -1,9 +1,5 @@
 {% extends "base.html" %}
 
-{% block nav %}
-<a class="btn btn-small" href="/recipes/new">New recipe</a>
-{% endblock %}
-
 {% block page_class %}page--wide{% endblock %}
 
 {% block content %}
@@ -32,6 +28,20 @@
 </form>
 <p class="card muted recipe-none" data-recipe-none hidden>No recipe matches that.</p>
 <ul class="recipe-grid" data-recipe-list>
+  {#- The empty slot: a recipe that is not there yet, like the jar-shaped gap
+      on the shelf and the dashed square in a gallery. It leads the grid
+      because the grid is long — thirty-odd cards — and a way to add one
+      should not be at the bottom of them. It is not a recipe, so the search
+      and the family chips leave it alone. -#}
+  <li class="recipe-add">
+    <a class="recipe-add-link" href="/recipes/new">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      <span>New recipe</span>
+    </a>
+  </li>
   {% for recipe in recipes %}
   {% set latest = recipe.latest_version %}
   {#- A card is the link to its recipe: the name's anchor is stretched over

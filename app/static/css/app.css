@@ -799,6 +799,10 @@ input[type="file"]::file-selector-button {
 .tab:hover { color: var(--ink); }
 .tab.is-current { color: var(--ink); border-bottom-color: var(--accent); }
 .tab-sub { margin: 0 0 var(--s-4); max-width: var(--measure); }
+/* A tab whose contents are a form to read down, in a page as wide as its
+   neighbours so the tab strip stays where it is. */
+.tab-narrow { max-width: 760px; display: flex; flex-direction: column; gap: var(--s-4); }
+.tab-narrow > * { margin-block: 0; }
 
 /* --- Hints --------------------------------------------------------------
    A folded aside of short notes (partials/hints.html; the words are in
@@ -1475,6 +1479,31 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   min-width: 0;
 }
 .recipe-card:hover { border-color: var(--accent); }
+
+/* The empty slot at the head of the grid: add a recipe. Dashed and hollow
+   like the other "add" squares, and as tall as the cards in its row. */
+.recipe-add { display: flex; min-width: 0; min-height: 84px; }
+.recipe-add-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  border: 2px dashed var(--line);
+  border-radius: var(--r-lg);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 120ms, border-color 120ms, background-color 120ms;
+}
+.recipe-add-link svg { width: 26px; height: 26px; }
+.recipe-add-link:hover,
+.recipe-add-link:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
 .recipe-card h2 { margin: 0; font-size: var(--text-md); line-height: var(--leading-tight); }
 .recipe-card p { margin: var(--s-1) 0 0; }
 .recipe-link { color: var(--ink); text-decoration: none; }
@@ -1672,6 +1701,19 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   text-align: center;
 }
 .showcase-standin .loaf-art { width: min(100%, 200px); }
+
+/* The strip under the cover: every photo of the loaf, small. The one in
+   the frame is ringed. */
+.showcase-cover { display: flex; flex-direction: column; gap: var(--s-4); }
+.photo-strip .photo-grid {
+  grid-template-columns: repeat(auto-fill, minmax(56px, 76px));
+  gap: var(--s-2);
+}
+.photo-strip .photo-tile { border-radius: var(--r-sm); }
+.photo-strip .photo-tile.is-shown { outline: 3px solid var(--accent); outline-offset: 2px; }
+.photo-strip .photo-add-label { border-radius: var(--r-sm); border-width: 2px; }
+.photo-strip .photo-add-label svg { width: 24px; height: 24px; }
+.photo-caption[hidden] { display: none; }
 .showcase-standin p { margin: 0; }
 
 .showcase-words { display: flex; flex-direction: column; gap: var(--s-3); min-width: 0; }

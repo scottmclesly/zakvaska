@@ -11,18 +11,26 @@
    Without JavaScript a tile is a link to the full image and the plus tile
    shows a Send button; captioning and deleting need the preview, which
    needs the script. #}
-<section class="gallery-block">
-  <h2 class="section-title">{{ gallery_title or "Photos" }}</h2>
+{#- `gallery_strip`: a row of small tiles to sit under a large picture, as
+    under the cover on a finished bake. There a tile does not open its photo
+    but puts it in the large frame (app.js), the way a product page or a
+    post with several pictures works; the large picture is what opens. -#}
+{%- set strip = gallery_strip is defined and gallery_strip %}
+<section class="gallery-block{% if strip %} photo-strip{% endif %}"
+         {%- if strip %} aria-label="{{ gallery_title or 'Photos' }}"{% endif %}>
+  {% if not strip %}<h2 class="section-title">{{ gallery_title or "Photos" }}</h2>{% endif %}
 
   <ul class="photo-grid">
     {% for photo in photos %}
     {%- set alt = photo.caption or 'Photo taken ' ~ (photo.taken_at | local_dt) %}
-    <li class="photo-tile">
+    <li class="photo-tile{% if strip and loop.first %} is-shown{% endif %}">
       <a class="photo-open" href="{{ photo.url }}" target="_blank" rel="noopener"
-         data-photo-open="photo-{{ photo.id }}">
+         data-photo-open="photo-{{ photo.id }}"
+         {%- if strip %} data-photo-pick data-caption="{{ photo.caption or '' }}"
+         aria-label="Show this photo large"{% endif %}>
         <img src="{{ photo.thumb_url }}" alt="{{ alt }}"
              loading="lazy" width="240" height="240">
-        {%- if photo.caption %}
+        {%- if photo.caption and not strip %}
         <span class="photo-caption">{{ photo.caption }}</span>
         {%- endif %}
       </a>
@@ -43,7 +51,7 @@
                stroke-width="1.8" stroke-linecap="round">
             <path d="M12 5v14M5 12h14"/>
           </svg>
-          <span>Add a photo</span>
+          <span{% if strip %} class="sr-only"{% endif %}>Add a photo</span>
         </label>
         <noscript><button class="btn btn-small" type="submit">Send</button></noscript>
       </form>

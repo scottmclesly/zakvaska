@@ -25,8 +25,8 @@
 
       Three sections, because that is what the notebook is: jars, recipes,
       bakes. Planning a bake is part of baking and is reached from the bakes
-      page; the bread maker's programs are something you set up, so they are
-      a tab of Settings, which stands apart at the far end of the header. -#}
+      page; the bread maker's programs and backup are upkeep, so they are
+      tabs of Settings, which stands apart at the far end of the header. -#}
   {%- set sections = [
         ("jars", "/", "Jars",
          "Starter jars: feedings, observations and bakes, logged properly."),
@@ -37,7 +37,7 @@
       ] -%}
   {%- if path.startswith("/recipes") %}{% set here = "recipes" -%}
   {%- elif path.startswith("/bakes") or path.startswith("/photos") or path.startswith("/plan") %}{% set here = "bakes" -%}
-  {%- elif path.startswith("/settings") or path.startswith("/equipment") %}{% set here = "settings" -%}
+  {%- elif path.startswith("/settings") or path.startswith("/equipment") or path.startswith("/backup") %}{% set here = "settings" -%}
   {%- elif path == "/" or path.startswith("/jars") %}{% set here = "jars" -%}
   {%- else %}{% set here = "" %}{% endif -%}
 
@@ -57,7 +57,7 @@
       {%- endfor %}
       {%- set section = "settings" %}
       <a class="navlink nav-settings{% if here == 'settings' %} is-here{% endif %}" href="/settings"
-         title="Units, feeding rhythm, preheating, busy hours, hints — and the bread maker's programs."
+         title="Units, feeding rhythm, preheating, busy hours, hints — and the bread maker's programs and backup."
          {%- if here == 'settings' %} aria-current="page"{% endif %}>
         {%- include "partials/nav_icon.html" %}<span>Settings</span></a>
     </nav>
@@ -85,8 +85,6 @@
     <span>zakvaska v{{ app_version }}{% if app_build %} · {{ app_build.label }}{% endif %}</span>
     <span aria-hidden="true">·</span>
     <a class="footer-link" href="/about">About</a>
-    <span aria-hidden="true">·</span>
-    <a class="footer-link" href="/backup">Backup</a>
     <span aria-hidden="true">·</span>
     <a class="footer-link" href="/settings">Settings</a>
   </footer>
