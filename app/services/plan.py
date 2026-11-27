@@ -739,6 +739,7 @@ def jar_series(
             )
             for index, cycle in enumerate(cycles)
         ),
+        projected=tuple(_projected_marks(cycles, made, now=now)),
         planned=tuple(planned_marks(session, jar, made, now=now, busy=busy)),
         observations=tuple(
             _observation_marks(session, jar, since=start, until=end)
@@ -749,6 +750,38 @@ def jar_series(
         note=note,
     )
     return series, made
+
+
+def _projected_marks(
+    cycles: Sequence[FedCycle], made: JarPlan, *, now: datetime
+) -> list[ribbon.FeedMark]:
+    """The rise each planned feed would set off, if the plan is kept.
+
+    A ribbon that stops at the next feed shows half a day of a two-day
+    window. What comes after is not known, but it is not a mystery either:
+    the same jar, fed the same way on the same rhythm, does the same thing.
+    So each planned feed still ahead gets the last real feed's curve (its
+    ratio, its temperature, this jar's own pace), running until the feed
+    after it.
+
+    Only feeds still to come: a planned feed already missed set nothing
+    off, and drawing a rise from it would be drawing something that did
+    not happen. And only with a real feed to copy.
+    """
+    if not cycles:
+        return []
+    last = cycles[-1]
+    ahead = [feed for feed in made.planned if feed.at >= now]
+    return [
+        ribbon.FeedMark(
+            at=feed.at,
+            peak_h=last.peak_h,
+            ratio_label=last.ratio_label,
+            temp_assumed=last.temp_assumed,
+            ends_at=ahead[index + 1].at if index + 1 < len(ahead) else None,
+        )
+        for index, feed in enumerate(ahead)
+    ]
 
 
 def build_ribbon(

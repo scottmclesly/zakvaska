@@ -144,6 +144,24 @@
     </g>
     {%- endfor %}
 
+    {#- What the planned feeds would set off, if each is made on time and
+        like the last one: the same curve again, dashed, because none of it
+        has happened. No fill and no solid dot; the hollow planned-feed
+        marker under it is where it starts. -#}
+    {%- for curve in row.projections %}
+    <g class="ribbon-curve is-projected">
+      {%- for segment in curve.segments %}
+      {%- if segment.points | length > 1 %}
+      <polyline class="ribbon-path band-{{ segment.band_key }}"
+                points="{{ segment.polyline }}"/>
+      {%- endif %}
+      {%- endfor %}
+      <title>If fed as planned at {{ curve.feed.at | local_time }}
+        {%- if curve.feed.ratio_label %}, again at {{ curve.feed.ratio_label }}{% endif %}
+        {%- if not curve.peak_pre_empted %}: would peak about {{ curve.peak_at | local_time }}{% endif %}</title>
+    </g>
+    {%- endfor %}
+
     {#- Measured heights, against the prediction. -#}
     {%- for point in row.observations %}
     <circle class="ribbon-obs" cx="{{ point.x | round(2) }}"

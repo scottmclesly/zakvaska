@@ -3538,6 +3538,14 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .band-past { stroke: var(--band-past); stroke-width: 2; }
 .band-hungry { stroke: var(--band-hungry); stroke-width: 1.6; stroke-dasharray: 3 2.5; }
 
+/* A rise that has not happened: what a planned feed would set off. The same
+   colours and weights, broken into dashes and a little fainter. */
+.ribbon-curve.is-projected .ribbon-path {
+  stroke-dasharray: 5 4;
+  stroke-linecap: butt;
+  opacity: 0.7;
+}
+
 /* Waiting on a feed: the hungry band's own dashes, along the baseline. */
 .ribbon-wait-label { fill: var(--band-hungry); font-size: var(--text-xs); font-weight: 600; }
 .duel-wait { stroke: var(--series); stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 3 4; }
