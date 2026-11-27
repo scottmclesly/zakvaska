@@ -1,0 +1,11 @@
+{
+  "name": "zakvaska-desktop",
+  "private": true,
+  "description": "Build tooling for the zakvaska desktop app. The app itself has no JavaScript build step; this only fetches the Tauri command-line tool.",
+  "scripts": {
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.6"
+  }
+}

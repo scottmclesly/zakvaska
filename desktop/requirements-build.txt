@@ -1,0 +1,2 @@
+# Build-time only: freezes the server for the desktop app. Never imported.
+pyinstaller==6.22.3
