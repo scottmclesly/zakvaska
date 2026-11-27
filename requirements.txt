@@ -1,5 +1,7 @@
-# zakvaska v1 — pinned. See CLAUDE.md "Stack"; ask before adding anything here.
-# Install: ./scripts/setup.sh  (or .venv/bin/pip install -r requirements.txt)
+# zakvaska v1 — what the app needs to run, pinned. See CLAUDE.md "Stack";
+# ask before adding anything here. The Docker image and the desktop build
+# install exactly this file; requirements-dev.txt adds the test tools.
+# Install: ./scripts/setup.sh
 
 # Web
 fastapi==0.162.0
@@ -22,7 +24,7 @@ pillow==13.0.0
 # macOS arm64 and linux aarch64, so the Pi needs no toolchain either.
 pillow-heif==1.8.1
 
-# Tests
-pytest==9.2.0
-# starlette's TestClient prefers httpx2; plain httpx still works but warns.
-httpx2==2.16.0
+# Time zones. Windows ships no zone database and neither does a slim
+# container, and zoneinfo falls back to this package when the system has
+# none. Data only, no code path of ours changes.
+tzdata==2026.6

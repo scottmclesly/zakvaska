@@ -1,0 +1,7 @@
+# Everything in requirements.txt, plus what the test suite needs.
+-r requirements.txt
+
+# Tests
+pytest==9.2.0
+# starlette's TestClient prefers httpx2; plain httpx still works but warns.
+httpx2==2.16.0

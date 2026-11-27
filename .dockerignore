@@ -1,0 +1,10 @@
+# The image is requirements.txt, alembic.ini, migrations/ and app/ — nothing
+# else is copied in, and nothing from a working notebook may ever be.
+*
+!requirements.txt
+!alembic.ini
+!migrations/
+!app/
+**/__pycache__/
+**/*.pyc
+**/.DS_Store
