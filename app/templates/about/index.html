@@ -7,7 +7,10 @@
 
 {% block content %}
 <section class="hero">
-  <h1>About zakvaska</h1>
+  <div class="jar-title">
+    <h1>About zakvaska</h1>
+    <span class="badge badge-version">v{{ version }}{% if app_build %} · {{ app_build.label }}{% endif %}</span>
+  </div>
   {#- One sentence, so it gets the line: the reading measure would fold its
       last few words under it. -#}
   <p class="sub sub-line">
@@ -173,6 +176,15 @@
 
   <ul class="plain about-facts">
     <li><span class="muted">Version</span> <strong>{{ version }}</strong></li>
+    <li>
+      <span class="muted">Build</span>
+      {% if app_build %}
+      <strong>{{ app_build.number }}
+        <span class="muted build-detail">· <code>{{ app_build.commit }}</code> · {{ app_build.date }}</span></strong>
+      {% else %}
+      <strong class="muted">not a git checkout</strong>
+      {% endif %}
+    </li>
     <li><span class="muted">Rows in all</span> <strong>{{ rows }}</strong></li>
     <li><span class="muted">Database</span> <strong>{{ db_bytes | filesize }}</strong></li>
     <li>
@@ -191,6 +203,7 @@
 <section class="card about-by">
   <h2 class="section-title">Created by</h2>
   <p class="about-by-name">Scott McLeslie</p>
+
   <p class="muted">
     Bakes the bread, keeps the notebook, and decided the notebook should be
     software. The source is on GitHub at

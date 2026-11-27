@@ -379,7 +379,10 @@ class TestEquipmentPrograms:
 
 
 class TestNavigation:
-    def test_every_page_links_to_recipes_and_equipment(self, client, session):
+    def test_every_page_links_to_recipes_and_on_to_equipment(self, client, session):
+        """Recipes is in the header. Equipment is a tab of Settings now, so
+        it is two steps from anywhere: Settings is on every page, and the
+        Equipment tab is on Settings."""
         recipe_service.create_recipe(
             session, name="Borodinsky", category=RecipeCategory.RYE,
             ingredients=[IngredientSpec("Rye", IngredientRole.FLOUR, 100.0)],
@@ -389,4 +392,5 @@ class TestNavigation:
         for url in ["/", "/recipes", "/equipment", "/recipes/1/v/1"]:
             text = client.get(url).text
             assert 'href="/recipes"' in text, url
-            assert 'href="/equipment"' in text, url
+            assert 'href="/settings"' in text, url
+        assert 'href="/equipment"' in client.get("/settings").text

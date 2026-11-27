@@ -23,13 +23,11 @@
 {%- endmacro %}
 
 {% block content %}
-<section class="hero">
-  <h1>Settings</h1>
-  <p class="sub">
-    How the numbers are shown, how often the jars get fed, and the hours you
-    are not around to feed them.
-  </p>
-</section>
+{% with tab = "general" %}{% include "partials/settings_tabs.html" %}{% endwith %}
+<p class="tab-sub muted">
+  How the numbers are shown, how often the jars get fed, and the hours you
+  are not around to feed them.
+</p>
 
 {% if errors %}
 <div class="card errors" role="alert">
