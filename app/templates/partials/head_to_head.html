@@ -26,7 +26,6 @@
           fed {{ last.feed.at | local_time }}
           {%- if last.feed.ratio_label %} at {{ last.feed.ratio_label }}{% endif %}
           · peak{{ "ed" if last.peak_at < duel.now else "s" }} about {{ last.peak_at | local_time }}
-          {%- if row.is_estimate %} (estimate){% endif %}
         {%- else %}
           {{ row.note or "nothing logged yet" }}
         {%- endif %}

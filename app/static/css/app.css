@@ -31,6 +31,7 @@
   --danger: #a32020;
   --danger-bg: #fdf0ee;
   --chill: #4a7fb4;        /* a jar in the fridge */
+  --now: #d1345b;          /* the present moment on a chart */
 
   /* --- A starter's journey between feeds ------------------------------ */
   /* Cool while it climbs, confident at the peak, then draining away to the
@@ -3371,6 +3372,8 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   );
 }
 .chart-caption { margin: var(--s-0) 0 0; }
+/* Under a ribbon the caption is one line, as wide as the card allows. */
+.ribbon-card .chart-caption { max-width: none; }
 
 @media (max-width: 560px) {
   /* The size label stays: on a sized program it says which loaf this row
@@ -3484,10 +3487,18 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   .chart-fit > .fit-1180 { display: block; }
 }
 
+/* Hours you are not around: shaded, and fenced with a faint dashed line so
+   the edge of one reads as an edge and not as a change in the paper. */
 .ribbon-busy-band {
   fill: var(--busy-shade);
-  opacity: 0.14;
+  fill-opacity: 0.14;
+  stroke: var(--busy-shade);
+  stroke-opacity: 0.5;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
 }
+/* What is already behind you. */
+.ribbon-past { fill: var(--ink); opacity: 0.045; }
 .ribbon-tick {
   stroke: var(--line);
   stroke-width: 0.8;
@@ -3517,11 +3528,15 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   stroke-width: 2.2;
   stroke-linecap: round;
 }
-.band-rising { stroke: var(--band-rising); }
-.band-peak { stroke: var(--band-peak); stroke-width: 2.8; }
-.band-ok { stroke: var(--band-ok); }
-.band-past { stroke: var(--band-past); }
-.band-hungry { stroke: var(--band-hungry); stroke-dasharray: 3 2.5; }
+/* The thickness of the line is how good a moment it is to use the starter:
+   thin on the way up, fattest at the peak, still stout while it holds, and
+   thinning away as it goes over. Colour says which phase; weight says
+   "now would be good" to someone who has not learned the colours. */
+.band-rising { stroke: var(--band-rising); stroke-width: 1.8; }
+.band-peak { stroke: var(--band-peak); stroke-width: 6; }
+.band-ok { stroke: var(--band-ok); stroke-width: 4; }
+.band-past { stroke: var(--band-past); stroke-width: 2; }
+.band-hungry { stroke: var(--band-hungry); stroke-width: 1.6; stroke-dasharray: 3 2.5; }
 
 /* Waiting on a feed: the hungry band's own dashes, along the baseline. */
 .ribbon-wait-label { fill: var(--band-hungry); font-size: var(--text-xs); font-weight: 600; }
@@ -3572,10 +3587,17 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 }
 
 .ribbon-now line {
-  stroke: var(--accent);
-  stroke-width: 1.4;
+  stroke: var(--now);
+  stroke-width: 2.2;
 }
-.ribbon-now circle { fill: var(--accent); }
+.ribbon-now circle { fill: var(--now); }
+.ribbon-now-flag { fill: var(--now); }
+.ribbon-now-label {
+  fill: #fff;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 
 .ribbon-key {
   display: flex;
@@ -3593,7 +3615,9 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   background: var(--ink-soft);
 }
 .ribbon-swatch.band-rising { background: var(--band-rising); }
-.ribbon-swatch.band-peak { background: var(--band-peak); height: 4px; }
+.ribbon-swatch.band-rising { height: 2px; }
+.ribbon-swatch.band-peak { background: var(--band-peak); height: 6px; }
+.ribbon-swatch.band-ok { height: 4px; }
 .ribbon-swatch.band-ok { background: var(--band-ok); }
 .ribbon-swatch.band-past { background: var(--band-past); }
 .ribbon-swatch.band-hungry { background: var(--band-hungry); }
@@ -4149,10 +4173,12 @@ table.steps tr.is-clash td {
 
 /* The same dot on a ribbon row, drawn rather than styled because the row
    label lives inside the SVG. */
-.ribbon-cap {
-  fill: var(--cap);
-  stroke: color-mix(in srgb, var(--cap) 62%, var(--ink));
-  stroke-width: 0.5;
+.ribbon-cap-lid { fill: var(--cap); }
+.ribbon-cap-glass {
+  fill: color-mix(in srgb, var(--cap) 62%, var(--card));
+  stroke: color-mix(in srgb, var(--cap) 70%, var(--ink));
+  stroke-width: 0.9;
+  stroke-linejoin: round;
 }
 
 /* --- The ghost jar: the empty slot that adds one ----------------------- */
