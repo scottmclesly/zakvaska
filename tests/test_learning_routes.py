@@ -116,12 +116,23 @@ class TestPeakedNow:
         assert "Peaked now" in page.text
         assert f'action="/jars/{jar_id}/peaked"' in page.text
 
-    def test_the_dashboard_offers_it_too(self, client, session):
+    def test_the_dashboard_card_has_no_buttons_and_the_jar_page_keeps_them(
+        self, client, session
+    ):
+        """Feeding, observing and marking a peak are done on the jar's own
+        page. The card on the dashboard says how the jar is and links there."""
         jar_id = _jar(session)
 
-        page = client.get("/")
+        dashboard = client.get("/").text
+        cards = dashboard.split('id="jar-cards"')[1].split("</ul>")[0]
+        assert f'href="/jars/{jar_id}"' in cards
+        for gone in ("/peaked", "/feed", "/observe", "row-actions"):
+            assert gone not in cards, gone
 
-        assert f'action="/jars/{jar_id}/peaked"' in page.text
+        jar_page = client.get(f"/jars/{jar_id}").text
+        assert f'action="/jars/{jar_id}/peaked"' in jar_page
+        assert f'href="/jars/{jar_id}/feed"' in jar_page
+        assert f'href="/jars/{jar_id}/observe"' in jar_page
 
     def test_tapping_it_records_a_peak(self, client, session):
         jar_id = _jar(session)

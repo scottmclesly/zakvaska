@@ -92,16 +92,9 @@
       {% endif %}
     </dl>
 
-    <div class="row-actions">
-      <a class="btn btn-small" href="/jars/{{ jar.id }}/feed">Fed it</a>
-      {#- The measurement the app cannot make for itself, one tap from the
-          dashboard so it is never worth skipping. -#}
-      <form method="post" action="/jars/{{ jar.id }}/peaked">
-        <input type="hidden" name="next" value="/">
-        <button class="btn btn-small btn-secondary" type="submit">Peaked now</button>
-      </form>
-      <a class="btn btn-small btn-secondary" href="/jars/{{ jar.id }}/observe">Observe</a>
-    </div>
+    {#- No buttons here: the card says how the jar is, and its name leads to
+        the jar's own page, which is where it is fed, observed and marked as
+        peaked. -#}
   </li>
       {% endfor %}
     </ul>
