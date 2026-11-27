@@ -1,15 +1,21 @@
 {% extends "base.html" %}
 
 {% block nav %}
-<a class="btn btn-small btn-secondary" href="/bakes">Bakes</a>
+<a class="btn btn-small btn-secondary" href="/bakes">All bakes</a>
 {% endblock %}
 
 {% block page_class %}page--wide{% endblock %}
 
 {% block content %}
-{#- No visible title: the highlighted section in the header is the heading.
-    This one is for screen readers and the document outline. -#}
-<h1 class="sr-only">Plan a bake</h1>
+{#- Reached from the bakes page, and Bakes is what the header highlights,
+    so this page says its own name. -#}
+<section class="hero">
+  <h1>Plan a bake</h1>
+  <p class="sub sub-line">
+    When does each step happen, and does it fit your day? Scrub the start and
+    watch the times move.
+  </p>
+</section>
 
 {% if notes %}
 <div class="card errors" role="alert">

@@ -10,6 +10,9 @@
     This one is for screen readers and the document outline. -#}
 <h1 class="sr-only">Bakes</h1>
 
+{#- What has been baked is filtered on the left; the next one is planned
+    from the right. The planner used to be a menu item of its own. -#}
+<div class="bakes-top">
 <form class="form card filters" method="get" action="/bakes">
   <div class="field-row">
     <label>
@@ -62,6 +65,14 @@
     {% if any_filter %}<a class="btn btn-secondary" href="/bakes">Clear</a>{% endif %}
   </div>
 </form>
+<a class="card plan-cta" href="/plan">
+  {{ icon("clock") }}
+  <span class="plan-cta-text">
+    <strong>Plan a bake</strong>
+    <span class="small">Lay the next one out on the clock</span>
+  </span>
+</a>
+</div>
 
 {% if bakes %}
 <ul class="plain bake-list">

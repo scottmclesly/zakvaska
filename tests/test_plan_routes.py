@@ -108,8 +108,10 @@ def test_the_planner_opens_with_nothing_chosen(client):
     assert "Step by step" in page.text
 
 
-def test_it_is_reachable_from_the_nav(client):
-    assert 'href="/plan"' in client.get("/").text
+def test_it_is_reachable_from_the_bakes_page(client):
+    """Planning a bake is part of baking: it left the header's menu for a
+    button beside the bakes list's filters."""
+    assert 'href="/plan"' in client.get("/bakes").text
 
 
 def test_a_recipe_version_offers_to_plan_a_bake(client, session):

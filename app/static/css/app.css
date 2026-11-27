@@ -336,34 +336,39 @@ h2:not(.section-title),
 }
 
 .topnav { display: flex; gap: var(--s-2); flex-wrap: wrap; justify-content: flex-end; }
+.topnav:empty { display: none; }
 
 /* The sections. Along the header beside the brand on anything wider than a
    phone, with the page's own actions pushed to the far end. */
-.sectionnav {
-  display: flex;
-  align-items: stretch;
-  gap: var(--s-1);
-  margin-right: auto;
-  /* Down to the header's bottom edge, so the mark under the section you
-     are in sits on the line the page begins at. */
-  align-self: stretch;
-  margin-block: calc(var(--s-3) * -1);
-}
+/* On anything wider than a phone the nav's links are laid out by the
+   header itself, so Settings can stand at the far end past the page's own
+   actions while still being part of the one list. */
+.sectionnav { display: contents; }
+.topnav { order: 2; margin-left: auto; }
+.nav-settings { order: 3; }
 
 /* The sections double as the page's heading: there is no title under the
-   header on a section's own page, because the highlighted one says it. So
-   they are set larger than links, each with its glyph, and the one you are
-   in is in the heading serif with a bar under it. */
+   header on a section's own page, because the highlighted one says it.
+
+   One typeface along the whole bar — the heading serif, the same as the
+   name beside it. The section you are in is told apart by size, weight and
+   the bar under it, never by a change of face. */
 .navlink {
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
+  /* Down to the header's bottom edge, so the bar under the current one
+     sits on the line the page begins at. */
+  align-self: stretch;
+  margin-block: calc(var(--s-3) * -1);
   min-height: var(--tap-lg);
   padding: 0 var(--s-4);
   color: var(--ink-soft);
   text-decoration: none;
+  font-family: var(--display);
   font-weight: 600;
-  font-size: var(--text-md);
+  font-size: var(--text-lg);
+  letter-spacing: -0.01em;
   border-bottom: 3px solid transparent;
   transition: color 120ms, border-color 120ms, background-color 120ms;
 }
@@ -373,25 +378,27 @@ h2:not(.section-title),
 }
 .navlink.is-here {
   color: var(--ink);
-  font-family: var(--display);
   font-size: var(--text-xl);
   font-weight: 700;
-  letter-spacing: -0.01em;
   border-bottom-color: var(--accent);
   background: linear-gradient(to top, color-mix(in srgb, var(--accent) 12%, transparent), transparent 85%);
 }
 .nav-icon { width: 20px; height: 20px; flex: 0 0 auto; }
 .navlink.is-here .nav-icon { width: 24px; height: 24px; color: var(--accent); }
+/* Settings is a utility, not a section: quieter, and never the big one. */
+.nav-settings,
+.nav-settings.is-here { font-size: var(--text-md); padding: 0 var(--s-3); }
+.nav-settings.is-here .nav-icon { width: 20px; height: 20px; }
 
 /* On a phone the sections are a tab bar along the bottom, where a thumb
    is, and the header keeps only the brand and this page's own action. */
 @media (max-width: 639px) {
   .sectionnav {
+    display: flex;
     position: fixed;
     inset: auto 0 0 0;
     z-index: 20;
     margin: 0;
-    align-self: auto;
     gap: 0;
     justify-content: space-around;
     padding: var(--s-1) var(--s-1) max(var(--s-1), env(safe-area-inset-bottom));
@@ -407,6 +414,9 @@ h2:not(.section-title),
     gap: var(--s-0);
     min-height: var(--tap-lg);
     padding: var(--s-1) 0;
+    align-self: auto;
+    margin-block: 0;
+    order: 0;
     border: 0;
     border-radius: var(--r-md);
     font-family: var(--sans);
@@ -766,6 +776,29 @@ input[type="file"]::file-selector-button {
 .chalkboard .icon { color: var(--chalk-yellow); }
 /* A finished step's glyph steps back with the rest of its row. */
 .stage-step.is-done .icon { color: var(--ink-soft); }
+
+/* --- Tabs ------------------------------------------------------------------
+   The pages of one thing, as links along a rule (partials/settings_tabs). */
+.tabs {
+  display: flex;
+  gap: var(--s-1);
+  margin: 0 0 var(--s-3);
+  border-bottom: 1px solid var(--line);
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--s-4);
+  margin-bottom: -1px;
+  color: var(--ink-soft);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+}
+.tab:hover { color: var(--ink); }
+.tab.is-current { color: var(--ink); border-bottom-color: var(--accent); }
+.tab-sub { margin: 0 0 var(--s-4); max-width: var(--measure); }
 
 /* --- Hints --------------------------------------------------------------
    A folded aside of short notes (partials/hints.html; the words are in
@@ -1515,6 +1548,27 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+/* The top of the bakes page: what has been baked is filtered on the left,
+   and the next one is planned from the big button beside it. */
+.bakes-top { display: flex; flex-wrap: wrap; gap: var(--s-3); align-items: stretch; margin-bottom: var(--s-5); }
+.bakes-top .filters { flex: 1 1 32rem; margin-bottom: 0; }
+.plan-cta {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-5);
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+  text-decoration: none;
+}
+.plan-cta:hover { filter: brightness(1.06); }
+.plan-cta .icon { width: 32px; height: 32px; margin: 0; color: var(--accent-ink); }
+.plan-cta-text { display: flex; flex-direction: column; line-height: var(--leading-tight); }
+.plan-cta-text strong { font-family: var(--display); font-size: var(--text-xl); }
+.plan-cta-text .small { opacity: 0.8; }
+
 /* The filters: four menus and their button on one line where they fit. */
 .filters { flex-direction: row; flex-wrap: wrap; align-items: flex-end; gap: var(--s-3) var(--s-4); }
 .filters .field-row { flex: 1 1 24rem; gap: var(--s-3); }
@@ -1592,6 +1646,11 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   .bake-top .bake-now { grid-column: 1; grid-row: 2; align-self: stretch; align-content: start; }
   /* As tall as the Now panel beside it, whatever that comes to. */
   .bake-top-side > .card:first-child { grid-column: 2; grid-row: 2; align-self: stretch; }
+  /* A finished bake has no Now panel, so there is nothing to stand beside:
+     the figures take the row, in one line, instead of a tile in the corner
+     of an empty one. */
+  .bake-top-side:not(:has(.bake-now)) > .card:first-child { grid-column: 1 / -1; }
+  .bake-top-side:not(:has(.bake-now)) .stats { grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
 }
 
 /* The bake in figures: two across, spread to fill the card, each with a
@@ -2411,6 +2470,7 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   border-radius: calc(var(--r-lg) - var(--s-2));
 }
 .about-hero figcaption { padding: var(--s-2) var(--s-2) var(--s-1); text-align: center; }
+.build-detail { font-weight: 400; }
 .about-by-name { margin: 0 0 var(--s-1); font-family: var(--display); font-size: var(--text-xl); }
 
 .about-why { display: flex; align-items: center; gap: var(--s-5); }

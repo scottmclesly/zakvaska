@@ -121,3 +121,38 @@ class TestWhoAndWhy:
         text = client.get("/about").text
         for word in ("Plan", "Hints", "Counter mode", "head to head", "Enlarge"):
             assert word in text, word
+
+
+class TestTheBuild:
+    def test_it_reports_the_build_it_is_running(self, client):
+        """This checkout is a git repository, so there is one to report."""
+        from app import buildinfo
+
+        build = buildinfo.build()
+        assert build is not None and build.number > 0
+
+        text = client.get("/about").text
+        assert f"build {build.number}" in text
+        assert f"<code>{build.commit}</code>" in text
+        assert build.date in text
+
+    def test_the_footer_carries_it_on_every_page(self, client):
+        from app import buildinfo
+
+        assert f"build {buildinfo.build().number}" in client.get("/recipes").text
+
+    def test_a_copy_with_no_git_still_starts(self, monkeypatch):
+        """An unpacked archive has no history to count; that is not an error."""
+        import subprocess
+
+        from app import buildinfo
+
+        def no_git(*args, **kwargs):
+            raise FileNotFoundError("git")
+
+        buildinfo.build.cache_clear()
+        monkeypatch.setattr(subprocess, "run", no_git)
+        try:
+            assert buildinfo.build() is None
+        finally:
+            buildinfo.build.cache_clear()

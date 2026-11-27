@@ -7,9 +7,14 @@
 {% block page_class %}page--wide{% endblock %}
 
 {% block content %}
-{#- No visible title: the highlighted section in the header is the heading.
-    This one is for screen readers and the document outline. -#}
-<h1 class="sr-only">Equipment programs</h1>
+{#- A tab of Settings: these are set up once, from the manual, not visited
+    in the course of a bake. -#}
+{% with tab = "equipment" %}{% include "partials/settings_tabs.html" %}{% endwith %}
+<h2 class="sr-only">Equipment programs</h2>
+<p class="tab-sub muted">
+  The bread maker's programs, typed in from the manual, so a bake can record
+  which one was used.
+</p>
 
 {% if errors %}
 <div class="card errors" role="alert">

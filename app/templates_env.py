@@ -12,6 +12,7 @@ from markupsafe import Markup, escape
 
 from app import __version__
 from app.config import get_settings
+from app import buildinfo
 from app.services import alerts as alert_service
 from app.services import hints as hint_service
 from app.services import settings_store
@@ -192,6 +193,8 @@ templates.env.filters.update(
     headline=alert_service.headline,
 )
 templates.env.globals["app_version"] = __version__
+#: The commit this copy runs from, or None where there is no git to ask.
+templates.env.globals["app_build"] = buildinfo.build()
 
 
 def _asset_version() -> str:
