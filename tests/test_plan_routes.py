@@ -114,11 +114,15 @@ def test_it_is_reachable_from_the_bakes_page(client):
     assert 'href="/plan"' in client.get("/bakes").text
 
 
-def test_a_recipe_version_offers_to_plan_a_bake(client, session):
+def test_starting_a_bake_from_a_recipe_offers_to_plan_it_instead(client, session):
+    """The recipe's page has one button, Bake this. The planner is offered
+    on the page that button leads to, for the same version."""
     version_id = _recipe(session)
     version = session.get(RecipeVersion, version_id)
+    recipe_id = version.recipe_id
+    _release(session) if "_release" in globals() else session.rollback()
 
-    page = client.get(f"/recipes/{version.recipe_id}/v/1")
+    page = client.get(f"/bakes/new?recipe_id={recipe_id}&version=1")
 
     assert f"/plan?version={version_id}" in page.text
 

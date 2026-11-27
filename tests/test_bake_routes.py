@@ -585,3 +585,23 @@ class TestTheRecipesDefaults:
         assert response.status_code == 400
         assert 'name="loaf_size" value="3 lb"' in response.text
         assert 'name="crust_setting" value="dark"' in response.text
+
+
+def test_a_recipe_has_one_button_for_baking_it_and_the_planner_is_a_step_on(
+    client, session
+):
+    """"Plan a bake" and "Bake this" side by side were two buttons for one
+    intention. The recipe offers Bake this; the start page offers the
+    planner for a loaf that has to be ready at a set time."""
+    recipe = seed_recipe(session)
+    version_id = recipe.latest_version.id
+    recipe_id = recipe.id
+    session.rollback()
+
+    page = client.get(f"/recipes/{recipe_id}/v/1").text
+    header = page.split('<nav class="topnav"')[1].split("</nav>")[0]
+    assert "Bake this" in header
+    assert "Plan a bake" not in header and "/plan" not in header
+
+    start = client.get(f"/bakes/new?recipe_id={recipe_id}&version=1").text
+    assert f'href="/plan?version={version_id}"' in start

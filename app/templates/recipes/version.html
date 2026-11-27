@@ -2,8 +2,10 @@
 {% from "partials/icons.html" import icon %}
 
 {% block nav %}
-<a class="btn btn-small" href="/plan?version={{ version.id }}">Plan a bake</a>
-<a class="btn btn-small btn-secondary" href="/bakes/new?recipe_id={{ recipe.id }}&amp;version={{ version.version }}">Bake this</a>
+{#- One way in to baking it. The start page offers the planner for a loaf
+    that has to be ready at a set time; two buttons here for one intention
+    was one too many. -#}
+<a class="btn btn-small" href="/bakes/new?recipe_id={{ recipe.id }}&amp;version={{ version.version }}">Bake this</a>
 {% if is_latest %}<a class="btn btn-small btn-secondary" href="/recipes/{{ recipe.id }}/edit">Edit</a>{% endif %}
 {% endblock %}
 

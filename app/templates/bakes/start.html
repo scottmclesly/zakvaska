@@ -10,6 +10,13 @@
     — its {{ version.stages | length }} stage{{ "" if version.stages | length == 1 else "s" }}
     become the running sheet, copied as they are now.
   </p>
+  {#- The other way to bake it: worked back from when it has to be ready,
+      around the hours you are busy. Reached from here now, not from a
+      second button on the recipe. -#}
+  <p class="sub">
+    Needs to be ready at a set time?
+    <a href="/plan?version={{ version.id }}">Plan it against the clock instead</a>.
+  </p>
 </section>
 
 {% if errors %}
