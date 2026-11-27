@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
 
 {% block nav %}
 <a class="btn btn-small btn-secondary" href="/backup">Backup</a>
@@ -7,11 +8,29 @@
 {% block content %}
 <section class="hero">
   <h1>About zakvaska</h1>
-  <p class="sub">
+  {#- One sentence, so it gets the line: the reading measure would fold its
+      last few words under it. -#}
+  <p class="sub sub-line">
     <em>Закваска</em> — sourdough starter. A lab notebook for it: jars,
     feedings, recipes, bakes and how they turned out.
   </p>
 </section>
+
+<div class="stack about-page">
+{#- How it came to this. A picture, so it is the one thing on the page that
+    is an image file rather than drawn; two sizes, and the browser takes the
+    one that fits. -#}
+<figure class="about-hero card">
+  <img src="{{ url_for('static', path='/img/about-hobby-1672.webp') }}"
+       srcset="{{ url_for('static', path='/img/about-hobby-836.webp') }} 836w,
+               {{ url_for('static', path='/img/about-hobby-1672.webp') }} 1672w"
+       sizes="(min-width: 1260px) 1140px, 94vw"
+       width="1672" height="941" loading="lazy"
+       alt="A cartoon of a bearded baker in a floury apron leaning back with a beer beside a fresh loaf, a smiling starter jar and a laptop running Zakvaska, saying: I should get a hobby, they said. Hobbies can be fun with no software stack to them, they said. Yea right. Hold my beer.">
+  <figcaption class="muted small">
+    The bread baking app, because this hobby obviously needed a software stack.
+  </figcaption>
+</figure>
 
 <section class="card about-why">
   <div class="about-art" aria-hidden="true">
@@ -39,9 +58,19 @@
   <dl class="about-guide">
     <dt>Jars</dt>
     <dd>
-      One per starter. Log a feeding and the next one is due on the jar's own
-      schedule; the banner at the top of every page is what is overdue.
-      Moving a jar to the fridge or back changes that schedule with it.
+      One per starter, standing on the shelf and drawn the way it is: domed at
+      its peak, slumped with a red corner on its tape when it is hungry. Log a
+      feeding and the next one is due on the jar's own rhythm — its page says
+      whether that rhythm is the jar's or the app's, and whether a feed you
+      moved has become a fixed daily time.
+    </dd>
+
+    <dt>The ribbon</dt>
+    <dd>
+      Each jar's rise since its last feed, against the next two days, with
+      the hours you are busy shaded and the feeds to come as rings. Jars on
+      the same flour are also set <strong>head to head</strong> on one axis.
+      Any chart opens to fill the window with <strong>Enlarge</strong>.
     </dd>
 
     <dt>Recipes</dt>
@@ -52,25 +81,43 @@
       baked in March still reads the way it was baked.
     </dd>
 
+    <dt>Plan</dt>
+    <dd>
+      Lays a bake out on the clock, forwards from a start or backwards from
+      when the bread is wanted, and flags the steps that land where you are
+      busy or asleep. A plan that fits can be started as a bake from there.
+    </dd>
+
     <dt>Bakes</dt>
     <dd>
       Started from a recipe version, with <strong>Bake this</strong> at the top
       of that version's page — that is what pins the loaf to the recipe as it
-      stood. The stages become a running sheet you tick off, and the result
-      goes on at the end.
+      stood. The day is drawn across the top; the stages are a running sheet
+      you tick off, with only the step in hand open.
+      <strong>Counter mode</strong> shows that one step large, for a phone
+      propped by the flour. The result goes on at the end.
+    </dd>
+
+    <dt>Hints</dt>
+    <dd>
+      Short notes on the steps of a bake, a recipe's stages and a jar's page:
+      what a first loaf got wrong, said where the next one will meet it, some
+      with a drawing. <strong>Got it</strong> puts one away for good;
+      <a href="/settings#hints">settings</a> brings them back.
     </dd>
 
     <dt>Equipment</dt>
     <dd>
       The bread maker's programs, typed in from its manual, so a bake can say
-      which one it ran. The 2 / 2.5 / 3 lb buttons on the start form scale the
-      flour to what the pan takes.
+      which one it ran. <strong>Fill a tin</strong> on the start form scales
+      the flour to the 2, 2.5 or 3 lb the pan takes.
     </dd>
 
     <dt>Photos</dt>
     <dd>
-      On jars, feedings and bakes. <strong>Compare crumb</strong> on the bakes
-      page puts two loaves side by side.
+      On jars, feedings and bakes: the dashed square with a plus adds one,
+      and a photo opens large to be captioned. <strong>Compare crumb</strong>
+      on the bakes page puts two loaves side by side.
     </dd>
   </dl>
 </section>
@@ -80,15 +127,16 @@
   <ul class="plain about-notes">
     <li>
       Weights are stored in <strong>grams</strong> and temperatures in
-      <strong>°C</strong> — one set of numbers, no rounding drift. The two
-      chips in the header change what you read <em>and</em> what you type:
-      grams, then US cups and spoons, then ounces and pounds.
+      <strong>°C</strong> — one set of numbers, no rounding drift. The units
+      picked in <a href="/settings">settings</a> change what you read
+      <em>and</em> what you type: grams, US cups and spoons, or ounces and
+      pounds; °F or °C.
     </li>
     <li>
       Every weight field takes whichever of those you are working in. A bare
-      number is read in the unit the chip is showing; write the unit out —
+      number is read in the unit on display; write the unit out —
       <em>250 g</em>, <em>8 oz</em>, <em>1 lb 2 oz</em>, <em>1 ½ cups</em> —
-      and that wins, whatever the chip says. A recipe typed as amounts keeps
+      and that wins, whatever the setting says. A recipe typed as amounts keeps
       the batch it was written at, so it reads back in cups.
     </li>
     <li>
@@ -140,12 +188,23 @@
   </p>
 </section>
 
+<section class="card about-by">
+  <h2 class="section-title">Created by</h2>
+  <p class="about-by-name">Scott McLeslie</p>
+  <p class="muted">
+    Bakes the bread, keeps the notebook, and decided the notebook should be
+    software. The source is on GitHub at
+    <a href="https://github.com/scottmclesly/zakvaska" rel="noopener">scottmclesly/zakvaska</a>.
+  </p>
+</section>
+
 <section class="card">
   <h2 class="section-title">Not yet</h2>
   <p class="muted">
-    Rise curves drawn from the feeding log, working backwards from the hour
-    you want bread out of the oven, a temperature and rise sensor posting
-    readings on its own, and a push to the phone instead of a banner.
+    A temperature and rise sensor posting readings on its own, a push to the
+    phone instead of a banner, and a home on a Raspberry Pi so it is there
+    when the laptop is shut.
   </p>
 </section>
+</div>
 {% endblock %}
