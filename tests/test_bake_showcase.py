@@ -193,3 +193,19 @@ class TestNoWayBackThatTheMenuAlreadyGives:
             assert "All bakes" not in actions, path
             assert "All recipes" not in actions, path
             assert 'href="/recipes">Recipes<' not in actions, path
+
+
+def test_the_day_runs_full_width_between_the_figures_and_the_columns():
+    """The timeline is a child of the showcase itself, after the figures and
+    before the two columns, not squeezed into one of them."""
+    from pathlib import Path
+
+    showcase = (
+        Path(__file__).resolve().parent.parent
+        / "app/templates/bakes/parts/showcase.html"
+    ).read_text(encoding="utf-8")
+    figures = showcase.index('include "bakes/parts/figures.html"')
+    day = showcase.index('include "bakes/parts/day.html"')
+    columns = showcase.index("showcase-record")
+    assert figures < day < columns
+    assert showcase.count('include "bakes/parts/day.html"') == 1

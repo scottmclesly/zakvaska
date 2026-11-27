@@ -4,8 +4,9 @@
    The photograph leads, with every other photo of the loaf in a strip under
    it, and the name, the stars and the verdict beside it. Then the bake in
    figures and two columns: what
-   went into it, and how the day went — the timeline and the running sheet,
-   which are history now rather than instruments. #}
+   went into it, and how the day went. The day's timeline runs the full
+   width under the figures; the running sheet, which is history now rather
+   than an instrument, sits beside what went into the loaf. #}
 {% from "partials/icons.html" import icon %}
 {%- set cover = photos[0] if photos else none -%}
 {%- set result = bake.result -%}
@@ -85,6 +86,11 @@
 
   {% include "bakes/parts/figures.html" %}
 
+  {#- The day drawn out, the full width of the page under the figures: a
+      timeline wants all the room there is, and squeezed into one column its
+      labels fought the bars. -#}
+  {% include "bakes/parts/day.html" %}
+
   <div class="split split--even showcase-record">
     <div class="stack">
       {% with weigh_title = "What went into it" %}
@@ -125,7 +131,6 @@
     </div>
     <div class="stack">
       <h2 class="section-title">How the day went</h2>
-      {% include "bakes/parts/day.html" %}
       {% with sheet_title = "Step by step" %}
       {% include "bakes/parts/sheet.html" %}
       {% endwith %}
