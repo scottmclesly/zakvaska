@@ -54,6 +54,13 @@ extra step each system asks for.
   days of feedings, the recipe library and a finished loaf.
 - **Check for a newer version** on the About page and in the desktop app's
   tray menu. It asks GitHub, from your browser, only when you press it.
+- **Bakes are a wall of loaves**: each one a card led by its photograph,
+  the newest photographed loaf hung larger, and a line that counts them up.
+  A loaf not yet photographed gets the drawing of what it was.
+- **Recipes are worth browsing**: each card leads with its bread, drawn as
+  the bread it is (a baguette is no longer a boule) or shown by the photo of
+  the best one you have baked, with hydration, time, and how often you have
+  made it. Two across on a phone.
 - "Compare with" on a finished loaf now sits under what went into it.
 
 ### Known limits

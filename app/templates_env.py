@@ -14,6 +14,7 @@ from app import __version__
 from app.config import get_settings
 from app import buildinfo
 from app.services import alerts as alert_service
+from app.services import browse
 from app.services import hints as hint_service
 from app.services import jars as jar_service
 from app.services import followalong
@@ -302,6 +303,11 @@ templates.env.globals["live_refresh_s"] = LIVE_REFRESH_S
 templates.env.globals["bakeplan_default_knead"] = bakeplan.DEFAULT_KNEAD_MIN
 templates.env.globals["cycle_bar"] = recipe_service.cycle_bar
 templates.env.globals["stage_bar"] = recipe_service.stage_bar
+# The shape a recipe's bread is drawn as: partials/loaf_art.html asks, so
+# every page that draws a loaf draws the same one.
+templates.env.globals["loaf_shape"] = browse.loaf_shape
+templates.env.globals["loaf_shape_labels"] = browse.SHAPE_LABELS
+templates.env.globals["recipe_time_label"] = browse.time_label
 
 
 def render(

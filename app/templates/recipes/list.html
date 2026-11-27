@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% from "partials/icons.html" import icon %}
+
 {% block page_class %}page--wide{% endblock %}
 
 {% block content %}
@@ -42,24 +44,40 @@
       <span>New recipe</span>
     </a>
   </li>
-  {% for recipe in recipes %}
-  {% set latest = recipe.latest_version %}
+  {% for card in cards %}
+  {% set recipe = card.recipe %}
+  {% set latest = card.latest %}
   {#- A card is the link to its recipe: the name's anchor is stretched over
-      all of it. One loaf, one name, one line of facts — thirty-six of these
-      should be a page you can take in, not six screens of them. -#}
+      all of it. The bread leads, drawn as the bread it is, or photographed
+      if you have baked it; then the two numbers a baker reads a formula by,
+      and what has come of it so far. -#}
   <li class="card recipe-card" data-family="{{ recipe.category.value }}"
       data-find="{{ (recipe.name ~ ' ' ~ (recipe.source or '') ~ ' ' ~ (latest.default_program.name if latest and latest.default_program else '')) | lower }}">
-    <div class="recipe-loaf">
-      {% include "partials/loaf_art.html" %}
+    <div class="recipe-loaf{% if card.cover %} has-photo{% endif %}">
+      {% if card.cover %}
+      <img src="{{ card.cover.thumb_url }}" decoding="async"
+           alt="{{ card.cover.caption or 'A loaf baked from this recipe' }}">
+      {% else %}
+      {% with shape = card.shape %}{% include "partials/loaf_art.html" %}{% endwith %}
+      {% endif %}
+      <span class="recipe-family">{{ recipe.category.label }}</span>
+      {% if latest and latest.default_program %}
+      <span class="recipe-machine-tag" title="Bread maker">{{ icon("machine") }}</span>
+      {% endif %}
     </div>
     <div class="recipe-head-text">
       <h2><a class="recipe-link" href="/recipes/{{ recipe.id }}">{{ recipe.name }}</a></h2>
-      <p class="recipe-facts muted small">
-        <span class="badge">{{ recipe.category.label }}</span>
-        {{ latest.label if latest else "—" }}
-        {%- if recipe.versions | length > 1 %} of {{ recipe.versions | length }}{% endif %}
-        {%- if latest %} · {{ latest.ingredients | length }} ingredients{% endif %}
-      </p>
+      <ul class="recipe-stats">
+        {% if card.hydration is not none %}
+        <li><strong>{{ card.hydration }}%</strong> water</li>
+        {% endif %}
+        {% if card.total_min %}
+        <li><strong>{{ recipe_time_label(card.total_min) }}</strong></li>
+        {% endif %}
+        {% if latest %}
+        <li><strong>{{ latest.ingredients | length }}</strong> ingredients</li>
+        {% endif %}
+      </ul>
       {% if latest and latest.default_program %}
       <p class="recipe-machine muted small">
         Bread maker: {{ latest.default_program.name }}{% if latest.default_loaf_size %},
@@ -67,16 +85,30 @@
         {{ latest.default_crust }} crust{% endif %}
       </p>
       {% endif %}
-      {% if recipe.source %}
-      <p class="source muted small" title="{{ recipe.source }}{% if recipe.source_ref %} · {{ recipe.source_ref }}{% endif %}">
-        {{ recipe.source }}{% if recipe.source_ref %} · {{ recipe.source_ref }}{% endif %}
-      </p>
-      {% endif %}
-      {% if recipe.versions | length > 1 %}
-      <p class="recipe-more small">
-        <a href="/recipes/{{ recipe.id }}/diff">Compare versions</a>
-      </p>
-      {% endif %}
+      <div class="recipe-foot small">
+        {% if card.baked %}
+        <p class="recipe-baked">
+          Baked {{ card.baked }}&times;
+          {%- if card.best_rating %}
+          <span class="stars" title="Best so far: {{ card.best_rating }} out of 5">
+            <span aria-hidden="true">{{ "★" * card.best_rating }}{{ "☆" * (5 - card.best_rating) }}</span>
+            <span class="sr-only">best so far {{ card.best_rating }} out of 5</span>
+          </span>
+          {%- endif %}
+        </p>
+        {% endif %}
+        {% if recipe.versions | length > 1 %}
+        <p class="recipe-facts muted">
+          {{ latest.label }} of {{ recipe.versions | length }}
+          · <a class="recipe-more" href="/recipes/{{ recipe.id }}/diff">Compare versions</a>
+        </p>
+        {% endif %}
+        {% if recipe.source %}
+        <p class="source muted" title="{{ recipe.source }}{% if recipe.source_ref %} · {{ recipe.source_ref }}{% endif %}">
+          {{ recipe.source }}
+        </p>
+        {% endif %}
+      </div>
     </div>
   </li>
   {% endfor %}

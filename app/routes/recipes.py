@@ -16,6 +16,7 @@ from app.models.enums import (
 from app.routes import forms as f
 from app.routes.deps import ViewContext, get_view_context
 from app.services import bakes as bake_service
+from app.services import browse
 from app.services import measures
 from app.services import recipes as recipe_service
 from app.services import scaling
@@ -208,7 +209,9 @@ def list_recipes(request: Request, ctx: Ctx) -> HTMLResponse:
         name="recipes/list.html",
         context={
             "title": "Recipes",
-            "recipes": recipe_service.list_recipes(ctx.session),
+            "recipes": (recipes := recipe_service.list_recipes(ctx.session)),
+            # What each card shows beyond the name: see services/browse.py.
+            "cards": browse.recipe_cards(ctx.session, recipes),
             "archived": [
                 r
                 for r in recipe_service.list_recipes(ctx.session, include_archived=True)
