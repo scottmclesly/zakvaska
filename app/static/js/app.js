@@ -437,3 +437,91 @@ document.addEventListener("input", (event) => {
   dress();
 })();
 
+// --- The gallery -------------------------------------------------------------
+// partials/photo_gallery.html. Three small things, none of them needed for it
+// to work: a tile opens its photo in a <dialog> instead of a new tab; the
+// plus tile sends the file as soon as one is chosen (or dropped on it); and
+// left and right step through the photos while one is open.
+(function () {
+  function views() {
+    return Array.prototype.slice.call(document.querySelectorAll("dialog.photo-view"));
+  }
+
+  function show(dialog) {
+    if (!dialog || typeof dialog.showModal !== "function") return false;
+    var all = views();
+    var at = all.indexOf(dialog);
+    dialog.querySelector(".photo-prev").hidden = at <= 0;
+    dialog.querySelector(".photo-next").hidden = at === all.length - 1;
+    dialog.showModal();
+    return true;
+  }
+
+  function step(dialog, by) {
+    var all = views();
+    var next = all[all.indexOf(dialog) + by];
+    if (!next) return;
+    dialog.close();
+    show(next);
+  }
+
+  document.addEventListener("click", function (event) {
+    var opener = event.target.closest("[data-photo-open]");
+    if (opener) {
+      // A modifier means "in a new tab", which the plain link already does.
+      if (event.metaKey || event.ctrlKey || event.shiftKey) return;
+      if (show(document.getElementById(opener.getAttribute("data-photo-open")))) {
+        event.preventDefault();
+      }
+      return;
+    }
+    var dialog = event.target.closest("dialog.photo-view");
+    if (!dialog) return;
+    var stepper = event.target.closest("[data-photo-step]");
+    if (stepper) step(dialog, parseInt(stepper.getAttribute("data-photo-step"), 10));
+    // The dialog element itself is only hit on its backdrop.
+    else if (event.target === dialog || event.target.closest("[data-photo-close]")) dialog.close();
+  });
+
+  document.addEventListener("keydown", function (event) {
+    var open = document.querySelector("dialog.photo-view[open]");
+    if (!open || event.target.matches("input, textarea")) return;
+    if (event.key === "ArrowLeft") step(open, -1);
+    else if (event.key === "ArrowRight") step(open, 1);
+  });
+
+  // Choosing a file is the whole act of adding one.
+  function send(form) {
+    form.closest(".photo-add").classList.add("is-sending");
+    form.submit();
+  }
+  document.addEventListener("change", function (event) {
+    var form = event.target.closest("[data-photo-add]");
+    if (form && event.target.type === "file" && event.target.files.length) send(form);
+  });
+
+  // Dropping one on the square does the same.
+  ["dragenter", "dragover"].forEach(function (name) {
+    document.addEventListener(name, function (event) {
+      var tile = event.target.closest && event.target.closest(".photo-add");
+      if (!tile) return;
+      event.preventDefault();
+      tile.classList.add("is-over");
+    });
+  });
+  ["dragleave", "drop"].forEach(function (name) {
+    document.addEventListener(name, function (event) {
+      var tile = event.target.closest && event.target.closest(".photo-add");
+      if (!tile) return;
+      tile.classList.remove("is-over");
+      if (name !== "drop") return;
+      event.preventDefault();
+      var input = tile.querySelector('input[type="file"]');
+      if (event.dataTransfer && event.dataTransfer.files.length) {
+        input.files = event.dataTransfer.files;
+        send(tile.querySelector("form"));
+      }
+    });
+  });
+})();
+
