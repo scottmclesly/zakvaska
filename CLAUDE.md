@@ -25,6 +25,11 @@ Comparing jars and iterating recipes is the point, so the data must be structure
   `ZAKVASKA_PORT`, `ZAKVASKA_TZ` (default `America/New_York`). The old `JARLOG_*` keys are
   still read as a fallback, and a `jarlog.db` is renamed to `zakvaska.db` on first open.
 - Store timestamps in **UTC**; display in `ZAKVASKA_TZ`.
+- **A rhythm is on the wall clock; a duration is real time.** Planned feeds step by
+  whole cycles on the local clock (`plan.cycles_on`), as recurring busy blocks do, so
+  eight-and-eight stays eight-and-eight across a daylight-saving change. Rise curves,
+  bake steps and the preheat lead are elapsed time and never gain or lose the hour.
+  `tests/test_alert_timing.py` holds both halves to it.
 - Store weights in **grams**, temperatures in **°C**. Both have a display setting, picked by
   name on `/settings` (`POST /settings/units`): temperature **default °F**, weight **default
   grams**, the others US cups/spoons and oz/lb. Volume readings use the per-ingredient
@@ -50,6 +55,9 @@ Comparing jars and iterating recipes is the point, so the data must be structure
   the dismissed ids are one row in the settings table (`hints_dismissed`).
   Explainer drawings are inline SVG in `templates/partials/explainers/`, coloured
   only through the stylesheet's `.ex-*` classes so they follow the theme.
+- The drawn jar moves by one value, `Life` (`services/jars.life_of`: active, hungry,
+  overdue, resting), carried as `life-*` on the SVG. Motion is CSS keyframes on
+  `transform`/`opacity` only, all inside `prefers-reduced-motion: no-preference`.
 - Never hard-delete jars, recipes or bakes — archive them. Lab-notebook history matters.
 - Every schema change ships with an Alembic migration.
 - Keep it dependency-light. Ask before adding a dependency not listed above.
@@ -60,11 +68,20 @@ Comparing jars and iterating recipes is the point, so the data must be structure
 ./scripts/setup.sh   # create .venv, install requirements, run migrations
 ./scripts/run.sh     # migrate if needed, then start on ZAKVASKA_HOST:ZAKVASKA_PORT
 ```
-Both go through `scripts/migrate.py`, so a pull that adds a column just works:
-it is silent when the schema is already at head, and copies the notebook to
-`data/zakvaska.db.before-<stamp>` before it changes anything. `--check` reports
-without touching anything. Never leave the live `data/` behind the code — the
-app does not degrade, it fails to start.
+The runner is `app/migrate.py`. The app calls it in its own startup, so uvicorn
+started directly migrates too, and `scripts/migrate.py` (which both scripts call)
+is the same thing from the command line: silent when the schema is already at
+head, and it copies the notebook to `data/zakvaska.db.before-<stamp>` before it
+changes anything. `--check` reports without touching anything. A database with
+tables but no schema version is refused and left untouched. `ZAKVASKA_MIGRATE=0`
+turns the startup run off; that is for the test suite, whose schema comes from
+the models.
+
+Restore (Settings → Backup) is two steps: `POST /backup/inspect` reads the file
+right through and shows it against what is here, `POST /backup/restore` replaces.
+An export from an older schema is rebuilt in a scratch database and brought
+forward by the real migrations, and the notebook as it stood is exported to
+`data/backups/before-restore-<stamp>.zip` first.
 
 ## Out of scope for v1 (planned v2 — don't build yet, but don't block them)
 Back-scheduling a bake from a target time, sensor ingest API
