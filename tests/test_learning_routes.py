@@ -206,14 +206,19 @@ class TestItChangesThePredictions:
 
         assert "No peak has been recorded for this jar yet" in page.text
 
-    def test_the_ribbon_calls_an_unmeasured_jar_an_estimate(
+    def test_the_ribbon_says_an_unmeasured_jar_is_a_guess_without_labelling_it(
         self, client, session
     ):
+        """The word "estimate" on every row was one word too many. The row
+        still says what its curve is, in a tooltip, and the jar's own page
+        says it in full."""
         _jar(session)
 
         page = client.get("/")
 
-        assert "estimate" in page.text
+        assert "· estimate" not in page.text
+        assert "(estimate)" not in page.text
+        assert "the model's guess until this jar has three recorded peaks" in page.text
 
     def test_a_well_watched_jar_loses_the_estimate_label(
         self, client, session
