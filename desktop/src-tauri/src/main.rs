@@ -17,15 +17,16 @@
 
 use std::collections::HashSet;
 use std::fs::{self, OpenOptions};
-use std::net::TcpListener;
+use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
+use tauri::webview::DownloadEvent;
 use tauri::{AppHandle, Manager, RunEvent, Url, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt as _};
 use tauri_plugin_notification::NotificationExt as _;
@@ -42,9 +43,10 @@ const ALERT_POLL: Duration = Duration::from_secs(20);
 /// window at you: the app just appears in the tray.
 const HIDDEN_FLAG: &str = "--hidden";
 
-/// Tells the pages they are inside the desktop app. `app.js` reads it and
-/// leaves notifications to the shell rather than raising its own as well.
-const PAGE_SCRIPT: &str = "window.__ZAKVASKA_DESKTOP__ = true;";
+/// Added to the browser's name so the pages can tell they are inside the
+/// desktop app. `app.js` looks for it and leaves notifications to the shell
+/// rather than offering the browser's own as well.
+const AGENT_MARK: &str = "ZakvaskaDesktop";
 
 struct Server {
     child: Mutex<Option<Child>>,
@@ -77,6 +79,7 @@ fn main() {
 
             thread::spawn(move || {
                 if wait_until_healthy(&base) {
+                    note(&handle, &format!("server ready at {base}"));
                     go_to(&handle, &base, "/");
                     watch_alerts(&handle, &base);
                 } else if let Some(window) = handle.get_webview_window("main") {
@@ -91,6 +94,7 @@ fn main() {
             // Closing the window is not quitting: the server keeps running
             // and alerts keep coming. Quit is in the tray menu.
             if let WindowEvent::CloseRequested { api, .. } = event {
+                note(window.app_handle(), "window closed; still running in the tray");
                 let _ = window.hide();
                 api.prevent_close();
             }
@@ -119,7 +123,13 @@ fn server_binary(app: &AppHandle) -> Result<PathBuf, Box<dyn std::error::Error>>
 }
 
 fn pick_port() -> u16 {
-    if TcpListener::bind(("127.0.0.1", PREFERRED_PORT)).is_ok() {
+    let preferred = SocketAddr::from(([127, 0, 0, 1], PREFERRED_PORT));
+    // Ask whether anything answers there before trying to bind it. Binding
+    // alone is not proof: where another program listens on every address
+    // (a zakvaska started by hand with ZAKVASKA_HOST=0.0.0.0, say), a bind
+    // to 127.0.0.1 can still succeed, and the two would share the port.
+    let answered = TcpStream::connect_timeout(&preferred, Duration::from_millis(300)).is_ok();
+    if !answered && TcpListener::bind(preferred).is_ok() {
         return PREFERRED_PORT;
     }
     TcpListener::bind(("127.0.0.1", 0))
@@ -216,13 +226,53 @@ fn build_window(app: &AppHandle, base: &str) -> tauri::Result<()> {
     let opener = app.clone();
     let home = Url::parse(base).expect("the server address is a URL");
     let start_hidden = std::env::args().any(|arg| arg == HIDDEN_FLAG);
+    let saving: Arc<Mutex<Option<PathBuf>>> = Arc::new(Mutex::new(None));
 
     WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
         .title("zakvaska")
         .inner_size(1180.0, 820.0)
         .min_inner_size(380.0, 560.0)
         .visible(!start_hidden)
-        .initialization_script(PAGE_SCRIPT)
+        .user_agent(&format!(
+            "Mozilla/5.0 ({}) AppleWebKit/605.1.15 (KHTML, like Gecko) {AGENT_MARK}/{}",
+            if cfg!(windows) { "Windows NT 10.0; Win64; x64" } else { "Macintosh; Intel Mac OS X 10_15_7" },
+            app.package_info().version,
+        ))
+        // An embedded web view saves nothing unless told where. The export
+        // (Settings, Backup) and a photo's original go to the Downloads
+        // folder under a name that is not already taken, and the folder
+        // opens on the file when it has arrived.
+        .on_download(move |webview, event| {
+            match event {
+                DownloadEvent::Requested { destination, .. } => {
+                    let name = destination
+                        .file_name()
+                        .map(|name| name.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| "zakvaska-download".into());
+                    if let Ok(folder) = webview.path().download_dir() {
+                        *destination = free_name(&folder, &name);
+                    }
+                    if let Ok(mut slot) = saving.lock() {
+                        *slot = Some(destination.clone());
+                    }
+                }
+                DownloadEvent::Finished { path, success, .. } => {
+                    // Some systems do not say where it went, so remember.
+                    let remembered = saving.lock().ok().and_then(|mut slot| slot.take());
+                    if let Some(file) = path.or(remembered) {
+                        let app = webview.app_handle();
+                        if success {
+                            note(app, &format!("saved {}", file.display()));
+                            let _ = app.opener().reveal_item_in_dir(&file);
+                        } else {
+                            note(app, &format!("could not save {}", file.display()));
+                        }
+                    }
+                }
+                _ => {}
+            }
+            true
+        })
         // The window is for the notebook. A link that leads anywhere else
         // (the GitHub page, a release to download) opens in the real browser.
         .on_navigation(move |url| {
@@ -237,6 +287,23 @@ fn build_window(app: &AppHandle, base: &str) -> tauri::Result<()> {
         })
         .build()?;
     Ok(())
+}
+
+/// `name` in `folder`, or "name (2)", "name (3)"… if that is taken: a second
+/// export on the same minute must not write over the first.
+fn free_name(folder: &Path, name: &str) -> PathBuf {
+    let first = folder.join(name);
+    if !first.exists() {
+        return first;
+    }
+    let (stem, ext) = match name.rsplit_once('.') {
+        Some((stem, ext)) => (stem, format!(".{ext}")),
+        None => (name, String::new()),
+    };
+    (2..)
+        .map(|n| folder.join(format!("{stem} ({n}){ext}")))
+        .find(|candidate| !candidate.exists())
+        .unwrap_or(first)
 }
 
 fn show_window(app: &AppHandle) {
@@ -312,6 +379,21 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     Ok(())
 }
 
+/// One line in logs/app.log beside the notebook: what the shell did, for
+/// the day someone asks why a notification never came.
+fn note(app: &AppHandle, line: &str) {
+    use std::io::Write as _;
+    let Some(server) = app.try_state::<Server>() else { return };
+    let path = server.data_dir.join("logs").join("app.log");
+    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path) {
+        let secs = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let _ = writeln!(file, "{secs} {line}");
+    }
+}
+
 // --- Alerts ------------------------------------------------------------------
 
 /// What the server is showing right now, as (id, title, body).
@@ -352,7 +434,11 @@ fn watch_alerts(app: &AppHandle, base: &str) {
         if let Some(alerts) = showing_alerts(base) {
             for (id, title, body) in &alerts {
                 if !last.contains(id) {
-                    let _ = app.notification().builder().title(title).body(body).show();
+                    let shown = app.notification().builder().title(title).body(body).show();
+                    note(app, &match shown {
+                        Ok(()) => format!("notified: {title}"),
+                        Err(err) => format!("could not notify ({err}): {title}"),
+                    });
                 }
             }
             last = alerts.into_iter().map(|(id, _, _)| id).collect();

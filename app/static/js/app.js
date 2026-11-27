@@ -62,7 +62,11 @@ if ("serviceWorker" in navigator) {
 
   // Inside the desktop app the shell raises native notifications itself,
   // window open or not, so the page stays out of it rather than doubling up.
-  var desktop = window.__ZAKVASKA_DESKTOP__ === true;
+  // It says so in its browser name (desktop/src-tauri/src/main.rs). The class
+  // is what hides the "enable notifications" button, so that it stays hidden
+  // when the banner is redrawn by a live refresh.
+  var desktop = /ZakvaskaDesktop/.test(navigator.userAgent);
+  if (desktop) document.documentElement.classList.add("is-desktop");
   var supported = "Notification" in window && !desktop;
 
   function seen() {

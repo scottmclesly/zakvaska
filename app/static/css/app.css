@@ -3925,3 +3925,8 @@ table.steps tr.is-clash td {
   outline-offset: 4px;
   border-radius: var(--r-md);
 }
+
+/* Inside the desktop app the shell raises native notifications itself, so
+   the browser's own offer has nothing to offer. */
+.is-desktop [data-notify-enable],
+.is-desktop [data-notify-status] { display: none !important; }
