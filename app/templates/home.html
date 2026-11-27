@@ -157,6 +157,23 @@
   </p>
   <p><a class="btn" href="/jars/new">Add a jar</a></p>
 </section>
+
+{% if demo_offer %}
+<section class="empty card">
+  <h2>Or look around first</h2>
+  <p>
+    Load a demo notebook: two rye jars with a few days of feedings and rise
+    measurements, the recipe library, and one finished loaf.
+  </p>
+  <p class="muted">
+    Everything it adds has &ldquo;(demo)&rdquo; in its name. Archive the jars
+    when you are ready to start your own.
+  </p>
+  <form method="post" action="/demo/load">
+    <button class="btn btn-secondary" type="submit">Load the demo notebook</button>
+  </form>
+</section>
+{% endif %}
 {% endif %}
 
 {% if archived %}

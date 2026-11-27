@@ -60,7 +60,10 @@ if ("serviceWorker" in navigator) {
   var button = document.querySelector("[data-notify-enable]");
   var status = document.querySelector("[data-notify-status]");
 
-  var supported = "Notification" in window;
+  // Inside the desktop app the shell raises native notifications itself,
+  // window open or not, so the page stays out of it rather than doubling up.
+  var desktop = window.__ZAKVASKA_DESKTOP__ === true;
+  var supported = "Notification" in window && !desktop;
 
   function seen() {
     // Remembered per browser so a page refresh does not re-notify.
@@ -85,6 +88,11 @@ if ("serviceWorker" in navigator) {
 
   function refreshButton() {
     if (!button) return;
+    if (desktop) {
+      button.hidden = true;
+      say("");
+      return;
+    }
     if (!supported) {
       say("This browser cannot show notifications.");
       return;
@@ -551,3 +559,67 @@ document.addEventListener("input", (event) => {
   });
 })();
 
+// --- Update check ----------------------------------------------------------
+// The About page's "is there a newer version?" Asked of GitHub by the
+// browser, and only on a press of the button (or the desktop app's tray
+// menu, which opens the page with ?check-updates=1). The server never calls
+// out: a notebook on a Pi with no route to the internet loses nothing.
+(function () {
+  var box = document.querySelector("[data-update-check]");
+  if (!box) return;
+  var button = box.querySelector("[data-update-button]");
+  var link = box.querySelector("[data-update-link]");
+  var status = box.querySelector("[data-update-status]");
+  var current = box.getAttribute("data-current");
+
+  function parts(version) {
+    return String(version).replace(/^v/, "").split(/[.+-]/).map(function (n) {
+      return parseInt(n, 10) || 0;
+    });
+  }
+
+  function newer(theirs, ours) {
+    var a = parts(theirs), b = parts(ours);
+    for (var i = 0; i < 3; i++) {
+      if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
+    }
+    return false;
+  }
+
+  function check() {
+    status.textContent = "Checking…";
+    button.disabled = true;
+    fetch(box.getAttribute("data-api"), {
+      headers: { Accept: "application/vnd.github+json" },
+    })
+      .then(function (response) {
+        if (response.status === 404) return { none: true };
+        if (!response.ok) throw new Error("status " + response.status);
+        return response.json();
+      })
+      .then(function (release) {
+        button.disabled = false;
+        if (release.none || !release.tag_name) {
+          status.textContent = "No releases have been published yet.";
+          return;
+        }
+        if (newer(release.tag_name, current)) {
+          status.textContent =
+            "Version " + release.tag_name.replace(/^v/, "") + " is out.";
+          if (release.html_url) link.href = release.html_url;
+          link.hidden = false;
+        } else {
+          status.textContent = "That is the newest there is.";
+        }
+      })
+      .catch(function () {
+        button.disabled = false;
+        status.textContent =
+          "Could not reach GitHub just now. Nothing is wrong with the notebook.";
+      });
+  }
+
+  button.hidden = false;
+  button.addEventListener("click", check);
+  if (/[?&]check-updates=1/.test(window.location.search)) check();
+})();

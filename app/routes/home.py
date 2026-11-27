@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse
 from app.routes.deps import ViewContext, get_view_context
 from app.services import (
     charts,
+    demo as demo_service,
     followalong,
     jars as jar_service,
     plan as plan_service,
@@ -68,6 +69,8 @@ def home(request: Request, ctx: Ctx) -> HTMLResponse:
             "plans": plans,
             "underway": underway,
             "duel": duel,
+            # Offered on the empty shelf only, and only until the first jar.
+            "demo_offer": not cards and demo_service.can_load(ctx.session),
             "archived": [
                 jar
                 for jar in jar_service.list_jars(ctx.session, include_archived=True)
