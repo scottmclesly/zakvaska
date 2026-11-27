@@ -237,6 +237,27 @@ class ObservationPoint:
 
 
 @dataclass(frozen=True)
+class HungryWait:
+    """A stretch still to come in which the jar is spent and not yet fed.
+
+    Between a rise running its course and the next planned feed there is
+    nothing rising to draw, and left blank that reads as missing data. It is
+    not: it is the jar waiting, which on a slow rhythm and a quick ratio can
+    be a third of the day, and is worth seeing.
+    """
+
+    x1: float
+    x2: float
+    since: datetime
+    #: The planned feed that ends it, or None when none is in sight.
+    until: datetime | None
+
+    @property
+    def width(self) -> float:
+        return self.x2 - self.x1
+
+
+@dataclass(frozen=True)
 class RibbonRow:
     """One jar, laid out."""
 
@@ -265,6 +286,9 @@ class RibbonRow:
     #: The rises still to come if the plan is kept, drawn dashed. See
     #: `RibbonSeries.projected`.
     projections: tuple[RiseCurve, ...] = ()
+    #: The hungry stretches ahead: after the current rise is spent, and
+    #: after each projected one, until the feed that follows.
+    waits: tuple[HungryWait, ...] = ()
 
     @property
     def hungry_width(self) -> float:
@@ -612,6 +636,36 @@ def _ribbon_at(
                 hungry_x1 = x_for(max(spent, start))
                 hungry_x2 = x_for(min(now, end))
 
+        # And the same ahead of now: from where each rise gives out to the
+        # feed that follows it. The current rise first, then each projected
+        # one in turn.
+        waits: list[HungryWait] = []
+        upcoming = sorted(
+            (feed for feed in one.projected if feed.at >= now),
+            key=lambda feed: feed.at,
+        )
+        running: list[FeedMark] = []
+        if one.feeds:
+            latest = max(one.feeds, key=lambda feed: feed.at)
+            if latest.ends_at is None:
+                running.append(latest)
+        chain = running + upcoming
+        for index, feed in enumerate(chain):
+            if feed.peak_h <= 0:
+                continue
+            following = chain[index + 1].at if index + 1 < len(chain) else None
+            since = max(
+                feed.at + timedelta(hours=feed.peak_h * timing.PAST_TO), now
+            )
+            stop = min(following, end) if following is not None else end
+            if since < stop and since < end and stop > start:
+                waits.append(
+                    HungryWait(
+                        x1=x_for(since), x2=x_for(stop),
+                        since=since, until=following,
+                    )
+                )
+
         rows.append(
             RibbonRow(
                 name=one.name,
@@ -632,6 +686,7 @@ def _ribbon_at(
                 is_estimate=one.is_estimate,
                 note=one.note,
                 projections=projections,
+                waits=tuple(waits),
                 hungry_x1=hungry_x1,
                 hungry_x2=hungry_x2,
                 hungry_since=hungry_since,
