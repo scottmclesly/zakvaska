@@ -1,20 +1,23 @@
 {% extends "base.html" %}
 {% from "partials/icons.html" import icon %}
 
-{% block nav %}
-<a class="btn btn-small btn-secondary" href="/jars/{{ jar.id }}/edit">Edit</a>
-{% endblock %}
-
 {% block page_class %}page--wide{% endblock %}
 
 {% block content %}
 <section class="hero hero-art">
   <div class="hero-jar">
-    {% with art_class = "jar-art-lg",
-            mood = readiness.band.value if readiness else none,
-            overdue = card.status.is_overdue %}
-      {% include "partials/jar_art.html" %}
-    {% endwith %}
+    {#- The jar is the way in to editing it: point at it and it lights up
+        with a pencil. The header keeps Settings to itself. Where there is
+        no pointer to hover with, the pencil is simply there. -#}
+    <a class="jar-edit" href="/jars/{{ jar.id }}/edit"
+       aria-label="Edit {{ jar.name }}" data-tip="Edit this jar">
+      {% with art_class = "jar-art-lg",
+              mood = readiness.band.value if readiness else none,
+              overdue = card.status.is_overdue %}
+        {% include "partials/jar_art.html" %}
+      {% endwith %}
+      <span class="jar-edit-pencil" aria-hidden="true">{{ icon("pencil") }}</span>
+    </a>
     <div class="shelf-plank shelf-plank-sm" aria-hidden="true"></div>
   </div>
   <div>
