@@ -1,58 +1,86 @@
-{# Photos for one thing, plus the form to add another.
-   Expects `photos`, `owner_type`, `owner_id`, and optionally `gallery_title`. #}
+{# Photos for one thing, and the way to add another.
+   Expects `photos`, `owner_type`, `owner_id`, and optionally `gallery_title`.
+
+   A grid of squares. Each photo is a tile with its caption laid over the
+   foot of it; the last tile is an empty one with a plus, which is the
+   upload — choosing a file sends it, with nothing else to fill in. A tile
+   opens the photo large, and that is where it is captioned, downloaded or
+   deleted: the things you do to one photo live with that photo, not under
+   every thumbnail.
+
+   Without JavaScript a tile is a link to the full image and the plus tile
+   shows a Send button; captioning and deleting need the preview, which
+   needs the script. #}
 <section class="gallery-block">
   <h2 class="section-title">{{ gallery_title or "Photos" }}</h2>
 
-  {% if photos %}
-  <ul class="gallery">
+  <ul class="photo-grid">
     {% for photo in photos %}
-    <li class="shot">
-      <a href="{{ photo.url }}" target="_blank" rel="noopener">
-        <img src="{{ photo.thumb_url }}" alt="{{ photo.caption or 'Photo taken ' ~ (photo.taken_at | local_dt) }}"
+    {%- set alt = photo.caption or 'Photo taken ' ~ (photo.taken_at | local_dt) %}
+    <li class="photo-tile">
+      <a class="photo-open" href="{{ photo.url }}" target="_blank" rel="noopener"
+         data-photo-open="photo-{{ photo.id }}">
+        <img src="{{ photo.thumb_url }}" alt="{{ alt }}"
              loading="lazy" width="240" height="240">
+        {%- if photo.caption %}
+        <span class="photo-caption">{{ photo.caption }}</span>
+        {%- endif %}
       </a>
+    </li>
+    {% endfor %}
+
+    {#- The empty square: one more goes here. -#}
+    <li class="photo-tile photo-add">
+      <form method="post" action="/photos/upload" enctype="multipart/form-data"
+            data-photo-add>
+        <input type="hidden" name="owner_type" value="{{ owner_type }}">
+        <input type="hidden" name="owner_id" value="{{ owner_id }}">
+        <label class="photo-add-label">
+          {# capture lets a phone go straight to the camera. #}
+          <input class="sr-only" type="file" name="photo"
+                 accept="image/*,.heic,.heif" capture="environment" required>
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor"
+               stroke-width="1.8" stroke-linecap="round">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          <span>Add a photo</span>
+        </label>
+        <noscript><button class="btn btn-small" type="submit">Send</button></noscript>
+      </form>
+    </li>
+  </ul>
+
+  {#- One photo, large. A <dialog> apiece, opened by its tile (app.js); the
+      forms in it are ordinary forms, so they work the same either way. -#}
+  {% for photo in photos %}
+  {%- set alt = photo.caption or 'Photo taken ' ~ (photo.taken_at | local_dt) %}
+  <dialog class="photo-view" id="photo-{{ photo.id }}" aria-label="{{ alt }}">
+    <div class="photo-view-stage">
+      <img src="{{ photo.url }}" alt="{{ alt }}" loading="lazy">
+      <button class="photo-nav photo-prev" type="button" data-photo-step="-1"
+              aria-label="Previous photo">‹</button>
+      <button class="photo-nav photo-next" type="button" data-photo-step="1"
+              aria-label="Next photo">›</button>
+    </div>
+    <div class="photo-view-foot">
       <form class="shot-caption" method="post" action="/photos/{{ photo.id }}/caption">
         <label class="sr-only" for="caption-{{ photo.id }}">Caption</label>
         <input id="caption-{{ photo.id }}" name="caption" value="{{ photo.caption or '' }}"
-               placeholder="Caption">
-        <button class="btn btn-small btn-secondary" type="submit">Save</button>
+               placeholder="Add a caption — crumb, two hours after slicing">
+        <button class="btn btn-small" type="submit">Save</button>
       </form>
-      <p class="shot-when muted small">
-        {{ photo.taken_at | local_dt }}
+      <p class="photo-view-meta muted small">
+        <span>{{ photo.taken_at | local_dt }}</span>
         {% if photo.has_original %}
         <a href="{{ photo.original_url }}" download>Original</a>
         {% endif %}
-        <form method="post" action="/photos/{{ photo.id }}/delete"
-              onsubmit="return confirm('Delete this photo? The file goes too.')">
-          <button class="linkish" type="submit">Delete</button>
-        </form>
+        <button class="linkish" type="submit" form="delete-photo-{{ photo.id }}">Delete</button>
+        <button class="btn btn-small btn-secondary photo-close" type="button"
+                data-photo-close>Close</button>
       </p>
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-
-  {#- One line until it is wanted. -#}
-  <details class="card disclosure">
-  <summary>Add a photo</summary>
-  <form class="form upload" method="post" action="/photos/upload"
-        enctype="multipart/form-data">
-    <input type="hidden" name="owner_type" value="{{ owner_type }}">
-    <input type="hidden" name="owner_id" value="{{ owner_id }}">
-    <div class="field-row">
-      <label>
-        <span>Photo</span>
-        {# capture lets a phone go straight to the camera. #}
-        <input type="file" name="photo" accept="image/*,.heic,.heif" capture="environment" required>
-      </label>
-      <label>
-        <span>Caption <em>optional</em></span>
-        <input name="caption" placeholder="e.g. crumb, 2 h after slicing">
-      </label>
     </div>
-    <div class="row-actions">
-      <button class="btn" type="submit">Upload</button>
-    </div>
-  </form>
-  </details>
+    <form id="delete-photo-{{ photo.id }}" method="post" action="/photos/{{ photo.id }}/delete"
+          onsubmit="return confirm('Delete this photo? The file goes too.')"></form>
+  </dialog>
+  {% endfor %}
 </section>
