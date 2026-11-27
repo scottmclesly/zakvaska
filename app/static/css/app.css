@@ -1531,8 +1531,50 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   }
   .bake-top:has(.bake-day) .bake-top-side { display: contents; }
   .bake-top .bake-day { grid-column: 1 / -1; grid-row: 1; }
-  .bake-top .bake-now { grid-column: 1; grid-row: 2; }
-  .bake-top-side > .card:first-child { grid-column: 2; grid-row: 2; }
+  /* Whichever of the pair is shorter grows to match the other. */
+  .bake-top .bake-now { grid-column: 1; grid-row: 2; align-self: stretch; align-content: start; }
+  /* As tall as the Now panel beside it, whatever that comes to. */
+  .bake-top-side > .card:first-child { grid-column: 2; grid-row: 2; align-self: stretch; }
+}
+
+/* The bake in figures: two across, spread to fill the card, each with a
+   glyph and a number big enough to read without leaning in. */
+.bake-figures { display: flex; }
+.bake-figures .stats {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4) var(--s-4);
+  align-content: space-evenly;
+  margin: 0;
+}
+.bake-figures .stats > div { min-width: 0; }
+.bake-figures dt {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--text-xs);
+}
+.stat-icon { width: 18px; height: 18px; flex: 0 0 auto; color: var(--accent); }
+.bake-figures dd {
+  margin-top: var(--s-1);
+  font-family: var(--display);
+  font-size: var(--text-xl);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+}
+.bake-figures .stat-sub {
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  margin-top: var(--s-1);
+}
+/* Beside the Now panel on a laptop it is two across with bigger numerals;
+   on a phone, where it is a strip above the panel, as many as fit. */
+.bake-figures .stats { grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); }
+.bake-figures dd { font-size: var(--text-lg); }
+@media (min-width: 1024px) {
+  .bake-figures .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bake-figures dd { font-size: var(--text-xl); }
 }
 .bake-sheet { display: flex; flex-direction: column; gap: var(--s-3); }
 
