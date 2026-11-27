@@ -394,3 +394,42 @@ class TestNavigation:
             assert 'href="/recipes"' in text, url
             assert 'href="/settings"' in text, url
         assert 'href="/equipment"' in client.get("/settings").text
+
+
+class TestAddingOneFromTheList:
+    def test_new_recipe_is_an_empty_tile_in_the_grid_not_a_button(self, client, session):
+        """The same shape as every other "add" in the app: a dashed, hollow
+        slot where the next one will go."""
+        recipe_service.create_recipe(
+            session, name="Borodinsky", category=RecipeCategory.RYE,
+            ingredients=[IngredientSpec("Rye", IngredientRole.FLOUR, 100.0)],
+            stages=[StageSpec("bake", duration_min=60)],
+        )
+        session.commit()
+
+        page = client.get("/recipes").text
+        grid = page.split('<ul class="recipe-grid"')[1].split("</ul>")[0]
+
+        assert 'class="recipe-add-link" href="/recipes/new"' in grid
+        # It leads the grid, ahead of the first recipe.
+        assert grid.index('class="recipe-add"') < grid.index('class="card recipe-card"')
+        # And the header no longer carries a button for it.
+        actions = page.split('<nav class="topnav"')[1].split("</nav>")[0]
+        assert "/recipes/new" not in actions
+
+    def test_the_search_cannot_hide_the_way_to_add_one(self, client, session):
+        """The filter hides recipe cards; the empty tile is not one."""
+        recipe_service.create_recipe(
+            session, name="Borodinsky", category=RecipeCategory.RYE,
+            ingredients=[IngredientSpec("Rye", IngredientRole.FLOUR, 100.0)],
+            stages=[StageSpec("bake", duration_min=60)],
+        )
+        session.commit()
+
+        grid = client.get("/recipes").text.split('<ul class="recipe-grid"')[1].split("</ul>")[0]
+        tile = grid.split('<li class="recipe-add">')[1].split("</li>")[0]
+
+        assert "recipe-card" not in tile and "data-find" not in tile
+
+    def test_an_empty_notebook_still_offers_the_first_one(self, client):
+        assert 'href="/recipes/new"' in client.get("/recipes").text

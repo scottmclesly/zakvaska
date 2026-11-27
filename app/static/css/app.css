@@ -1475,6 +1475,31 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   min-width: 0;
 }
 .recipe-card:hover { border-color: var(--accent); }
+
+/* The empty slot at the head of the grid: add a recipe. Dashed and hollow
+   like the other "add" squares, and as tall as the cards in its row. */
+.recipe-add { display: flex; min-width: 0; min-height: 84px; }
+.recipe-add-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  border: 2px dashed var(--line);
+  border-radius: var(--r-lg);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 120ms, border-color 120ms, background-color 120ms;
+}
+.recipe-add-link svg { width: 26px; height: 26px; }
+.recipe-add-link:hover,
+.recipe-add-link:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
 .recipe-card h2 { margin: 0; font-size: var(--text-md); line-height: var(--leading-tight); }
 .recipe-card p { margin: var(--s-1) 0 0; }
 .recipe-link { color: var(--ink); text-decoration: none; }
