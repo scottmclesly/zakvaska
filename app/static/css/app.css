@@ -341,29 +341,47 @@ h2:not(.section-title),
    phone, with the page's own actions pushed to the far end. */
 .sectionnav {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: var(--s-1);
   margin-right: auto;
+  /* Down to the header's bottom edge, so the mark under the section you
+     are in sits on the line the page begins at. */
+  align-self: stretch;
+  margin-block: calc(var(--s-3) * -1);
 }
 
+/* The sections double as the page's heading: there is no title under the
+   header on a section's own page, because the highlighted one says it. So
+   they are set larger than links, each with its glyph, and the one you are
+   in is in the heading serif with a bar under it. */
 .navlink {
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
-  min-height: var(--tap-sm);
-  padding: 0 var(--s-3);
-  border-radius: var(--r-pill);
+  min-height: var(--tap-lg);
+  padding: 0 var(--s-4);
   color: var(--ink-soft);
   text-decoration: none;
   font-weight: 600;
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
+  border-bottom: 3px solid transparent;
+  transition: color 120ms, border-color 120ms, background-color 120ms;
 }
-.navlink:hover, .navlink:focus-visible { color: var(--ink); }
+.navlink:hover, .navlink:focus-visible {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
 .navlink.is-here {
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  border-bottom-color: var(--accent);
+  background: linear-gradient(to top, color-mix(in srgb, var(--accent) 12%, transparent), transparent 85%);
 }
-.nav-icon { width: 22px; height: 22px; flex: 0 0 auto; display: none; }
+.nav-icon { width: 20px; height: 20px; flex: 0 0 auto; }
+.navlink.is-here .nav-icon { width: 24px; height: 24px; color: var(--accent); }
 
 /* On a phone the sections are a tab bar along the bottom, where a thumb
    is, and the header keeps only the brand and this page's own action. */
@@ -373,6 +391,7 @@ h2:not(.section-title),
     inset: auto 0 0 0;
     z-index: 20;
     margin: 0;
+    align-self: auto;
     gap: 0;
     justify-content: space-around;
     padding: var(--s-1) var(--s-1) max(var(--s-1), env(safe-area-inset-bottom));
@@ -380,17 +399,27 @@ h2:not(.section-title),
     border-top: 1px solid var(--line);
     box-shadow: var(--lift-2);
   }
-  .navlink {
+  .navlink,
+  .navlink.is-here {
     flex: 1 1 0;
     flex-direction: column;
     justify-content: center;
     gap: var(--s-0);
     min-height: var(--tap-lg);
     padding: var(--s-1) 0;
+    border: 0;
     border-radius: var(--r-md);
+    font-family: var(--sans);
     font-size: var(--text-xs);
+    font-weight: 600;
+    letter-spacing: 0;
   }
-  .nav-icon { display: block; }
+  .navlink.is-here {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+  .nav-icon,
+  .navlink.is-here .nav-icon { width: 22px; height: 22px; }
   /* Room for the bar, so the last thing on a page is never under it. */
   body { padding-bottom: calc(var(--tap-lg) + var(--s-3) + env(safe-area-inset-bottom)); }
 }
@@ -1351,6 +1380,10 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .diff-fields { list-style: none; margin: var(--s-1) 0 0; padding: 0; color: var(--ink-soft); font-size: var(--text-sm); }
 .diff-fields .was { text-decoration: line-through; }
 .diff-fields .now { color: var(--ink); font-weight: 600; }
+
+/* The machine stands beside the fold that adds one of its programs. */
+.program-add { display: flex; align-items: flex-end; gap: var(--s-4); }
+.program-add > details { flex: 1; min-width: 0; }
 
 /* Equipment: the programs as cards you read, two across when there is
    room for the cycle bars to stay legible. */

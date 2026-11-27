@@ -10,10 +10,9 @@
     the charts take the width and the "now" list stands beside them — and
     stacked on a phone with the list straight under the shelf. -#}
 <div class="dash">
-  <section class="hero dash-head">
-    <h1>Starter jars</h1>
-    <p class="sub">Feedings, observations and bakes, logged properly.</p>
-  </section>
+  {#- No visible title: the highlighted section in the header is the heading.
+      This one is for screen readers and the document outline. -#}
+  <h1 class="sr-only">Starter jars</h1>
 
   <div class="dash-shelf">
   {% with shelf_cards = cards, shelf_ghost = true %}
@@ -167,10 +166,7 @@
   </div>
 </div>
 {% else %}
-<section class="hero">
-  <h1>Starter jars</h1>
-  <p class="sub">Feedings, observations and bakes, logged properly.</p>
-</section>
+<h1 class="sr-only">Starter jars</h1>
 {#- An empty shelf is still the shelf: the ghost slot is on it, and with no
     jars to hide behind it is simply there, which is the way in. -#}
 {% with shelf_ghost = true, shelf_label = "The shelf, with no jars on it yet" %}

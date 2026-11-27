@@ -6,10 +6,9 @@
 {% endblock %}
 
 {% block content %}
-<section class="hero">
-  <h1>Bakes</h1>
-  <p class="sub">Every loaf, the version it came from and how it turned out.</p>
-</section>
+{#- No visible title: the highlighted section in the header is the heading.
+    This one is for screen readers and the document outline. -#}
+<h1 class="sr-only">Bakes</h1>
 
 <form class="form card filters" method="get" action="/bakes">
   <div class="field-row">
