@@ -213,6 +213,11 @@ jobs:
             type=raw,value=latest,enable=${{ env.PUBLISH == 'true' }}
             type=sha,enable=${{ env.PUBLISH != 'true' }}
       - uses: docker/build-push-action@v6
+        env:
+          # No build-record artifact on the run: nothing reads it, and see
+          # the publish job for what it broke.
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
+          DOCKER_BUILD_SUMMARY: "false"
         with:
           context: .
           platforms: linux/amd64,linux/arm64
@@ -230,9 +235,17 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Only what this job publishes, by name. Asking for everything also
+      # asks for the build record the Docker step used to attach, which is
+      # not a zip of ours and failed the very first release at this step.
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
+          pattern: installer-*
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: artifacts/release-notes
       - name: Gather the files
         run: |
           mkdir release

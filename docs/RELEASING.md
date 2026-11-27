@@ -52,5 +52,16 @@ git tag -d v1.0.0 && git push origin :refs/tags/v1.0.0
 git tag -a v1.0.0 -m "zakvaska 1.0.0" && git push origin v1.0.0
 ```
 
-Only do that for a tag whose release never appeared. Once people have
+If only the last job (GitHub Release) failed, the installers are already
+built and attached to the run. Rather than build them again, download them
+and create the release by hand, which is what was done for 1.0.0:
+
+```bash
+gh run download <run-id> --dir dl --pattern 'installer-*'
+gh run download <run-id> --dir dl/release-notes --name release-notes
+gh release create v1.0.0 dl/installer-*/* --title "zakvaska 1.0.0" \
+  --notes-file dl/release-notes/release-notes.md --verify-tag
+```
+
+Only move a tag whose release never appeared. Once people have
 downloaded 1.0.0, a fix is 1.0.1.
