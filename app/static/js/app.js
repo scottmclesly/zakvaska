@@ -292,8 +292,27 @@ document.addEventListener("input", (event) => {
       card.hidden = !match;
       if (match) shown += 1;
     });
+    // A shelf with nothing left on it goes too, heading and all. Picking a
+    // family also puts away "Baked by you", which is every family at once.
+    list.querySelectorAll("[data-shelf]").forEach(function (shelf) {
+      var left = shelf.querySelectorAll(".recipe-card:not([hidden])").length;
+      var mixed = shelf.getAttribute("data-shelf") === "baked" && family;
+      shelf.hidden = left === 0 || !!mixed;
+      var row = shelf.querySelector("[data-shelf-row]");
+      if (row) row.scrollLeft = 0;
+    });
     if (none) none.hidden = shown !== 0;
   }
+
+  // The arrows move a shelf along by most of what is showing, so the last
+  // card you could see becomes the first.
+  list.addEventListener("click", function (event) {
+    var arrow = event.target.closest("[data-shelf-step]");
+    if (!arrow) return;
+    var row = arrow.closest("[data-shelf]").querySelector("[data-shelf-row]");
+    var by = Number(arrow.getAttribute("data-shelf-step")) * row.clientWidth * 0.85;
+    row.scrollBy({ left: by, behavior: "smooth" });
+  });
 
   chips.forEach(function (chip) {
     chip.addEventListener("click", function () {

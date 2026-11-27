@@ -169,6 +169,62 @@ def recipe_cards(session: Session, recipes: list[Recipe]) -> list[RecipeCard]:
     return cards
 
 
+@dataclass(frozen=True)
+class RecipeShelf:
+    """One row of the recipes page: a family of bread, or your own bakes."""
+
+    key: str
+    label: str
+    blurb: str
+    cards: tuple[RecipeCard, ...]
+
+
+#: The families in the order they are shelved, and a line for each.
+_FAMILY_BLURBS = {
+    RecipeCategory.RYE: "Dense, dark and sour: scalds, sponges and long proofs.",
+    RecipeCategory.WHEAT: "Boules, tins and baguettes, lean and crusty.",
+    RecipeCategory.ENRICHED: "Butter, eggs, milk and sugar: soft and golden.",
+    RecipeCategory.OTHER: "Everything that is not quite a loaf.",
+}
+
+
+def recipe_shelves(cards: list[RecipeCard]) -> list[RecipeShelf]:
+    """The cards arranged for browsing.
+
+    What you have baked comes first, best loaf first, because that row has
+    your own photographs in it and is the reason to open the page. Then one
+    shelf per family, in the same order as everywhere else. A recipe you
+    have baked is on both: once as yours, once where it belongs.
+    """
+    shelves: list[RecipeShelf] = []
+    baked = sorted(
+        (card for card in cards if card.baked),
+        key=lambda card: (card.best_rating or 0, card.baked),
+        reverse=True,
+    )
+    if baked:
+        shelves.append(
+            RecipeShelf(
+                key="baked",
+                label="Baked by you",
+                blurb="The ones you have made, best loaf first.",
+                cards=tuple(baked),
+            )
+        )
+    for family in RecipeCategory:
+        mine = tuple(card for card in cards if card.recipe.category is family)
+        if mine:
+            shelves.append(
+                RecipeShelf(
+                    key=family.value,
+                    label=family.label,
+                    blurb=_FAMILY_BLURBS.get(family, ""),
+                    cards=mine,
+                )
+            )
+    return shelves
+
+
 # --- Bakes ---------------------------------------------------------------------
 
 

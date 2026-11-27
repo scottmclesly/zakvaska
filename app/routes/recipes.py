@@ -211,7 +211,9 @@ def list_recipes(request: Request, ctx: Ctx) -> HTMLResponse:
             "title": "Recipes",
             "recipes": (recipes := recipe_service.list_recipes(ctx.session)),
             # What each card shows beyond the name: see services/browse.py.
-            "cards": browse.recipe_cards(ctx.session, recipes),
+            "cards": (cards := browse.recipe_cards(ctx.session, recipes)),
+            # The same cards, shelved for browsing: yours first, then by family.
+            "shelves": browse.recipe_shelves(cards),
             "archived": [
                 r
                 for r in recipe_service.list_recipes(ctx.session, include_archived=True)

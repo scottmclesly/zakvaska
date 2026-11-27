@@ -57,10 +57,12 @@ extra step each system asks for.
 - **Bakes are a wall of loaves**: each one a card led by its photograph,
   the newest photographed loaf hung larger, and a line that counts them up.
   A loaf not yet photographed gets the drawing of what it was.
-- **Recipes are worth browsing**: each card leads with its bread, drawn as
-  the bread it is (a baguette is no longer a boule) or shown by the photo of
-  the best one you have baked, with hydration, time, and how often you have
-  made it. Two across on a phone.
+- **Recipes are shelves to browse along**: what you have baked first, with
+  your own photographs, then a shelf for each family of bread, each
+  scrolling sideways. A card leads with its bread: the photo of the best
+  loaf you baked from it, or the loaf drawn on a board in the shape it
+  really is (a baguette is no longer a boule, and a tin loaf shows its
+  crumb), with hydration, time and how often you have made it.
 - "Compare with" on a finished loaf now sits under what went into it.
 
 ### Known limits

@@ -1576,20 +1576,108 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .chip-count { font-weight: 400; opacity: 0.7; }
 .recipe-card[hidden] { display: none; }
 
-/* Recipes: a card each, as many across as fit. The bread leads: a plate
-   tinted by the family it belongs to, with the loaf drawn on it, or the
-   photograph of the best one you have baked. */
-.recipe-grid {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--s-4);
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 228px), 1fr));
+/* Recipes: shelves to browse along. What you have baked first, then one
+   shelf per family of bread; each scrolls sideways and snaps card to card.
+   A card leads with its bread: your photograph of the best loaf, or the
+   loaf drawn on a board, on a wall tinted by its family. */
+.recipe-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-5);
 }
+.recipe-top .recipe-find { flex: 1 1 24rem; margin-bottom: 0; }
+.recipe-add-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  padding: 0 var(--s-4);
+  border: 2px dashed var(--line);
+  border-radius: var(--r-pill);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 120ms, border-color 120ms, background-color 120ms;
+}
+.recipe-add-link svg { width: 20px; height: 20px; }
+.recipe-add-link:hover,
+.recipe-add-link:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.recipe-shelves { display: flex; flex-direction: column; gap: var(--s-6); }
+.recipe-shelf[hidden] { display: none; }
+.recipe-shelf { --tint: var(--loaf); min-width: 0; }
+.recipe-shelf[data-shelf="rye"] { --tint: var(--loaf-rye); }
+.recipe-shelf[data-shelf="wheat"] { --tint: var(--loaf-wheat); }
+.recipe-shelf[data-shelf="enriched"] { --tint: var(--loaf-enriched); }
+.recipe-shelf[data-shelf="other"] { --tint: var(--role-other); }
+.recipe-shelf[data-shelf="baked"] { --tint: var(--accent); }
+.recipe-shelf-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+  padding-left: var(--s-3);
+  border-left: 4px solid color-mix(in srgb, var(--tint) 75%, var(--line));
+}
+.recipe-shelf-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: var(--text-xl);
+  line-height: var(--leading-tight);
+}
+.recipe-shelf-count {
+  margin-left: var(--s-1);
+  color: var(--ink-soft);
+  font-family: var(--sans);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+.recipe-shelf-blurb { margin: var(--s-0) 0 0; }
+.recipe-shelf-arrows { display: flex; gap: var(--s-2); flex: 0 0 auto; }
+.recipe-shelf-arrow {
+  display: grid;
+  place-items: center;
+  width: var(--tap-sm);
+  height: var(--tap-sm);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.recipe-shelf-arrow:hover { color: var(--ink); border-color: var(--accent); }
+.recipe-shelf-arrow svg { width: 16px; height: 16px; }
+
+/* The shelf itself. It bleeds to the page's edge on the right so a cut-off
+   card says there is more; the padding keeps hover shadows from clipping. */
+.recipe-row {
+  list-style: none;
+  margin: 0 calc(var(--gutter) * -1) 0 0;
+  padding: var(--s-1) var(--gutter) var(--s-4) var(--s-0);
+  display: flex;
+  gap: var(--s-4);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-left: var(--s-0);
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--tint) 45%, var(--line)) transparent;
+}
+.recipe-row > li { scroll-snap-align: start; }
+
 .recipe-card {
   --tint: var(--loaf);
   position: relative;
+  flex: 0 0 232px;
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -1597,6 +1685,7 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   overflow: hidden;
   transition: border-color 160ms, box-shadow 160ms, transform 160ms;
 }
+.recipe-card[hidden] { display: none; }
 .recipe-card[data-family="rye"] { --tint: var(--loaf-rye); }
 .recipe-card[data-family="wheat"] { --tint: var(--loaf-wheat); }
 .recipe-card[data-family="enriched"] { --tint: var(--loaf-enriched); }
@@ -1604,29 +1693,45 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .recipe-card:hover,
 .recipe-card:focus-within {
   border-color: color-mix(in srgb, var(--tint) 70%, var(--line));
-  box-shadow: 0 10px 24px -14px color-mix(in srgb, var(--tint) 80%, transparent);
+  box-shadow: 0 14px 26px -16px color-mix(in srgb, var(--tint) 85%, transparent);
 }
 
-/* The plate. Lit from below the loaf, so the bread sits in a pool of its
-   own colour rather than on a grey tile. */
+/* The picture. Drawn: a wall in the family's colour, lit from one side,
+   and a wooden board along the bottom for the loaf to stand on. */
 .recipe-loaf {
   position: relative;
   flex: 0 0 auto;
   display: grid;
-  place-items: center;
-  aspect-ratio: 16 / 10;
+  place-items: end center;
+  aspect-ratio: 5 / 4;
   overflow: hidden;
   background:
-    radial-gradient(ellipse 80% 70% at 50% 108%,
-      color-mix(in srgb, var(--tint) 42%, var(--card)) 0%,
-      color-mix(in srgb, var(--tint) 13%, var(--card)) 72%);
-  border-bottom: 1px solid color-mix(in srgb, var(--tint) 22%, var(--line));
+    radial-gradient(ellipse 90% 80% at 22% 8%,
+      color-mix(in srgb, var(--tint) 16%, var(--card)) 0%,
+      color-mix(in srgb, var(--tint) 42%, var(--card)) 100%);
+}
+.recipe-board {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 24%;
+  background:
+    repeating-linear-gradient(90deg,
+      transparent 0 46px, color-mix(in srgb, var(--loaf-rye-deep) 14%, transparent) 46px 47px),
+    linear-gradient(to bottom,
+      color-mix(in srgb, var(--loaf-wheat) 62%, var(--loaf-rye)) 0%,
+      color-mix(in srgb, var(--loaf-wheat) 38%, var(--loaf-rye)) 100%);
+  box-shadow: 0 -1px 0 color-mix(in srgb, var(--loaf-rye-deep) 30%, transparent);
 }
 .recipe-loaf .loaf-art {
-  width: 50%;
-  max-width: 136px;
-  filter: drop-shadow(0 6px 6px color-mix(in srgb, var(--tint) 35%, transparent));
+  position: relative;
+  width: 72%;
+  max-width: none;
+  margin-bottom: 6%;
+  filter: drop-shadow(0 8px 6px color-mix(in srgb, var(--loaf-rye-deep) 34%, transparent));
 }
+/* The drawing brings a shadow of its own, for a page with no board. Here
+   the board and the drop shadow do that job. */
+.recipe-loaf .loaf-shadow { display: none; }
 .recipe-loaf img {
   position: absolute;
   inset: 0;
@@ -1634,9 +1739,11 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   height: 100%;
   object-fit: cover;
 }
-/* The family, pinned to the corner of the plate like a price ticket. */
+/* Pinned to the picture like price tickets: the family, the machine, and
+   how the best loaf was rated. */
 .recipe-family,
-.recipe-machine-tag {
+.recipe-machine-tag,
+.recipe-rating {
   position: absolute;
   top: var(--s-2);
   display: inline-flex;
@@ -1644,7 +1751,7 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   min-height: 22px;
   padding: 0 var(--s-2);
   border-radius: var(--r-pill);
-  background: color-mix(in srgb, var(--card) 86%, transparent);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
   color: color-mix(in srgb, var(--tint) 55%, var(--ink));
   font-size: var(--text-xs);
   font-weight: 700;
@@ -1655,6 +1762,14 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 .recipe-family { left: var(--s-2); }
 .recipe-machine-tag { right: var(--s-2); padding: 0 var(--s-1); }
 .recipe-machine-tag .icon { width: 16px; height: 16px; margin: 0; }
+.recipe-rating {
+  top: auto;
+  bottom: var(--s-2);
+  right: var(--s-2);
+  background: rgba(20, 14, 8, 0.66);
+  color: #ffd27a;
+  letter-spacing: 0;
+}
 
 .recipe-head-text {
   flex: 1 1 auto;
@@ -1662,10 +1777,10 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   flex-direction: column;
   gap: var(--s-2);
   min-width: 0;
-  padding: var(--s-3) var(--s-4) var(--s-3);
+  padding: var(--s-3) var(--s-4);
   overflow-wrap: anywhere;
 }
-.recipe-card h2 {
+.recipe-card h3 {
   margin: 0;
   font-family: var(--display);
   font-size: var(--text-lg);
@@ -1685,55 +1800,22 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-1) var(--s-3);
+  gap: var(--s-0) var(--s-3);
   color: var(--ink-soft);
   font-size: var(--text-sm);
 }
 .recipe-stats li { padding: 0; border: 0; white-space: nowrap; }
 .recipe-stats strong { color: var(--ink); font-variant-numeric: tabular-nums; }
 
-/* What has come of it, and where it came from: the small print, ruled off
-   and kept to the bottom so a row of cards lines up. */
+/* The small print, kept to the bottom so a shelf of cards lines up. */
+.recipe-foot { margin-top: auto; padding-top: var(--s-1); }
 .recipe-foot:empty { display: none; }
-.recipe-foot {
-  margin-top: auto;
-  padding-top: var(--s-2);
-  border-top: 1px dashed var(--line);
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-0);
-}
 .recipe-baked { color: var(--ink); font-weight: 600; }
-.recipe-baked .stars { margin-left: var(--s-1); }
-.recipe-card .source { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recipe-foot { display: flex; flex-direction: column; gap: var(--s-0); }
+.recipe-card .source,
+.recipe-card .recipe-machine { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Above the stretched link, so it can still be clicked on its own. */
 .recipe-more { position: relative; z-index: 1; }
-
-/* The empty slot at the head of the grid: add a recipe. Dashed and hollow
-   like the other "add" squares, and as tall as the cards in its row. */
-.recipe-add { display: flex; min-width: 0; min-height: 120px; }
-.recipe-add-link {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--s-2);
-  border: 2px dashed var(--line);
-  border-radius: var(--r-lg);
-  color: var(--ink-soft);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 120ms, border-color 120ms, background-color 120ms;
-}
-.recipe-add-link svg { width: 30px; height: 30px; }
-.recipe-add-link:hover,
-.recipe-add-link:focus-visible {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 7%, transparent);
-}
 
 @media (prefers-reduced-motion: no-preference) {
   .recipe-loaf .loaf-art,
@@ -3102,7 +3184,8 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 }
 .loaf-art-lg { width: 134px; }
 
-.loaf-rye { --crust: var(--loaf-rye); --crust-dark: var(--loaf-rye-deep); }
+.loaf-art { --crumb: #f3e2bd; }
+.loaf-rye { --crust: var(--loaf-rye); --crust-dark: var(--loaf-rye-deep); --crumb: #a87a52; }
 .loaf-wheat { --crust: var(--loaf-wheat); --crust-dark: var(--loaf-wheat-deep); }
 .loaf-enriched { --crust: var(--loaf-enriched); --crust-dark: var(--loaf-enriched-deep); }
 
@@ -3119,6 +3202,9 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
 }
 .loaf-seeds ellipse { fill: var(--crust-dark); opacity: 0.85; }
 .loaf-flour ellipse { fill: var(--highlight); opacity: 0.3; }
+/* The cut end of a loaf, and the holes in it. */
+.loaf-crumb { fill: var(--crumb); stroke: var(--crust-dark); stroke-width: 1.6; stroke-linejoin: round; }
+.loaf-holes ellipse { fill: var(--crust-dark); opacity: 0.28; }
 /* Rolls baked touching: each keeps its own edge. */
 .loaf-bun circle { fill: var(--crust); stroke: var(--crust-dark); stroke-width: 1.2; }
 .loaf-plait rect {
@@ -4262,19 +4348,18 @@ table.steps tr.is-clash td {
 .is-desktop [data-notify-enable],
 .is-desktop [data-notify-status] { display: none !important; }
 
-/* Recipes on a phone: two across, so thirty of them are a few thumb-lengths
-   and not fifteen screens. The small print waits for the recipe's own page. */
-@media (max-width: 560px) {
-  .recipe-grid { gap: var(--s-3); grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .recipe-add { grid-column: 1 / -1; min-height: 72px; }
-  .recipe-add-link { flex-direction: row; }
+/* Recipes on a phone: narrower cards, so two and the edge of a third show
+   and the shelf plainly goes on; the arrows are for a mouse and go. */
+@media (max-width: 639px) {
+  .recipe-card { flex-basis: 168px; }
+  .recipe-row { gap: var(--s-3); }
+  .recipe-shelf-arrows { display: none; }
   .recipe-head-text { padding: var(--s-2) var(--s-3) var(--s-3); gap: var(--s-1); }
-  .recipe-card h2 { font-size: var(--text-md); }
+  .recipe-card h3 { font-size: var(--text-md); }
   .recipe-stats { font-size: var(--text-xs); gap: 0 var(--s-2); }
-  .recipe-card .recipe-machine,
-  .recipe-card .source { display: none; }
-  .recipe-foot:not(:has(.recipe-baked, .recipe-facts)) { display: none; }
   .recipe-family { font-size: 0.625rem; }
+  .recipe-top .recipe-find { flex-basis: 100%; }
+}
 }
 
 /* A jar's own page: the jar is the way in to editing it. Pointed at, it
