@@ -1,3 +1,4 @@
+{% from "partials/icons.html" import icon %}
 {# One entry on a jar's timeline. Expects `event` plus `now` / `temp_unit`. #}
 <li class="timeline-item kind-{{ event.kind }}">
   <div class="timeline-when">
@@ -8,7 +9,7 @@
   <div class="timeline-body card">
     {% if event.kind == "feeding" %}
       {% set feeding = event.obj %}
-      <h3>Fed
+      <h3>{{ icon("spoon") }}Fed
         {% if event.detail.ratio %}<span class="ratio">{{ event.detail.ratio }}</span>{% endif %}
       </h3>
       <p class="timeline-facts">
@@ -30,7 +31,7 @@
 
     {% elif event.kind == "observation" %}
       {% set observation = event.obj %}
-      <h3>Observed
+      <h3>{{ icon("eye") }}Observed
         {% if event.detail.rise_pct is not none %}
         <span class="ratio">{{ event.detail.rise_pct | percent }} rise</span>
         {% endif %}
@@ -50,7 +51,7 @@
 
     {% else %}
       {% set change = event.obj %}
-      <h3>
+      <h3>{{ icon("swap") }}
         {% if change.from_state %}
           Moved from {{ change.from_state.label.lower() }} to {{ change.to_state.label.lower() }}
         {% else %}

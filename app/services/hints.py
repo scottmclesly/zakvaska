@@ -86,6 +86,58 @@ def places_for(step_key: str | None, name: str | None) -> tuple[str, ...]:
     return ()
 
 
+#: The glyph for each place, so a step can be told by its shape on the
+#: running sheet, a recipe's stages and the planner alike.
+PLACE_ICONS: dict[str, str] = {
+    "levain": "bubbles",
+    "levain_rise": "rise",
+    "autolyse": "drop",
+    "bulk": "fold",
+    "preshape": "round",
+    "shape": "round",
+    "final_rise": "basket",
+    "preheat": "flame",
+    "load": "pot",
+    "bake": "pot",
+    "bake_open": "pot",
+    "cool": "rack",
+}
+
+#: Steps that have no hints of their own still have a shape. Keys first,
+#: then names; first match wins.
+_KEY_ICONS: dict[str, str] = {
+    "mix": "bowl", "load": "bowl", "knead": "fold", "program": "machine",
+    "wait": "hourglass", "bag": "checklist",
+}
+_NAME_ICONS: tuple[tuple[re.Pattern[str], str], ...] = tuple(
+    (re.compile(pattern, re.I), name)
+    for pattern, name in (
+        (r"machine|bread maker", "machine"),
+        (r"^mix|final dough|sponge|poolish|biga|soaker|tangzhong|scald", "bowl"),
+        (r"knead|roll", "fold"),
+        (r"sour|starter", "bubbles"),
+        (r"rise|proof", "rise"),
+        (r"soak", "drop"),
+        (r"rest|retard|overnight", "hourglass"),
+        (r"dry|bake", "flame"),
+        (r"cool", "rack"),
+    )
+)
+
+
+def icon_for(step_key: str | None, name: str | None) -> str:
+    """The glyph for a step or a stage; "" when it is none we can name."""
+    places = places_for(step_key, name)
+    if places:
+        return PLACE_ICONS.get(places[0], "")
+    if step_key and step_key in _KEY_ICONS:
+        return _KEY_ICONS[step_key]
+    for pattern, found in _NAME_ICONS:
+        if name and pattern.search(name.strip()):
+            return found
+    return ""
+
+
 # --- What has been put away ---------------------------------------------
 
 

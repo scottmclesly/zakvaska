@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
 
 {% block page_class %}page--wide{% endblock %}
 
@@ -84,11 +85,11 @@
 
     <dl class="stats">
       <div>
-        <dt>Last fed</dt>
+        <dt>{{ icon("spoon") }}Last fed</dt>
         <dd>{{ card.status.last_fed_at | since(now) }}</dd>
       </div>
       <div>
-        <dt>Next feed</dt>
+        <dt>{{ icon("clock") }}Next feed</dt>
         <dd>
           {% if card.status.next_due_at %}
             <span class="{% if card.status.is_overdue %}overdue-text{% endif %}">
@@ -115,7 +116,7 @@
       {% endif %}
       {% if card.rise_pct is not none %}
       <div>
-        <dt>Last rise</dt>
+        <dt>{{ icon("rise") }}Last rise</dt>
         <dd>{{ card.rise_pct | percent }}</dd>
       </div>
       {% endif %}

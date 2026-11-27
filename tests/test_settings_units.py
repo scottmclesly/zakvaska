@@ -21,7 +21,8 @@ def _release(session):
 
 
 def _units_section(page: str) -> str:
-    return page.split('<h2 class="section-title">Units</h2>')[1].split(
+    # The heading carries a glyph before its word now, so find it by the word.
+    return page.split('Units</h2>')[1].split(
         "</section>"
     )[0]
 

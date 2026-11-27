@@ -714,6 +714,30 @@ input[type="file"]::file-selector-button {
 .disclosure[open] > summary::before { transform: rotate(45deg); }
 .disclosure > :not(summary) { margin-top: var(--s-3); }
 
+/* --- Glyphs ---------------------------------------------------------------
+   partials/icons.html. Sized from the type they sit in and coloured like
+   the accent, so a row of figures or steps can be scanned by shape. */
+.icon {
+  flex: 0 0 auto;
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.2em;
+  margin-right: 0.4em;
+  color: var(--accent);
+}
+/* A label over a figure: the glyph a touch larger than its small caps. */
+.stats dt { display: flex; align-items: center; }
+.stats dt .icon { width: 16px; height: 16px; margin-right: var(--s-2); }
+.bake-figures dt .icon { width: 18px; height: 18px; }
+.section-title .icon { width: 1.25em; height: 1.25em; vertical-align: -0.25em; }
+/* In a heading that is already a row with gaps, the glyph needs none of
+   its own and sits on the middle of the line. */
+.timeline-body h3 .icon { align-self: center; margin-right: 0; }
+/* On the slate the glyphs are chalk too. */
+.chalkboard .icon { color: var(--chalk-yellow); }
+/* A finished step's glyph steps back with the rest of its row. */
+.stage-step.is-done .icon { color: var(--ink-soft); }
+
 /* --- Hints --------------------------------------------------------------
    A folded aside of short notes (partials/hints.html; the words are in
    app/data/hints.py). Quiet by design: tinted like a pencilled margin note,
@@ -1549,13 +1573,7 @@ table.data tfoot td { background: var(--paper); font-weight: 650; border-bottom:
   margin: 0;
 }
 .bake-figures .stats > div { min-width: 0; }
-.bake-figures dt {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  font-size: var(--text-xs);
-}
-.stat-icon { width: 18px; height: 18px; flex: 0 0 auto; color: var(--accent); }
+.bake-figures dt { font-size: var(--text-xs); }
 .bake-figures dd {
   margin-top: var(--s-1);
   font-family: var(--display);

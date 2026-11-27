@@ -224,6 +224,8 @@ templates.env.globals["total_unit_label"] = measures.total_unit_label
 templates.env.globals["nudge_label"] = plan_service.nudge_label
 # "4.5 h", "2 d 2 h" — a span of hours as a person says it.
 templates.env.globals["hours_label"] = timing.hours_label
+#: The glyph a step or stage is drawn with: see services.hints.icon_for.
+templates.env.globals["step_icon"] = hint_service.icon_for
 # "1:4:4" — a feed ratio as a baker writes it.
 templates.env.filters["ratio_label"] = timing.ratio_label
 # The planner's slider labels its own ends, which needs arithmetic on `now`.
