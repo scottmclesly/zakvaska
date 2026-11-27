@@ -21,6 +21,9 @@ from app.models.busy_block import (
 from app.models.enums import BusyKind
 from app.models.setting import (
     FEEDS_PER_DAY_CHOICES,
+    FOLD_EVERY_CHOICES,
+    FOLD_SETS_CHOICES,
+    LID_OFF_CHOICES,
     PREHEAT_OVEN_CHOICES,
     PREHEAT_POT_CHOICES,
     RIBBON_SPAN_CHOICES,
@@ -58,6 +61,12 @@ def _page_context(ctx: ViewContext, errors: list[str] | None = None) -> dict:
         "preheat_pot_choices": PREHEAT_POT_CHOICES,
         "preheat_oven_min": settings_store.preheat_oven_min(session),
         "preheat_oven_choices": PREHEAT_OVEN_CHOICES,
+        "fold_sets": settings_store.fold_sets(session),
+        "fold_sets_choices": FOLD_SETS_CHOICES,
+        "fold_every_min": settings_store.fold_every_min(session),
+        "fold_every_choices": FOLD_EVERY_CHOICES,
+        "lid_off_after_min": settings_store.lid_stays_on_min(session),
+        "lid_off_choices": LID_OFF_CHOICES,
         # Held in Celsius, typed in whichever unit is on display.
         "ferment_temp": temp_in(
             settings_store.default_ferment_temp_c(session), ctx.temp_unit
@@ -226,6 +235,62 @@ def save_preheat(
             errors.append(complaint)
         else:
             settings_store.set_setting(ctx.session, key, str(minutes))
+
+    if errors:
+        ctx.session.rollback()
+        return render(
+            request=request, ctx=ctx, name="settings/index.html",
+            context=_page_context(ctx, errors), status_code=400,
+        )
+
+    ctx.session.commit()
+    return _see_other()
+
+
+# --- Reminders part-way through a step ----------------------------------
+
+
+@router.post("/reminders")
+def save_reminders(
+    request: Request,
+    ctx: Ctx,
+    fold_sets: Annotated[str, Form()] = "",
+    fold_every_min: Annotated[str, Form()] = "",
+    lid_off_after_min: Annotated[str, Form()] = "",
+):
+    """Stretch-and-folds during the bulk, and the lid coming off the pot.
+
+    Read when a bake is written down and copied onto its steps, so changing
+    these moves the next bake and not the one underway.
+    """
+    errors: list[str] = []
+    wanted: list[tuple[str, str, tuple[int, ...], str]] = [
+        (
+            "fold_sets", fold_sets, FOLD_SETS_CHOICES,
+            "Sets of folds must be between 0 and 6.",
+        ),
+        (
+            "fold_every_min", fold_every_min, FOLD_EVERY_CHOICES,
+            "Folds must be 20, 30, 45 or 60 minutes apart.",
+        ),
+        (
+            "lid_off_after_min", lid_off_after_min, LID_OFF_CHOICES,
+            "The lid must come off after 15, 20, 25 or 30 minutes, or not at all.",
+        ),
+    ]
+
+    for key, raw, choices, complaint in wanted:
+        try:
+            value = f.opt_int(raw, field="Reminder")
+        except ValueError as exc:
+            errors.append(str(exc))
+            continue
+        if value is None:
+            continue
+        if value not in choices:
+            errors.append(complaint)
+        else:
+            settings_store.set_setting(ctx.session, key, str(value))
 
     if errors:
         ctx.session.rollback()

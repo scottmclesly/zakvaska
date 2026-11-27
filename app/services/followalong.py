@@ -140,6 +140,10 @@ def start_from_plan(
                 planned_temp_c=oven_temp_c if step.key == BAKE_STEP else None,
                 planned_start=at,
                 preheat_lead_min=lead if step.key == BAKE_STEP else None,
+                **midway_reminders(
+                    session, key=step.key, name=step.name, method=method,
+                    minutes=minutes,
+                ),
                 hands_on=step.hands_on,
                 must_be_home=step.must_be_home,
             )
@@ -455,6 +459,91 @@ def preheat_moment(log: BakeStageLog) -> datetime | None:
     if log.actual_start is not None or log.is_done:
         return None
     return log.preheat_at
+
+
+# --- Part-way through a step ---------------------------------------------
+#
+# Folds and the lid are the two things that happen in the *middle* of a
+# step. Neither is a step: the bulk does not wait for a fold and the bake
+# does not wait for the lid. So, like the preheat, they are a few numbers
+# on the step they belong to, and the moments are worked out from them and
+# never stored. Unlike the preheat they count forward, and from when the
+# step really began once that is known: a bulk started twenty minutes late
+# is folded twenty minutes late.
+
+
+def midway_reminders(
+    session: Session,
+    *,
+    key: str | None,
+    name: str | None,
+    method: BakeMethod,
+    minutes: float | None,
+) -> dict[str, int | None]:
+    """The fold and lid columns for a step being written down.
+
+    From the settings, for the steps they apply to: a bulk ferment gets the
+    folds, and the single bake step of a pot bake gets the lid. A recipe
+    that already splits its bake into covered and uncovered stages gets
+    neither, because the change of stage is the reminder.
+    """
+    from app.services import hints
+
+    places = hints.places_for(key, name)
+    found: dict[str, int | None] = {
+        "fold_sets": None, "fold_every_min": None, "lid_off_after_min": None,
+    }
+    if "bulk" in places:
+        sets = settings_store.fold_sets(session)
+        if sets:
+            found["fold_sets"] = sets
+            found["fold_every_min"] = settings_store.fold_every_min(session)
+    if "bake" in places and "bake_open" in places:
+        after = settings_store.lid_off_after_min(session, method)
+        if after and (not minutes or after < minutes):
+            found["lid_off_after_min"] = after
+    return found
+
+
+def _began(log: BakeStageLog) -> datetime | None:
+    return log.actual_start or log.planned_start
+
+
+def fold_moments(log: BakeStageLog) -> tuple[datetime, ...]:
+    """When each set of stretch-and-folds is due.
+
+    Evenly spaced from the start of the bulk. A set is only planned if it
+    leaves the dough a full interval of rest before the bulk ends, so a
+    two-hour bulk at thirty minutes gets three sets rather than four, and a
+    forty-minute one gets none: the folds build the dough early and the
+    rest of the bulk is its own.
+    """
+    if log.is_done or not log.fold_sets or not log.fold_every_min:
+        return ()
+    began = _began(log)
+    if began is None:
+        return ()
+    every = timedelta(minutes=log.fold_every_min)
+    ends = began + timedelta(minutes=log.planned_min) if log.planned_min else None
+    moments: list[datetime] = []
+    for n in range(1, log.fold_sets + 1):
+        at = began + every * n
+        if ends is not None and at + every > ends:
+            break
+        moments.append(at)
+    return tuple(moments)
+
+
+def lid_off_moment(log: BakeStageLog) -> datetime | None:
+    """When the lid comes off, for a bake step in a lidded pot."""
+    if log.is_done or not log.lid_off_after_min:
+        return None
+    began = _began(log)
+    if began is None:
+        return None
+    if log.planned_min and log.lid_off_after_min >= log.planned_min:
+        return None
+    return began + timedelta(minutes=log.lid_off_after_min)
 
 
 def preheat_log(bake: Bake) -> BakeStageLog | None:

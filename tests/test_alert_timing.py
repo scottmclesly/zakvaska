@@ -32,23 +32,29 @@ from sqlalchemy import select
 from app.config import get_settings
 from app.models.alert import Alert
 from app.models.bake import BakeStageLog
+from app.models.base import utcnow
 from app.models.busy_block import EVERY_DAY, BusyBlock
 from app.models.enums import (
     AlertKind,
     BakeMethod,
+    BakeStatus,
     BusyKind,
     IngredientRole,
     JarOrigin,
     JarState,
+    RecipeCategory,
 )
 from app.models.recipe import Recipe, RecipeIngredient, RecipeVersion
 from app.models.setting import PREHEAT_POT_CHOICES
 from app.services import alerts as alert_service
 from app.services import bakeplan, followalong, ribbon, settings_store
+from app.services import bakes as bake_service
+from app.services import recipes as recipe_service
 from app.services import hints as hint_service
 from app.services import jars as jar_service
 from app.services import plan as plan_service
 from app.services.bakeplan import PlanInputs
+from app.services.recipes import IngredientSpec, StageSpec
 from app.services.schedule import last_feeding
 from app.templates_env import local_dt
 
@@ -1047,8 +1053,8 @@ class TestStepAlerts:
     """Stretch-and-folds, shaping, loading: the hands-on steps ring when the
     work starts. The long waits ring when they end.
 
-    There is no alert per set of folds. Folds are a hint on the step they
-    belong to; what is timed is the step. These tests pin that down.
+    Sets of stretch-and-folds have alerts of their own, part-way through a
+    bulk ferment: see TestFoldSets further down.
     """
 
     def test_a_hands_on_step_rings_as_it_starts(self, session):
@@ -1287,8 +1293,7 @@ class TestThePotPreheat:
 
 class TestLidOnLidOff:
     """The pot bake is one step with two halves. The app rings to put the
-    loaf in and rings to take it out; when the lid comes off is told on the
-    step itself. These tests pin down what is timed and what is only said.
+    loaf in, rings when the lid comes off, and rings to take it out.
     """
 
     def test_it_rings_to_put_the_loaf_in_and_to_take_it_out(self, session):
@@ -1333,12 +1338,472 @@ class TestLidOnLidOff:
         assert "bake" in covered and "bake_open" not in covered
         assert uncovered == ("bake_open",)
 
-    def test_there_is_no_separate_lid_off_alert(self, session):
-        """Stated as a fact so that adding one is a decision, not a drift."""
+    def test_the_lid_coming_off_has_an_alert_of_its_own(self, session):
         bake = make_bake(session, start=local(2026, 6, 13, 18))
         baking = step(bake, "bake")
         tick(session, local(2026, 6, 13, 18))
 
-        for_the_bake = [a for a in stage_alerts(session) if a.stage_log_id == baking.id]
+        (lid,) = stage_alerts(session, AlertKind.LID_OFF_DUE)
 
-        assert len(for_the_bake) == 2
+        assert lid.stage_log_id == baking.id
+        assert lid.due_at == baking.planned_start + timedelta(minutes=20)
+        assert len([a for a in stage_alerts(session) if a.stage_log_id == baking.id]) == 2
+
+    def test_it_says_how_long_is_left(self, session):
+        bake = make_bake(session, start=local(2026, 6, 13, 18))
+        tick(session, local(2026, 6, 13, 18))
+        (lid,) = stage_alerts(session, AlertKind.LID_OFF_DUE)
+
+        assert alert_service.headline(lid) == "Take the lid off — 25 min to go"
+        assert lid.subject == "Take the lid off"
+        assert lid.url == f"/bakes/{bake.id}"
+
+    def test_it_counts_from_when_the_loaf_really_went_in(self, session):
+        """In twelve minutes late, lid off twelve minutes late."""
+        bake = make_bake(session, start=local(2026, 6, 13, 18))
+        baking = step(bake, "bake")
+        tick(session, local(2026, 6, 13, 18))
+        went_in = baking.planned_start + timedelta(minutes=12)
+
+        baking.actual_start = went_in
+        session.commit()
+        result = tick(session, went_in)
+
+        (lid,) = stage_alerts(session, AlertKind.LID_OFF_DUE)
+        assert lid.due_at == went_in + timedelta(minutes=20)
+        assert result.dropped >= 1
+
+    def test_it_fires_on_its_minute_between_in_and_out(self, session):
+        bake = make_bake(session, start=local(2026, 6, 13, 18))
+        baking = step(bake, "bake")
+        goes_in, comes_out = followalong.stage_due_moments(baking)
+        lid_off = followalong.lid_off_moment(baking)
+        assert goes_in < lid_off < comes_out
+
+        early = tick(session, lid_off - MINUTE).fired
+        on_time = tick(session, lid_off).fired
+
+        assert AlertKind.LID_OFF_DUE not in [a.kind for a in early]
+        assert [a.kind for a in on_time if a.stage_log_id == baking.id] == [
+            AlertKind.LID_OFF_DUE
+        ]
+
+    def test_taking_the_loaf_out_ends_it(self, session):
+        bake = make_bake(session, start=local(2026, 6, 13, 18))
+        baking = step(bake, "bake")
+        tick(session, local(2026, 6, 13, 18))
+
+        baking.actual_start = baking.planned_start
+        baking.actual_end = baking.planned_start + timedelta(minutes=10)
+        session.commit()
+        tick(session, baking.actual_end)
+
+        assert followalong.lid_off_moment(baking) is None
+        assert [a for a in stage_alerts(session, AlertKind.LID_OFF_DUE) if a.is_pending] == []
+
+    @pytest.mark.parametrize("method", [BakeMethod.OVEN, BakeMethod.BREAD_MAKER])
+    def test_a_bake_with_no_lid_gets_none(self, session, method):
+        bake = make_bake(session, start=local(2026, 6, 13, 18), method=method)
+        tick(session, local(2026, 6, 13, 18))
+
+        assert step(bake, "bake").lid_off_after_min is None
+        assert stage_alerts(session, AlertKind.LID_OFF_DUE) == []
+
+    def test_the_setting_decides_when_and_can_turn_it_off(self, session):
+        settings_store.set_setting(session, "lid_off_after_min", "30")
+        session.commit()
+        later = make_bake(session, start=local(2026, 6, 13, 18))
+        assert step(later, "bake").lid_off_after_min == 30
+
+        settings_store.set_setting(session, "lid_off_after_min", "0")
+        session.commit()
+        off = make_bake(session, start=local(2026, 6, 20, 18))
+        assert step(off, "bake").lid_off_after_min is None
+
+    def test_changing_the_setting_leaves_a_bake_underway_alone(self, session):
+        bake = make_bake(session, start=local(2026, 6, 13, 18))
+
+        settings_store.set_setting(session, "lid_off_after_min", "30")
+        session.commit()
+        session.refresh(bake)
+
+        assert step(bake, "bake").lid_off_after_min == 20
+
+    @CHANGEOVERS
+    def test_twenty_minutes_is_twenty_minutes_on_any_night(
+        self, session, saturday, sunday, shift
+    ):
+        bake = make_bake(session, start=local(*saturday, 14))
+        baking = step(bake, "bake")
+
+        assert followalong.lid_off_moment(baking) - baking.planned_start == timedelta(
+            minutes=20
+        )
+
+    def test_a_lid_that_comes_off_across_the_autumn_change(self, session):
+        """Loaf in at 01:50, the first time round. Twenty minutes later the
+        clock says 01:10 — and that is when it rings, not at 02:10."""
+        bake = make_bake(session, start=local(2026, 10, 31, 14))
+        baking = step(bake, "bake")
+        baking.planned_start = local(2026, 11, 1, 1, 50, fold=0)
+        session.commit()
+
+        moment = followalong.lid_off_moment(baking)
+
+        assert moment == local(2026, 11, 1, 1, 10, fold=1)
+        assert AlertKind.LID_OFF_DUE not in [
+            a.kind for a in tick(session, moment - MINUTE).fired
+        ]
+        assert AlertKind.LID_OFF_DUE in [a.kind for a in tick(session, moment).fired]
+
+    def test_a_recipe_that_splits_the_bake_itself_gets_no_extra_reminder(self, session):
+        """Covered and uncovered as two stages: the change of stage is the
+        reminder, and a second one would be noise."""
+        bake = recipe_bake(
+            session,
+            [("bake covered", 20), ("bake uncovered", 25)],
+            method=BakeMethod.DUTCH_OVEN,
+        )
+
+        assert [log.lid_off_after_min for log in bake.stage_logs] == [None, None]
+
+    def test_a_recipe_s_single_bake_stage_gets_one_once_it_is_started(self, session):
+        bake = recipe_bake(session, [("bake", 45)], method=BakeMethod.DUTCH_OVEN)
+        (baking,) = bake.stage_logs
+        assert followalong.lid_off_moment(baking) is None   # no start yet
+
+        went_in = local(2026, 6, 13, 19)
+        bake_service.start_stage(session, bake, baking, went_in)
+        session.commit()
+        tick(session, went_in)
+
+        (lid,) = stage_alerts(session, AlertKind.LID_OFF_DUE)
+        assert lid.due_at == went_in + timedelta(minutes=20)
+
+
+# --- Stretch-and-folds --------------------------------------------------
+
+
+def recipe_bake(session, stages, *, method=BakeMethod.DUTCH_OVEN):
+    """A bake started straight from a recipe, whose stages are its steps."""
+    recipe = recipe_service.create_recipe(
+        session, name="Country loaf", category=RecipeCategory.WHEAT,
+        ingredients=[
+            IngredientSpec("Bread flour", IngredientRole.FLOUR, 100.0),
+            IngredientSpec("Water", IngredientRole.WATER, 75.0),
+        ],
+        stages=[StageSpec(name, duration_min=minutes) for name, minutes in stages],
+    )
+    session.commit()
+    bake = bake_service.start_bake(
+        session, recipe.versions[-1], method=method,
+        started_at=local(2026, 6, 13, 12), status=BakeStatus.IN_PROGRESS,
+    )
+    session.commit()
+    return bake
+
+
+def bulk_of(bake) -> BakeStageLog:
+    return next(log for log in bake.stage_logs if "bulk" in log.name)
+
+
+class TestFoldSets:
+    """Four sets, half an hour apart, from when the bulk began — unless the
+    settings say otherwise, or the bulk is too short to hold them."""
+
+    STAGES = [("autolyse", 30), ("bulk ferment", 270), ("shape", 10), ("bake", 45)]
+
+    def _started(self, session, minutes=270, at=None):
+        stages = [(n, minutes if n == "bulk ferment" else m) for n, m in self.STAGES]
+        bake = recipe_bake(session, stages)
+        bulk = bulk_of(bake)
+        began = at or local(2026, 6, 13, 13)
+        bake_service.start_stage(session, bake, bulk, began)
+        session.commit()
+        return bake, bulk, began
+
+    def test_the_bulk_step_carries_the_sets_and_the_spacing(self, session):
+        bake = recipe_bake(session, self.STAGES)
+
+        carried = {
+            log.name: (log.fold_sets, log.fold_every_min) for log in bake.stage_logs
+        }
+
+        assert carried == {
+            "autolyse": (None, None),
+            "bulk ferment": (4, 30),
+            "shape": (None, None),
+            "bake": (None, None),
+        }
+
+    def test_nothing_is_due_until_the_bulk_has_a_start(self, session):
+        bake = recipe_bake(session, self.STAGES)
+        tick(session, local(2026, 6, 13, 13))
+
+        assert followalong.fold_moments(bulk_of(bake)) == ()
+        assert stage_alerts(session, AlertKind.FOLD_DUE) == []
+
+    def test_four_sets_half_an_hour_apart_from_the_start(self, session):
+        _, bulk, began = self._started(session)
+
+        assert followalong.fold_moments(bulk) == tuple(
+            began + timedelta(minutes=30 * n) for n in (1, 2, 3, 4)
+        )
+
+    def test_each_one_fires_on_its_minute(self, session):
+        _, bulk, began = self._started(session)
+
+        fired = []
+        now = began
+        while now <= began + timedelta(minutes=150):
+            fired += [
+                (a.due_at - began) // MINUTE
+                for a in tick(session, now).fired
+                if a.kind is AlertKind.FOLD_DUE
+            ]
+            now += MINUTE
+
+        assert fired == [30, 60, 90, 120]
+
+    def test_each_one_says_which_set_it_is(self, session):
+        _, bulk, began = self._started(session)
+        tick(session, began)
+
+        said = [alert_service.headline(a) for a in stage_alerts(session, AlertKind.FOLD_DUE)]
+
+        assert said == [
+            "Stretch and fold — set 1 of 4",
+            "Stretch and fold — set 2 of 4",
+            "Stretch and fold — set 3 of 4",
+            "Stretch and fold — set 4 of 4",
+        ]
+
+    def test_reconciling_again_and_again_makes_no_more_of_them(self, session):
+        _, bulk, began = self._started(session)
+
+        for _ in range(4):
+            tick(session, began)
+
+        assert len(stage_alerts(session, AlertKind.FOLD_DUE)) == 4
+
+    def test_a_fold_does_not_sweep_away_the_bulk_s_own_alerts(self, session):
+        """Different kinds against one step, each with its own sweep."""
+        bake = make_bake(session, start=local(2026, 6, 13, 18))
+        proof = step(bake, "final_rise")
+        proof.fold_sets, proof.fold_every_min = 2, 30
+        session.commit()
+
+        for _ in range(3):
+            tick(session, local(2026, 6, 13, 18))
+
+        kinds = sorted(
+            a.kind.value
+            for a in session.scalars(select(Alert).where(Alert.stage_log_id == proof.id))
+        )
+        assert kinds == ["fold_due", "fold_due", "stage_due"]
+
+    @pytest.mark.parametrize(
+        "bulk_min, expected",
+        [(270, 4), (150, 4), (149, 3), (120, 3), (75, 1), (60, 1), (59, 0), (35, 0)],
+    )
+    def test_a_set_is_only_planned_if_a_rest_follows_it(self, session, bulk_min, expected):
+        _, bulk, _ = self._started(session, minutes=bulk_min)
+
+        assert len(followalong.fold_moments(bulk)) == expected
+
+    def test_a_bulk_started_late_is_folded_late(self, session):
+        bake = make_bake(session, start=local(2026, 6, 13, 18))
+        proof = step(bake, "final_rise")
+        proof.fold_sets, proof.fold_every_min = 2, 30
+        session.commit()
+        tick(session, local(2026, 6, 13, 18))
+        planned = [a.due_at for a in stage_alerts(session, AlertKind.FOLD_DUE)]
+
+        late = proof.planned_start + timedelta(minutes=20)
+        proof.actual_start = late
+        session.commit()
+        tick(session, late)
+
+        moved = [a.due_at for a in stage_alerts(session, AlertKind.FOLD_DUE)]
+        assert [b - a for a, b in zip(planned, moved)] == [timedelta(minutes=20)] * 2
+
+    def test_ending_the_bulk_early_drops_the_folds_still_to_come(self, session):
+        bake, bulk, began = self._started(session)
+        tick(session, began + timedelta(minutes=45))   # set 1 has fired
+
+        # What the page does when "done" is tapped: end it, and settle
+        # whatever was showing for it.
+        bake_service.end_stage(session, bake, bulk, began + timedelta(minutes=50))
+        alert_service.acknowledge_for_stage(
+            session, bulk.id, began + timedelta(minutes=50)
+        )
+        session.commit()
+        tick(session, began + timedelta(minutes=50))
+
+        left = stage_alerts(session, AlertKind.FOLD_DUE)
+        assert [a.is_pending for a in left] == [False]
+        assert alert_service.showing(session, began + timedelta(minutes=50)) == []
+
+    def test_a_fold_can_be_snoozed_like_anything_else(self, session):
+        _, bulk, began = self._started(session)
+        now = began + timedelta(minutes=30)
+        tick(session, now)
+        (showing,) = alert_service.showing(session, now)
+
+        alert_service.snooze(session, showing, now, 10)
+        session.commit()
+
+        assert alert_service.showing(session, now + 5 * MINUTE) == []
+        assert alert_service.showing(session, now + 10 * MINUTE) == [showing]
+
+    def test_the_settings_decide_how_many_and_how_far_apart(self, session):
+        settings_store.set_setting(session, "fold_sets", "3")
+        settings_store.set_setting(session, "fold_every_min", "45")
+        session.commit()
+
+        _, bulk, began = self._started(session)
+
+        assert followalong.fold_moments(bulk) == tuple(
+            began + timedelta(minutes=45 * n) for n in (1, 2, 3)
+        )
+
+    def test_no_sets_means_no_reminders(self, session):
+        settings_store.set_setting(session, "fold_sets", "0")
+        session.commit()
+
+        _, bulk, began = self._started(session)
+        tick(session, began)
+
+        assert bulk.fold_sets is None
+        assert stage_alerts(session, AlertKind.FOLD_DUE) == []
+
+    def test_changing_the_setting_leaves_a_bulk_underway_alone(self, session):
+        _, bulk, began = self._started(session)
+
+        settings_store.set_setting(session, "fold_sets", "1")
+        session.commit()
+        session.refresh(bulk)
+
+        assert len(followalong.fold_moments(bulk)) == 4
+
+    def test_a_bake_laid_out_by_the_planner_has_no_bulk_to_fold(self, session):
+        """The planner's chain goes from kneading to shaping. Stated so that
+        giving it a bulk step is a decision and not a surprise."""
+        bake = make_bake(session, start=local(2026, 6, 13, 18))
+
+        assert all(log.fold_sets is None for log in bake.stage_logs)
+
+    def test_a_bulk_through_the_night_folds_across_midnight(self, session):
+        _, bulk, began = self._started(session, at=local(2026, 6, 13, 23, 10))
+
+        assert [on_clock(at) for at in followalong.fold_moments(bulk)] == [
+            "Sat 23:40", "Sun 00:10", "Sun 00:40", "Sun 01:10",
+        ]
+
+    def test_thirty_minutes_is_thirty_minutes_when_the_clocks_go_forward(self, session):
+        _, bulk, began = self._started(session, at=local(2026, 3, 8, 1, 10))
+
+        moments = followalong.fold_moments(bulk)
+
+        assert [on_clock(at) for at in moments] == [
+            "Sun 01:40", "Sun 03:10", "Sun 03:40", "Sun 04:10",
+        ]
+        assert {b - a for a, b in zip((began, *moments), moments)} == {
+            timedelta(minutes=30)
+        }
+
+    def test_and_when_they_go_back(self, session):
+        _, bulk, began = self._started(session, at=local(2026, 11, 1, 0, 40))
+
+        moments = followalong.fold_moments(bulk)
+
+        assert [on_clock(at) for at in moments] == [
+            "Sun 01:10", "Sun 01:40", "Sun 01:10", "Sun 01:40",
+        ]
+        assert len(set(moments)) == 4
+        fired = []
+        now = began
+        while now <= moments[-1]:
+            fired += [a.due_at for a in tick(session, now).fired]
+            now += MINUTE
+        assert fired == list(moments)
+
+    def test_moving_the_kitchen_mid_bulk_moves_nothing(self, session, in_zone):
+        _, bulk, began = self._started(session)
+        tick(session, began)
+        before = [(a.id, a.due_at) for a in stage_alerts(session, AlertKind.FOLD_DUE)]
+
+        in_zone("Europe/London")
+        result = tick(session, began + MINUTE)
+
+        assert not result.changed
+        assert [(a.id, a.due_at) for a in stage_alerts(session, AlertKind.FOLD_DUE)] == before
+
+
+class TestTheRemindersSettings:
+    def test_the_page_offers_them(self, client):
+        body = client.get("/settings").text
+
+        assert 'action="/settings/reminders"' in body
+        for name in ("fold_sets", "fold_every_min", "lid_off_after_min"):
+            assert f'name="{name}"' in body
+
+    def test_saving_them(self, client, session):
+        response = client.post(
+            "/settings/reminders",
+            data={"fold_sets": "3", "fold_every_min": "45", "lid_off_after_min": "25"},
+            follow_redirects=False,
+        )
+
+        assert response.status_code == 303
+        assert settings_store.fold_sets(session) == 3
+        assert settings_store.fold_every_min(session) == 45
+        assert settings_store.lid_stays_on_min(session) == 25
+
+    def test_turning_both_off(self, client, session):
+        client.post(
+            "/settings/reminders", data={"fold_sets": "0", "lid_off_after_min": "0"}
+        )
+
+        assert settings_store.fold_sets(session) == 0
+        assert settings_store.lid_off_after_min(session, BakeMethod.DUTCH_OVEN) is None
+
+    @pytest.mark.parametrize(
+        "field, value",
+        [("fold_sets", "9"), ("fold_every_min", "7"), ("lid_off_after_min", "90")],
+    )
+    def test_a_value_that_was_not_offered_is_refused(self, client, session, field, value):
+        response = client.post("/settings/reminders", data={field: value})
+
+        assert response.status_code == 400
+        assert settings_store.fold_sets(session) == 4
+        assert settings_store.fold_every_min(session) == 30
+        assert settings_store.lid_stays_on_min(session) == 20
+
+    def test_the_banner_shows_a_fold_with_its_set_number(self, client, session):
+        bake = recipe_bake(session, TestFoldSets.STAGES)
+        bulk = bulk_of(bake)
+        began = utcnow() - timedelta(minutes=31)
+        bake_service.start_stage(session, bake, bulk, began)
+        session.commit()
+        tick(session, utcnow())
+
+        body = client.get("/").text
+
+        assert "Stretch and fold — set 1 of 4" in body
+
+    def test_the_running_sheet_says_when_the_folds_and_the_lid_are(self, client, session):
+        bake = recipe_bake(session, TestFoldSets.STAGES)
+        bulk = bulk_of(bake)
+
+        waiting = client.get(f"/bakes/{bake.id}").text
+        assert "4 sets of folds, 30 min apart" in waiting
+        assert "Lid off 20 min after the loaf goes in" in waiting
+
+        began = local(2026, 6, 13, 13)
+        bake_service.start_stage(session, bake, bulk, began)
+        session.commit()
+
+        assert "Stretch and fold at\n      13:30, 14:00, 14:30, 15:00" in client.get(
+            f"/bakes/{bake.id}"
+        ).text

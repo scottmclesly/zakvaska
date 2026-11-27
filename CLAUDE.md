@@ -58,6 +58,11 @@ Comparing jars and iterating recipes is the point, so the data must be structure
 - The drawn jar moves by one value, `Life` (`services/jars.life_of`: active, hungry,
   overdue, resting), carried as `life-*` on the SVG. Motion is CSS keyframes on
   `transform`/`opacity` only, all inside `prefers-reduced-motion: no-preference`.
+- Folds and the lid are **not steps**, for the reason the preheat is not: they are
+  numbers on the step they happen during (`fold_sets`/`fold_every_min` on a bulk
+  ferment, `lid_off_after_min` on a pot's single bake step), copied from the settings
+  when a bake is written down. `followalong.fold_moments` / `lid_off_moment` work the
+  times out from when the step really began; each has its own `AlertKind`.
 - Never hard-delete jars, recipes or bakes — archive them. Lab-notebook history matters.
 - Every schema change ships with an Alembic migration.
 - Keep it dependency-light. Ask before adding a dependency not listed above.

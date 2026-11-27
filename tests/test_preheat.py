@@ -437,8 +437,9 @@ class TestTheAlert:
             )
         )
 
-        # The bake's own start and end, and the preheat before them.
-        assert kinds == ["preheat_due", "stage_due", "stage_due"]
+        # The bake's own start and end, the preheat before them, and the
+        # lid coming off in the middle, which a pot bake now also has.
+        assert kinds == ["lid_off_due", "preheat_due", "stage_due", "stage_due"]
 
     def test_doing_the_step_clears_it(self, session):
         bake = _bake(session, start=_at(16, 14), now=_at(15, 8))

@@ -115,6 +115,12 @@ class Alert(Base):
         """
         if self.kind.is_preheat:
             return "Preheat the oven"
+        # Likewise a fold and the lid: both happen in the middle of a step,
+        # and the step's own name would say that step was due.
+        if self.kind is AlertKind.FOLD_DUE:
+            return "Stretch and fold"
+        if self.kind is AlertKind.LID_OFF_DUE:
+            return "Take the lid off"
         if self.stage_log is not None:
             return self.stage_log.name
         return self.jar.name if self.jar is not None else "something"
