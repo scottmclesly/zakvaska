@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
 
 {% block nav %}
 <a class="btn btn-small btn-secondary" href="/jars/{{ jar.id }}/edit">Edit</a>
@@ -42,11 +43,11 @@
 <section class="card {% if card.status.is_overdue %}is-overdue{% endif %}">
   <dl class="stats stats-wide">
     <div>
-      <dt>Last fed</dt>
+      <dt>{{ icon("spoon") }}Last fed</dt>
       <dd>{{ card.status.last_fed_at | since(now) }}</dd>
     </div>
     <div>
-      <dt>Next due</dt>
+      <dt>{{ icon("clock") }}Next due</dt>
       <dd>
         {% if card.status.next_due_at %}
           <span class="{% if card.status.is_overdue %}overdue-text{% endif %}">
@@ -61,7 +62,7 @@
     </div>
     {% if card.last_feeding %}
     <div>
-      <dt>Last ratio</dt>
+      <dt>{{ icon("scale") }}Last ratio</dt>
       <dd>
         {{ last_ratio or "—" }}
         <span class="muted stat-sub">
@@ -72,13 +73,13 @@
       </dd>
     </div>
     <div>
-      <dt>Hydration</dt>
+      <dt>{{ icon("drop") }}Hydration</dt>
       <dd>{{ last_hydration | percent }}</dd>
     </div>
     {% endif %}
     {% if readiness %}
     <div>
-      <dt>Right now</dt>
+      <dt>{{ icon("bubbles") }}Right now</dt>
       <dd>
         <span class="band-text band-{{ readiness.band.value }}">
           {{ readiness.band.label }}

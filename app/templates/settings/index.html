@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
 
 {% macro weekday_boxes(name, chosen) -%}
 {#- `chosen` is the list of weekday indices to tick; none means every day. -#}
@@ -39,7 +40,7 @@
 {# --- Display units ------------------------------------------------- #}
 <div class="settings-grid">
 <section class="card">
-  <h2 class="section-title">Units</h2>
+  <h2 class="section-title">{{ icon("ruler") }}Units</h2>
   <p class="muted small">
     Stored in grams and °C whatever these say; they set how amounts are shown
     — and how a bare number you type is read.
@@ -80,7 +81,7 @@
 
 {# --- Feeding rhythm ------------------------------------------------ #}
 <section class="card">
-  <h2 class="section-title">Feeding rhythm</h2>
+  <h2 class="section-title">{{ icon("clock") }}Feeding rhythm</h2>
   <p class="muted small">
     A jar's cycle is a day divided by the feeds in it, and the ribbon plans
     the next feed from there. A single jar can be put on its own rhythm from
@@ -125,7 +126,7 @@
 
 {# --- The preheat heads-up ------------------------------------------ #}
 <section class="card">
-  <h2 class="section-title">Preheating</h2>
+  <h2 class="section-title">{{ icon("flame") }}Preheating</h2>
   <p class="muted small">
     How long before the bake step you want telling to turn the oven on. The
     preheat runs alongside the final proof rather than after it, so the
@@ -166,7 +167,7 @@
 
 {# --- Busy blocks --------------------------------------------------- #}
 <section class="card settings-wide">
-  <h2 class="section-title">When you are busy</h2>
+  <h2 class="section-title">{{ icon("moon") }}When you are busy</h2>
   <p class="muted small">
     Shaded on the ribbon and the bake-day planner, so a feed or a hands-on
     step landing in one gets flagged rather than silently suggested. Times
@@ -291,7 +292,7 @@
 
 {# --- Hints ----------------------------------------------------------- #}
 <section class="card settings-wide" id="hints">
-  <h2 class="section-title">Hints</h2>
+  <h2 class="section-title">{{ icon("bulb") }}Hints</h2>
   <p class="muted small">
     Short notes on the steps of a bake, a recipe's stages and a jar's page,
     each one put away for good with “Got it”. There are {{ hints.total }};

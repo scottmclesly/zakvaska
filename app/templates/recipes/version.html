@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/icons.html" import icon %}
 
 {% block nav %}
 <a class="btn btn-small" href="/plan?version={{ version.id }}">Plan a bake</a>
@@ -200,7 +201,7 @@
   {% for stage in version.stages %}
   <li class="card stage">
     <div class="stage-head">
-      <h3>{{ stage.name }}</h3>
+      <h3>{{ icon(step_icon(none, stage.name)) }}{{ stage.name }}</h3>
       <span class="stage-facts muted">
         {% if stage.duration_min is not none %}{{ stage.duration_min }} min{% endif %}
         {% if stage.duration_min is not none and stage.temp_c is not none %} · {% endif %}

@@ -134,9 +134,10 @@ class TestVersionPage:
         recipe_id = create(client)
         text = client.get(f"/recipes/{recipe_id}/v/1").text
         # Matched on the heading, not the bare name: "bake" also appears in
-        # the /bakes links on this page.
+        # the /bakes links on this page. A stage's glyph comes before its
+        # name inside the heading, so the name is found by what closes it.
         positions = [
-            text.index(f"<h3>{name}</h3>")
+            text.index(f">{name}</h3>")
             for name in ["scald (zavarka)", "sponge", "final dough", "proof", "bake"]
         ]
         assert positions == sorted(positions)

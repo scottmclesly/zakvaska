@@ -1,3 +1,4 @@
+{% from "partials/icons.html" import icon %}
 {# The answer: the timeline, the conflicts, and the step table.
 
    Swapped in on its own by the start-time slider, so everything that
@@ -120,7 +121,7 @@
         {% for step in plan.steps %}
         <tr class="{% if step.clashes %}is-clash{% endif %}">
           <td>
-            {{ step.name }}
+            {{ icon(step_icon(step.key, step.name)) }}{{ step.name }}
             {%- if step.spec.note %}
             <br><span class="muted small">{{ step.spec.note }}</span>
             {%- endif %}

@@ -293,3 +293,43 @@ class TestElsewhere:
         client.post("/hints/feed-temperature-times-the-peak/dismiss")
 
         assert 'class="hints"' not in client.get(f"/jars/{jar.id}/feed").text
+
+
+# --- A step's glyph -------------------------------------------------------
+
+
+class TestStepGlyphs:
+    """One function decides a step's shape, so the running sheet, a recipe's
+    stages and the planner cannot disagree about what bulk looks like."""
+
+    @pytest.mark.parametrize(
+        ("key", "name", "glyph"),
+        [
+            ("levain", "Build the levain", "bubbles"),
+            ("mix", "Mix in levain, salt and water", "bowl"),
+            ("bulk", "Bulk ferment with folds", "fold"),
+            ("final_rise", "Final proof", "basket"),
+            ("preheat", "Preheat oven and pot", "flame"),
+            ("bake", "Bake in the pot", "pot"),
+            ("cool", "Cool on a rack", "rack"),
+            (None, "machine sweet cycle", "machine"),
+            (None, "scald (zavarka)", "bowl"),
+            (None, "bulk ferment", "fold"),
+        ],
+    )
+    def test_a_step_has_the_glyph_of_what_it_is(self, key, name, glyph):
+        assert hint_service.icon_for(key, name) == glyph
+
+    def test_a_step_nobody_can_name_has_none(self):
+        assert hint_service.icon_for(None, "slice") == ""
+
+    def test_every_glyph_a_step_can_be_given_is_drawn(self):
+        """A name with no drawing behind it would silently show nothing."""
+        drawn = Path("app/templates/partials/icons.html").read_text()
+        wanted = (
+            set(hint_service.PLACE_ICONS.values())
+            | set(hint_service._KEY_ICONS.values())
+            | {name for _, name in hint_service._NAME_ICONS}
+        )
+        for name in wanted:
+            assert f'"{name}":' in drawn, name
